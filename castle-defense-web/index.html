@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Castle Defense</title>
+  <meta name="description" content="Defend the castle with riflemen, ragdoll archers, gas grenadiers, snipers and a giant mech.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: game stats on the left, money on the right -->
+    <header class="hud">
+      <div class="brand">CASTLE<span>DEFENSE</span></div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Wave</span>
+          <span class="stat-value" id="wave">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat stat-castle" id="castle-stat">
+          <span class="stat-label">Castle <span class="armor" id="armor" title="Armor points block damage first">🛡 0</span></span>
+          <div class="bar"><div class="bar-fill" id="castle-fill"></div><span class="bar-text" id="castle">0/0</span></div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Army</span>
+          <span class="stat-value" id="army">0/10</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Weapons</span>
+          <span class="stat-value" id="weapons">Lv 0</span>
+        </div>
+      </div>
+      <div class="money" id="money" aria-live="polite">$0</div>
+    </header>
+
+    <!-- recruit cards are added by game.js -->
+    <section class="shop" id="shop" aria-label="Recruit soldiers"></section>
+
+    <div class="toolbar">
+      <div class="group" id="upgrades" aria-label="Upgrades">
+        <!-- upgrade buttons are added by game.js -->
+      </div>
+      <div class="group">
+        <button id="sell" class="tool"><span class="label">Sell</span><kbd>S</kbd></button>
+        <button id="delete" class="tool"><span class="label">Delete</span><kbd>D</kbd></button>
+      </div>
+      <div class="group group-end">
+        <button id="pause" class="tool icon" title="Pause (P)"><span class="label">⏸</span><kbd>P</kbd></button>
+        <div class="segmented" id="speed" role="group" aria-label="Enemy speed" title="Enemy speed (F)">
+          <button data-speed="1" aria-pressed="true">1×</button>
+          <button data-speed="2" aria-pressed="false">2×</button>
+          <button data-speed="3" aria-pressed="false">3×</button>
+        </div>
+        <button id="sound" class="tool icon" title="Sound (M)" aria-label="Sound on">🔊</button>
+        <button id="reset" class="tool danger">Reset</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="board" width="600" height="400" aria-label="Castle Defense battlefield"></canvas>
+
+      <div class="boss" id="boss" hidden>
+        <div class="boss-name" id="boss-name">GIANT BOSS</div>
+        <div class="boss-bar"><div class="boss-fill" id="boss-fill"></div></div>
+        <div class="boss-hp" id="boss-hp">0</div>
+      </div>
+      <div class="mode-hint" id="mode-hint" hidden></div>
+      <div class="banner" id="banner" hidden>
+        <div class="banner-title" id="banner-title">WAVE 1</div>
+        <div class="banner-sub" id="banner-sub"></div>
+      </div>
+      <div class="toasts" id="toasts" aria-live="polite"></div>
+
+      <div class="screen" id="pause-screen" hidden>
+        <h2>PAUSED</h2>
+        <p>Press <kbd>P</kbd> or click to keep fighting</p>
+      </div>
+
+      <div class="screen title" id="title">
+        <h1>CASTLE<br>DEFENSE</h1>
+        <p id="title-message">Choose your difficulty</p>
+        <div class="summary" id="summary" hidden></div>
+        <div class="levels" id="levels">
+          <!-- difficulty cards are added by game.js -->
+        </div>
+      </div>
+    </div>
+
+    <p class="help">
+      <strong>Click enemies</strong> to hit them yourself and <strong>click coins</strong> to collect them before enemies pick them up.
+      Every 3rd wave ends with a <strong>giant boss</strong>: only a Mech can stop it.
+      Keys: <kbd>1</kbd>–<kbd>6</kbd> recruit, <kbd>U</kbd> upgrade, <kbd>A</kbd> armor, <kbd>B</kbd> ammo,
+      <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
+      <kbd>Esc</kbd> cancel, <kbd>Tab</kbd> wipe out every enemy.
+    </p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
