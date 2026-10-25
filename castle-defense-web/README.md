@@ -25,19 +25,67 @@ Open `index.html` in a web browser. That's it.
 
 Every time you upload changed files, GitHub Pages updates the game automatically.
 
+### Making sure players get the new version
+
+Browsers save copies of `style.css` and `game.js`, so after an update some players can still see
+the old game. To stop that, change the version number in `index.html` every time you release:
+
+- `style.css?v=1.02.0` and `game.js?v=1.02.0` (for example to `?v=1.03.0`)
+- the version shown at the bottom of the page, `v1.02.0`
+
+The new number makes the browser download the new files. GitHub Pages can take up to 10 minutes
+to show a new `index.html`; to see it right away, press **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac).
+
 ## How to play
 
 - Pick **Easy**, **Medium** or **Hard** to start. Each wave starts as soon as the last one is cleared.
-- Buy soldiers with the buttons at the top. They line up in front of the castle and shoot by themselves.
+- Buy soldiers with the cards at the top. A card that's greyed out shows why: not enough money, or the army is full. They line up in front of the castle and shoot by themselves.
 - Click an enemy to hit it yourself.
 - Dead enemies drop coins. **Click a coin** to turn it into money. Enemies that walk over a coin pick it
   up, and drop everything they carried when they die.
 - Enemies shoot back. Every soldier has a health bar, and a soldier with no health left is destroyed.
-- **Sell soldier**, then click a soldier, gives you all of its money back.
-  **Delete soldier** (top right) removes one with no money back.
+- **Sell**, then click a soldier, gives you all of its money back.
+  **Delete** removes one with no money back. Press **Esc** to cancel either mode.
+- Every **6th wave** ends with the **giant giant boss** instead: 900,000 health and bigger than the giant
+  boss. A Golem's boulder takes a third of its health (3 hits); a Mech's shell only a twentieth (20 hits).
+- From **wave 5** on, every enemy has **10× health** (except the giant boss).
 - Every 2nd wave ends with a heavy tank. Every 3rd wave ends with a **giant boss** with 90,000 health
-  that crushes soldiers it drives over. Only a **Mech** (top right) can beat it: two hits destroy it.
+  that crushes soldiers it drives over. Only a **Mech** (the blue card in the shop glows while it's out) can beat it: two hits destroy it.
+- With **2 or more Mechs**, press **Collector**, then click one of them. That Mech walks the battlefield
+  picking up coins for you. It does not shoot, and enemies can still destroy it. Buy **Mech armor**
+  (+20,000 for $50, up to 200,000) to make it tougher: armor is used up before its health.
+  Click the collector again in Collector mode to send it back to fight.
+- With **3 or more soldiers**, press **Combine** (twice, to confirm) to merge every soldier into one giant
+  stone **Golem**. It gets all their health plus 60,000 for each soldier, throws exploding boulders, smashes
+  the giant boss in **one hit**, and is too big to be driven over. Recruit more soldiers later and press
+  Combine again to add them to it. Selling the Golem gives back what all its soldiers cost.
 - Press **Tab** to wipe out every enemy on the field.
+- The game pauses by itself when you switch tabs, and remembers your best score.
+- If your score makes the **top 10**, write your name when the game ends and it goes on the
+  **leaderboard**. Everyone who plays shares the same leaderboard.
+
+### The online leaderboard
+
+Scores are stored in a free [Supabase](https://supabase.com) database (table `scores`). The
+Project URL and publishable key at the top of the leaderboard section in `game.js` are safe to
+publish: the database only lets them read scores and add new ones. Never put the `service_role`
+or secret key in the game. To remove a fake or rude score, delete its row in Supabase's
+**Table Editor**. If Supabase can't be reached, the game shows the scores saved on that computer.
+
+### Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| 1–6 | Recruit Rifleman, Archer, Gas grenadier, Tear gas, Sniper, Mech |
+| U / A / B | Upgrade weapons / buy armor / buy sniper ammo |
+| S / D | Sell mode / delete mode |
+| C / K | Pick a collector Mech / buy Mech armor |
+| G | Combine every soldier into a Golem (press twice) |
+| P or Space | Pause |
+| F | Change enemy speed (1×, 2×, 3×) |
+| M | Sound on or off |
+| Esc | Cancel sell or delete, or pause |
+| Tab | Wipe out every enemy |
 
 | Soldier | Cost | Health | What it does |
 | --- | --- | --- | --- |

@@ -14,6 +14,8 @@ const MEGA_BOSS_DAMAGE = 10;  // castle health lost if the heavy tank gets throu
 const GIANT_BOSS_WAVE = 3;    // every 3rd wave ends with the giant boss tank
 const GIANT_BOSS_HEALTH = 90000;
 const GIANT_BOSS_DAMAGE = 30; // castle health lost if the giant boss gets through (the whole castle!)
+const TITAN_WAVE = 6;         // every 6th wave, the giant GIANT boss comes instead of the giant boss
+const TITAN_HEALTH = 900000;  // it acts like the giant boss, only bigger: a Golem needs 3 hits, a Mech 20
 // enemies shoot back at your soldiers:
 // damage per shot, ticks between shots, how far they can shoot, shot speed, shot size and color
 const ENEMY_GUNS = {
@@ -23,8 +25,11 @@ const ENEMY_GUNS = {
   megaboss: { damage: 15, reload: 60, range: 450, speed: 10, size: 5, color: "orangered" },
   // each giant boss shell takes 150,000 health: more than a whole mech
   giant:    { damage: 150000, reload: 60, range: 2000, speed: 10, size: 6, color: "red" },
+  titan:    { damage: 250000, reload: 70, range: 2000, speed: 10, size: 9, color: "magenta" },
 };
 const CASTLE_HEALTH = 30;     // the castle starts with 30 health
+const HARD_WAVE = 5;          // from wave 5 on...
+const HARD_HEALTH = 10;       // ...every enemy (except the giant boss) has 10 times more health
 
 const BOSS_DAMAGE = 5;        // castle health lost if an armored car gets through
 
@@ -49,6 +54,14 @@ const ARMOR_PACK = 5;         // ...for 5 armor points; each point blocks 1 dama
 const MAX_ARMOR = 20;
 const AMMO_PACK = 5;          // the ammo button buys 5 sniper bullets...
 const AMMO_COST = 5;          // ...for $5
+// with 2 or more mechs, one of them can walk the battlefield picking up coins instead of shooting
+const COLLECTOR_SPEED = 3;           // pixels per tick
+const COLLECTOR_REACH = 22;          // how close it has to get to grab a coin
+const COLLECTOR_ARMOR_PACK = 20000;  // the Mech armor button buys 20,000 armor points...
+const COLLECTOR_ARMOR_COST = 50;     // ...for $50
+const COLLECTOR_ARMOR_MAX = 200000;  // enough to survive one giant boss shell (150,000)
+const GOLEM_MIN = 3;          // you need at least 3 soldiers to combine them into a golem
+const GOLEM_BONUS = 60000;    // every soldier that joins the golem adds its own health plus 60,000
 
 const SKIN = "#e0b48a";
 const SHADOW = "#3f6e2b";
@@ -75,6 +88,10 @@ const SOLDIER_TYPES = {
   // the mech is a giant walking robot: its cannon shell takes half of the giant boss's health (2 hits kill it)
   "mech": { name: "Mech", cost: 200, damage: 20, giantHalf: true, health: 9000, blast: 50, reload: 40,
             range: 520, color: "#5b6b7a", weapon: "shell", speed: 20, spread: 0.008, shot: "cyan" },
+  // the golem is every soldier combined into one giant stone giant (see combineSoldiers): it can't be bought.
+  // Its boulder smashes the giant boss in one hit and takes half of a heavy tank's health.
+  "golem": { name: "Golem", cost: 0, damage: 40, megaHalf: true, giantKill: true, health: 1, blast: 70, reload: 45,
+             range: 600, color: "#7d7466", weapon: "shell", speed: 16, spread: 0.01, shot: "#5e554a" },
 };
 // the mech is bought with its own button at the top right
 const SHOP_ORDER = ["strong", "archer", "poison", "freezer", "boss killer"];
@@ -98,8 +115,10 @@ let castleHealth = CASTLE_HEALTH;
 let score = 0;
 let money = 0;
 let playing = false;
+let paused = false;
 let sellMode = false;
 let deleteMode = false;   // like sell mode, but the soldier is just removed with no money back
+let collectMode = false;  // the next mech you click becomes the coin collector
 let monsterSpeedUp = 1;   // the Speed button cycles this through 1, 2 and 3
 let weaponLevel = 0;      // how many weapon upgrades you have bought this game
 let castleArmor = 0;      // armor points left on the castle
@@ -109,7 +128,8 @@ let waveSpawned = 0;      // how many have appeared so far
 
 // each enemy is {x, y, health, max, speed, slowed, poison, kind, push, step, gunTime, carried}
 let monsters = [];
-// each soldier is {x, y, reload, kind, cloudTime, ragdoll, recoil, ammo (null = never runs out), health}
+// each soldier is {x, y, reload, kind, cloudTime, ragdoll, recoil, ammo (null = never runs out), health,
+//                   collector, returning, homeX, homeY, armor}; the last five are only used by mechs
 let soldiers = [];
 let projectiles = [];   // bullets, arrows, grenades and shells that are flying right now
 let enemyShells = [];   // enemy shots flying at your soldiers
@@ -118,6 +138,8 @@ let particles = [];     // smoke, fire, dust, flashes and flying debris
 let corpses = [];       // fallen enemies (floppy ragdolls) and burning wrecks
 let coins = [];         // coins dropped by dead enemies: click one to turn it into money
 let stuck = [];         // arrows that missed and stuck in the ground
+let floaters = [];      // floating "+$50" words that rise and fade: {x, y, words, color, life}
+let lastCastleHealth = CASTLE_HEALTH;   // so the screen can flash when the castle loses health
 
 // Positions use the ground: x goes toward the castle, y is how far down the field,
 // and z is how high something is above the ground. On screen it is drawn at (x, y - z).
@@ -224,6 +246,16 @@ const KILL_SOUNDS = {
     tone(220, 60, 1.0, "square", 0.08, 0.1);
   },
 };
+KILL_SOUNDS.titan = KILL_SOUNDS.giant;
+
+function buySound() {
+  tone(520, 780, 0.07, "square", 0.05);
+  tone(780, 1040, 0.08, "square", 0.04, 0.05);
+}
+
+function deniedSound() {
+  tone(180, 120, 0.12, "square", 0.06);
+}
 
 function coinSound() {
   tone(1200, 1800, 0.08, "sine", 0.1);
@@ -231,7 +263,7 @@ function coinSound() {
 }
 
 function soldierDiedSound(kind) {
-  if (kind === "mech") {
+  if (kind === "mech" || kind === "golem") {
     tone(90, 30, 1.0, "sawtooth", 0.2);
   } else {
     tone(900, 500, 0.12, "triangle", 0.1);
@@ -289,6 +321,7 @@ function clearBattlefield() {
   corpses = [];
   coins = [];
   stuck = [];
+  floaters = [];
 }
 
 function startGame(level) {
@@ -298,18 +331,25 @@ function startGame(level) {
   castleArmor = 0;
   maxCastleHealth = difficulty.castle;
   castleHealth = maxCastleHealth;
+  lastCastleHealth = castleHealth;
   score = 0;
   money = difficulty.money;
   playing = true;
+  setPaused(false);
   clearBattlefield();
   wave = 0;
   startWave();
   titleBox.hidden = true;
+  lastEntry = null;
+  pendingScore = null;   // starting again without writing a name skips the leaderboard
   if (sellMode) {
     toggleSellMode();
   }
   if (deleteMode) {
     toggleDeleteMode();
+  }
+  if (collectMode) {
+    toggleCollectMode();
   }
   updateInfo();
 }
@@ -317,8 +357,12 @@ function startGame(level) {
 function resetGame() {
   // stop the current game and go back to the title screen
   playing = false;
+  setPaused(false);
   weaponLevel = 0;
   castleArmor = 0;
+  wave = 0;
+  score = 0;
+  castleHealth = maxCastleHealth;
   clearBattlefield();
   if (sellMode) {
     toggleSellMode();
@@ -326,47 +370,98 @@ function resetGame() {
   if (deleteMode) {
     toggleDeleteMode();
   }
-  titleMessage.textContent = "Choose your difficulty";
-  titleBox.hidden = false;
-  infoText.textContent = "Pick a difficulty to start!";
+  if (collectMode) {
+    toggleCollectMode();
+  }
+  showTitle("Choose your difficulty");
   money = 0;
-  updateMoney();
+  updateInfo();
+}
+
+function setText(el, words) {
+  // updateInfo runs 20 times a second, so only touch the page when something changed
+  if (el.textContent !== words) {
+    el.textContent = words;
+  }
+}
+
+function setLocked(el, locked) {
+  // locked buttons still take clicks, so they can say why you can't buy yet
+  el.classList.toggle("locked", locked);
+  el.setAttribute("aria-disabled", locked ? "true" : "false");
 }
 
 function updateMoney() {
-  moneyText.textContent = "$" + money;
-  for (const [kind, button] of Object.entries(buyButtons)) {
-    button.disabled = !playing || money < SOLDIER_TYPES[kind].cost || soldiers.length >= MAX_SOLDIERS;
+  if (moneyText.textContent !== "$" + money) {
+    moneyText.textContent = "$" + money;
+    bump(moneyText);
   }
-  ammoButton.disabled = !playing || money < AMMO_COST || !soldiers.some((s) => s.ammo !== null);
-  upgradeButton.textContent = weaponLevel >= MAX_WEAPON_LEVEL ? "Weapons maxed!" : "Upgrade weapons ($" + UPGRADE_COST + ")";
-  upgradeButton.disabled = !playing || money < UPGRADE_COST || weaponLevel >= MAX_WEAPON_LEVEL;
-  armorButton.disabled = !playing || money < ARMOR_COST || castleArmor >= MAX_ARMOR;
+  const full = soldiers.length >= MAX_SOLDIERS;
+  for (const [kind, card] of Object.entries(buyButtons)) {
+    const cost = SOLDIER_TYPES[kind].cost;
+    setLocked(card, !playing || money < cost || full);
+    card.classList.toggle("short", playing && money < cost);
+    setText(card.badge, playing && full ? "ARMY FULL" : "");
+  }
+  const hasSniper = soldiers.some((s) => s.ammo !== null);
+  setLocked(ammoButton, !playing || money < AMMO_COST || !hasSniper);
+  const maxed = weaponLevel >= MAX_WEAPON_LEVEL;
+  setText(upgradeButton.label, maxed ? "Weapons maxed" : "Weapons Lv " + (weaponLevel + 1));
+  setText(upgradeButton.price, maxed ? "" : "$" + UPGRADE_COST);
+  setLocked(upgradeButton, !playing || money < UPGRADE_COST || maxed);
+  setLocked(armorButton, !playing || money < ARMOR_COST || castleArmor >= MAX_ARMOR);
+  // the collector buttons only show up once they can be used
+  const collector = soldiers.find((s) => s.collector);
+  collectorButton.hidden = !collectMode && !collector && mechCount() < 2;
+  collectorButton.classList.toggle("ready", playing && !collector && mechCount() >= 2 && !collectMode);
+  collectorArmorButton.hidden = !collector;
+  const golem = soldiers.some((s) => s.kind === "golem");
+  const canCombine = soldiers.length >= GOLEM_MIN || (golem && soldiers.length >= 2);
+  setLocked(combineButton, !playing || !canCombine);
+  if (!combineArmedAt) {
+    setText(combineButton.label, golem ? "🗿 Add to Golem" : "🗿 Combine");
+  }
+  combineButton.classList.toggle("ready", playing && canCombine && !!strongestBoss() && isGiant(strongestBoss()));
+  setLocked(collectorArmorButton, !collector || money < COLLECTOR_ARMOR_COST || collector.armor >= COLLECTOR_ARMOR_MAX);
+}
+
+function strongestBoss() {
+  // the boss bar shows the biggest boss on the field
+  const rank = { titan: 4, giant: 3, megaboss: 2, boss: 1 };
+  let best = null;
+  for (const m of monsters) {
+    if (rank[m.kind] && (!best || rank[m.kind] > rank[best.kind])) {
+      best = m;
+    }
+  }
+  return best;
 }
 
 function updateInfo() {
-  let text = "Wave " + wave + "   Score: " + score + "   Castle health: " + castleHealth;
-  text += "   Soldiers: " + soldiers.length + "/" + MAX_SOLDIERS;
-  text += "   Weapons Lv " + weaponLevel;
-  text += "   Armor: " + castleArmor;
-  if (soldiers.length >= MAX_SOLDIERS) {
-    text += " (full)";
+  setText(waveText, String(wave));
+  setText(scoreText, score.toLocaleString());
+  const health = Math.max(castleHealth, 0);
+  setText(castleText, health + " / " + maxCastleHealth);
+  castleFill.style.width = (100 * health / maxCastleHealth) + "%";
+  castleStat.classList.toggle("hurt", health <= maxCastleHealth * 0.6);
+  castleStat.classList.toggle("danger", health <= maxCastleHealth * 0.3);
+  setText(armorText, "🛡 " + castleArmor);
+  setText(armyText, soldiers.length + "/" + MAX_SOLDIERS);
+  setText(weaponsText, "Lv " + weaponLevel);
+  if (playing && castleHealth < lastCastleHealth) {
+    replay(stage, "hit");
   }
-  for (const m of monsters) {
-    if (isGiant(m)) {
-      text += "   GIANT BOSS " + m.health + "/" + m.max + "!!!!";
-      break;
-    }
-    if (isMega(m)) {
-      text += "   HEAVY TANK!!!";
-      break;
-    }
-    if (isBoss(m)) {
-      text += "   ARMORED CAR!";
-      break;
-    }
+  lastCastleHealth = castleHealth;
+
+  const boss = playing ? strongestBoss() : null;
+  bossBox.hidden = !boss;
+  if (boss) {
+    setText(bossName, { titan: "GIANT GIANT BOSS", giant: "GIANT BOSS", megaboss: "HEAVY TANK", boss: "ARMORED CAR" }[boss.kind]);
+    bossFill.style.width = (100 * Math.max(boss.health, 0) / boss.max) + "%";
+    setText(bossHp, Math.max(boss.health, 0).toLocaleString() + " / " + boss.max.toLocaleString());
   }
-  infoText.textContent = text;
+  // while the giant boss is out, make the Mech card glow so you know what to buy
+  mechButton.classList.toggle("callout", !!boss && isGiant(boss));
   updateMoney();
 }
 
@@ -377,7 +472,7 @@ function isMega(m) {
 }
 
 function isGiant(m) {
-  return m.kind === "giant";
+  return m.kind === "giant" || m.kind === "titan";   // the giant giant boss does everything the giant boss does
 }
 
 function isBoss(m) {
@@ -389,6 +484,7 @@ function isTough(m) {
 }
 
 function monsterSize(m) {
+  if (m.kind === "titan") return 200;
   if (isGiant(m)) return 150;
   if (isMega(m)) return 100;
   if (isBoss(m)) return 55;
@@ -397,11 +493,11 @@ function monsterSize(m) {
 }
 
 function monsterHeight(m) {
-  return { normal: 38, tough: 54, boss: 64, megaboss: 104, giant: 156 }[m.kind];
+  return { normal: 38, tough: 54, boss: 64, megaboss: 104, giant: 156, titan: 208 }[m.kind];
 }
 
 function monsterHalfWidth(m) {
-  return { normal: 11, tough: 16, boss: 50, megaboss: 95, giant: 143 }[m.kind];
+  return { normal: 11, tough: 16, boss: 50, megaboss: 95, giant: 143, titan: 190 }[m.kind];
 }
 
 function groundY(m) {
@@ -419,35 +515,66 @@ function monsterSpeed(m) {
 
 function buySoldier(kind) {
   const cost = SOLDIER_TYPES[kind].cost;
-  if (soldiers.length >= MAX_SOLDIERS) {
-    return;   // the army is full: sell a soldier to make room
+  if (!playing) {
+    return;
   }
-  if (playing && money >= cost) {
+  if (soldiers.length >= MAX_SOLDIERS) {
+    // the army is full: sell a soldier to make room
+    denied(buyButtons[kind], "Army is full (" + MAX_SOLDIERS + "/" + MAX_SOLDIERS + "). Sell a soldier to make room.");
+    return;
+  }
+  if (money < cost) {
+    denied(buyButtons[kind], "Need $" + (cost - money) + " more for a " + SOLDIER_TYPES[kind].name + ".");
+    return;
+  }
+  {
     money -= cost;
     const y = 30 + (soldiers.length * 60) % (HEIGHT - 60);
     soldiers.push({ x: CASTLE_X - 40, y, reload: 0, kind, cloudTime: CLOUD_EVERY,
                     ragdoll: kind === "mech" ? null : newRagdoll(), recoil: 0,
-                    ammo: SOLDIER_TYPES[kind].ammo ?? null, health: SOLDIER_TYPES[kind].health });
+                    ammo: SOLDIER_TYPES[kind].ammo ?? null, health: SOLDIER_TYPES[kind].health,
+                    collector: false, returning: false, homeX: CASTLE_X - 40, homeY: y, armor: 0 });
+    buySound();
+    if (kind === "mech" && mechCount() === 2) {
+      toast("2 Mechs! Press Collector (C) and click one to send it collecting coins", "good");
+    }
     updateInfo();
   }
 }
 
 function buyUpgrade() {
   // better weapons: every soldier that does damage does 1 more per shot
-  if (playing && weaponLevel < MAX_WEAPON_LEVEL && money >= UPGRADE_COST) {
-    money -= UPGRADE_COST;
-    weaponLevel += 1;
-    updateInfo();
+  if (!playing || weaponLevel >= MAX_WEAPON_LEVEL) {
+    return;
   }
+  if (money < UPGRADE_COST) {
+    denied(upgradeButton, "Need $" + (UPGRADE_COST - money) + " more to upgrade weapons.");
+    return;
+  }
+  money -= UPGRADE_COST;
+  weaponLevel += 1;
+  buySound();
+  toast("Weapons upgraded to level " + weaponLevel + ": +1 damage on every shot", "good");
+  updateInfo();
 }
 
 function buyArmor() {
   // steel plates for the castle walls
-  if (playing && castleArmor < MAX_ARMOR && money >= ARMOR_COST) {
-    money -= ARMOR_COST;
-    castleArmor = Math.min(castleArmor + ARMOR_PACK, MAX_ARMOR);
-    updateInfo();
+  if (!playing) {
+    return;
   }
+  if (castleArmor >= MAX_ARMOR) {
+    denied(armorButton, "The castle already has the most armor (" + MAX_ARMOR + ").");
+    return;
+  }
+  if (money < ARMOR_COST) {
+    denied(armorButton, "Need $" + (ARMOR_COST - money) + " more for armor.");
+    return;
+  }
+  money -= ARMOR_COST;
+  castleArmor = Math.min(castleArmor + ARMOR_PACK, MAX_ARMOR);
+  buySound();
+  updateInfo();
 }
 
 function damageCastle(damage) {
@@ -461,11 +588,43 @@ function shotDamage(stats) {
   return stats.damage > 0 ? stats.damage + weaponLevel : 0;
 }
 
+function buyCollectorArmor() {
+  // armor plates for the collecting mech: armor is used up before its health
+  const collector = soldiers.find((s) => s.collector);
+  if (!playing || !collector) {
+    return;
+  }
+  if (collector.armor >= COLLECTOR_ARMOR_MAX) {
+    denied(collectorArmorButton, "The collector already has the most armor (" + COLLECTOR_ARMOR_MAX.toLocaleString() + ").");
+    return;
+  }
+  if (money < COLLECTOR_ARMOR_COST) {
+    denied(collectorArmorButton, "Need $" + (COLLECTOR_ARMOR_COST - money) + " more for Mech armor.");
+    return;
+  }
+  money -= COLLECTOR_ARMOR_COST;
+  collector.armor = Math.min(collector.armor + COLLECTOR_ARMOR_PACK, COLLECTOR_ARMOR_MAX);
+  buySound();
+  updateInfo();
+}
+
 function buyAmmo() {
   // 5 more bullets for the sniper who has the fewest left
   const snipers = soldiers.filter((s) => s.ammo !== null);
-  if (playing && snipers.length > 0 && money >= AMMO_COST) {
+  if (!playing) {
+    return;
+  }
+  if (snipers.length === 0) {
+    denied(ammoButton, "Recruit a Sniper first: ammo is for snipers.");
+    return;
+  }
+  if (money < AMMO_COST) {
+    denied(ammoButton, "Need $" + (AMMO_COST - money) + " more for ammo.");
+    return;
+  }
+  {
     money -= AMMO_COST;
+    buySound();
     const neediest = snipers.reduce((a, b) => (b.ammo < a.ammo ? b : a));
     neediest.ammo += AMMO_PACK;
     updateInfo();
@@ -477,9 +636,26 @@ function startWave() {
   wave += 1;
   waveTotal = Math.round((5 + 3 * wave) * difficulty.monsters);
   waveSpawned = 0;
+  // the same order spawnMonster uses to pick the boss at the end of the wave
+  if (wave % TITAN_WAVE === 0) {
+    showBanner("WAVE " + wave, "The GIANT GIANT BOSS is coming: 900,000 health! Build a Golem!", true);
+  } else if (wave % GIANT_BOSS_WAVE === 0) {
+    showBanner("WAVE " + wave, "A GIANT BOSS is coming. Only a Mech can stop it!", true);
+  } else if (wave % MEGA_BOSS_WAVE === 0) {
+    showBanner("WAVE " + wave, "A heavy tank ends this wave", true);
+  } else if (wave % BOSS_WAVE === 0) {
+    showBanner("WAVE " + wave, "An armored car ends this wave", true);
+  } else if (wave === HARD_WAVE) {
+    showBanner("WAVE " + wave, "Enemies now have " + HARD_HEALTH + "× health!", true);
+  } else {
+    showBanner("WAVE " + wave, waveTotal + " enemies incoming");
+  }
 }
 
 function addMonster(y, health, speed, kind) {
+  if (wave >= HARD_WAVE && !["giant", "titan"].includes(kind)) {
+    health *= HARD_HEALTH;   // the giant boss stays the same: a Mech still kills it in 2 hits
+  }
   // gunTime is random so enemies do not all shoot at once; carried holds the coins it has picked up
   monsters.push({ x: 0, y, health, max: health, speed, slowed: 0, poison: 0, kind, push: 0, step: uniform(0, 6),
                   gunTime: randint(10, ENEMY_GUNS[kind].reload), carried: [] });
@@ -487,13 +663,14 @@ function addMonster(y, health, speed, kind) {
 
 function spawnMonster() {
   // runs once per second
-  if (!playing) {
+  if (!playing || paused) {
     return;
   }
   if (waveSpawned >= waveTotal) {
     // wave is fully spawned: once every enemy is dead, get a bonus and the next wave starts right away
     if (monsters.length === 0) {
       money += 10 * wave;
+      toast("Wave " + wave + " cleared! +$" + 10 * wave + " bonus", "good");
       startWave();
       updateInfo();
     }
@@ -503,7 +680,10 @@ function spawnMonster() {
   const y = randint(60, HEIGHT - 60);
   const speed = Math.min(3 + 0.25 * (wave - 1), 6) * difficulty.speed;   // enemies get faster
   const toughChance = Math.min(0.08 * wave, 0.6);                        // and more of them are armored
-  if (wave % GIANT_BOSS_WAVE === 0 && waveSpawned === waveTotal) {
+  if (wave % TITAN_WAVE === 0 && waveSpawned === waveTotal) {
+    // the giant giant boss: even bigger and slower than the giant boss
+    addMonster(HEIGHT / 2, TITAN_HEALTH, 0.3, "titan");
+  } else if (wave % GIANT_BOSS_WAVE === 0 && waveSpawned === waveTotal) {
     // the giant boss is huge and very slow, but almost impossible to destroy
     addMonster(HEIGHT / 2, GIANT_BOSS_HEALTH, 0.4, "giant");
   } else if (wave % MEGA_BOSS_WAVE === 0 && waveSpawned === waveTotal) {
@@ -541,7 +721,10 @@ function hitMonster(m, damage, pushX = 0, pushZ = 0) {
   if (m.health <= 0) {
     monsters = monsters.filter((other) => other !== m);
     let value = 5;
-    if (isGiant(m)) {
+    if (m.kind === "titan") {
+      score += 2000;
+      value = 10000;
+    } else if (isGiant(m)) {
       score += 500;
       value = 2000;
     } else if (isMega(m)) {
@@ -593,6 +776,9 @@ function muzzle(s) {
   // where the shot leaves the weapon, as [x, ground_y, height]
   if (s.kind === "mech") {
     return [s.x - 44, s.y + 22, 44];
+  }
+  if (s.kind === "golem") {
+    return [s.x - 40, s.y + 22, 100];   // the boulder is thrown from above its head
   }
   const hand = s.ragdoll.bowHand;
   return [s.x + hand[0] - SOLDIER_TYPES[s.kind].muzzle, s.y + 22, 22 - hand[1]];
@@ -685,7 +871,8 @@ function updateProjectiles() {
 function land(p, stats, target) {
   const z = Math.max(p.z, 0);
   if (stats.weapon === "shell") {
-    explode(p.x, p.y, z, stats.blast, shotDamage(stats), Boolean(stats.megaHalf), Boolean(stats.giantHalf));
+    explode(p.x, p.y, z, stats.blast, shotDamage(stats), Boolean(stats.megaHalf), Boolean(stats.giantHalf),
+            Boolean(stats.giantKill));
   } else if (stats.weapon === "grenade") {
     gasBurst(p, stats);
   } else if (target) {
@@ -753,6 +940,9 @@ function updateClouds() {
 
 function soldiersShoot() {
   for (const s of soldiers) {
+    if (s.collector) {
+      continue;   // the collecting mech is busy picking up coins
+    }
     const stats = SOLDIER_TYPES[s.kind];
     s.reload -= 1;
     if (s.reload > 0) {
@@ -768,8 +958,8 @@ function soldiersShoot() {
       skip = "slowed";   // or tear gas on enemies that are already slowed
     }
     let target = findClosest(s, stats, skip);
-    if (stats.giantHalf) {
-      // the mech always shoots the giant boss first if it can reach it
+    if (stats.giantHalf || stats.giantKill) {
+      // the mech and the golem always shoot the giant boss first if they can reach it
       const giant = monsters.find((m) => isGiant(m) && distanceTo(s, m) < stats.range);
       if (giant) {
         target = giant;
@@ -791,7 +981,7 @@ function addParticle(kind, x, y, z, vx, vy, vz, life, size, color = "#3a3a3a") {
   particles.push({ kind, x, y, z, vx, vy, vz, life, max: life, size, color });
 }
 
-function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = false) {
+function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = false, giantKill = false) {
   addParticle("flash", x, y, z, 0, 0, 0, 4, radius * 0.8);
   for (let i = 0; i < Math.floor(6 + radius / 4); i++) {
     const angle = uniform(0, 2 * Math.PI);
@@ -812,7 +1002,12 @@ function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = fals
           hurt = Math.ceil(m.max / 2);   // half of the heavy tank's max health, rounded up
         }
         if (giantHalf && isGiant(m)) {
-          hurt = Math.ceil(m.max / 2);   // half of the giant boss's max health, rounded up
+          // half of the giant boss's max health, rounded up; only a twentieth of the giant giant boss's
+          hurt = Math.ceil(m.max / (m.kind === "titan" ? 20 : 2));
+        }
+        if (giantKill && isGiant(m)) {
+          // the golem's boulder smashes the giant boss in one hit, and the giant giant boss in three
+          hurt = m.kind === "titan" ? Math.ceil(m.max / 3) : m.health;
         }
         const away = m.x >= x ? 1 : -1;   // the blast pushes enemies away from it
         hitMonster(m, hurt, away * 6, 6);
@@ -926,7 +1121,7 @@ function updateCorpses() {
 }
 
 function gameLoop() {
-  if (playing) {
+  if (playing && !paused) {
     update();
   }
   drawAll();
@@ -966,6 +1161,7 @@ function update() {
     }
   }
   pickUpCoins();
+  moveCollectors();
   soldiersShoot();
   enemiesShoot();
   giantCrushes();
@@ -979,16 +1175,18 @@ function update() {
     a.life -= 1;
   }
   stuck = stuck.filter((a) => a.life > 0);
+  for (const f of floaters) {
+    f.y -= 0.8;
+    f.life -= 1;
+  }
+  floaters = floaters.filter((f) => f.life > 0);
   updateRagdolls();
   updateInfo();
   if (castleHealth <= 0) {
     playing = false;
     monsters = [];
-    const message = "Game over! You reached wave " + wave + ". Final score: " + score;
-    infoText.textContent = message;
-    titleMessage.textContent = message + " Play again?";
-    titleBox.hidden = false;
-    updateMoney();
+    gameOver();
+    updateInfo();
   }
 }
 
@@ -1004,7 +1202,7 @@ function enemiesShoot() {
     }
     let targets = soldiers;
     if (isGiant(m)) {
-      const mechs = soldiers.filter((s) => s.kind === "mech");
+      const mechs = soldiers.filter((s) => s.kind === "mech" || s.kind === "golem");
       if (mechs.length > 0) {
         targets = mechs;
       }
@@ -1029,8 +1227,11 @@ function giantCrushes() {
       continue;
     }
     for (const s of [...soldiers]) {
+      if (s.kind === "golem") {
+        continue;   // the golem is too big to be driven over
+      }
       if (Math.abs(s.x - m.x) < monsterHalfWidth(m) && Math.abs(s.y + 22 - groundY(m)) < 30) {
-        hurtSoldier(s, s.health);
+        hurtSoldier(s, s.health + s.armor);   // armor can't stop being driven over
       }
     }
   }
@@ -1047,8 +1248,9 @@ function updateEnemyShells() {
     const speed = e.gun.speed;
     const dx = s.x - e.x;
     const dy = s.y + 22 - e.y;
-    const dz = (s.kind === "mech" ? 40 : 20) - e.z;
-    const distance = Math.hypot(dx, dy, dz);
+    const dz = { mech: 40, golem: 70 }[s.kind] ?? 20;
+    const dz2 = dz - e.z;
+    const distance = Math.hypot(dx, dy, dz2);
     if (distance <= speed) {
       e.done = true;
       hurtSoldier(s, e.gun.damage);
@@ -1056,7 +1258,7 @@ function updateEnemyShells() {
     }
     e.x += dx / distance * speed;
     e.y += dy / distance * speed;
-    e.z += dz / distance * speed;
+    e.z += dz2 / distance * speed;
   }
   enemyShells = enemyShells.filter((e) => !e.done);
 }
@@ -1065,16 +1267,30 @@ function hurtSoldier(s, damage) {
   const gy = s.y + 22;
   if (s.kind === "mech") {
     explode(s.x, gy, 40, 30);   // just the fire and smoke, no damage to enemies
+  } else if (s.kind === "golem") {
+    addParticle("debris", s.x, gy, 70, uniform(-3, 3), uniform(-1, 1), uniform(2, 5), 30, 4, "#7d7466");
   } else {
     addParticle("dust", s.x, gy, 20, 0, 0, 0.5, 10, 4);
     if (s.ragdoll) {
       kickRagdoll(s.ragdoll);
     }
   }
+  if (s.armor > 0) {
+    const blocked = Math.min(s.armor, damage);
+    s.armor -= blocked;
+    damage -= blocked;
+  }
   s.health -= damage;
   if (s.health <= 0) {
     soldiers = soldiers.filter((other) => other !== s);
-    if (s.kind === "mech") {
+    if (s.kind === "golem") {
+      // the golem crumbles into a pile of rocks
+      for (let i = 0; i < 30; i++) {
+        addParticle("debris", s.x + uniform(-30, 30), gy, uniform(10, 110), uniform(-4, 4), uniform(-2, 2),
+                    uniform(1, 6), 70, uniform(4, 9), i % 2 ? "#7d7466" : "#544c42");
+      }
+      addParticle("dust", s.x, gy, 10, 0, 0, 0.5, 40, 50);
+    } else if (s.kind === "mech") {
       explode(s.x, gy, 30, 50);
       for (let i = 0; i < 8; i++) {
         addParticle("debris", s.x, gy, 40, uniform(-6, 6), uniform(-2, 2), uniform(4, 10), 60, 6, "#39434d");
@@ -1085,6 +1301,13 @@ function hurtSoldier(s, damage) {
       }
     }
     soldierDiedSound(s.kind);
+    if (s.collector) {
+      toast("Your collector Mech was destroyed!", "bad");
+    } else if (s.kind === "mech") {
+      toast("Your Mech was destroyed!", "bad");
+    } else if (s.kind === "golem") {
+      toast("Your Golem crumbled!", "bad");
+    }
     updateInfo();
   }
 }
@@ -1107,6 +1330,86 @@ function pickUpCoins() {
   }
 }
 
+function combineSoldiers() {
+  // every soldier (and any golem you already have) melts together into one giant golem
+  const golem = soldiers.find((s) => s.kind === "golem");
+  let health = golem ? golem.health : 0;
+  let maxHealth = golem ? golem.maxHealth : 0;
+  let cost = golem ? golem.cost : 0;
+  for (const s of soldiers) {
+    if (s === golem) {
+      continue;
+    }
+    health += s.health + GOLEM_BONUS;
+    maxHealth += SOLDIER_TYPES[s.kind].health + GOLEM_BONUS;
+    cost += SOLDIER_TYPES[s.kind].cost;
+    // each soldier flies into the golem in a puff of sparks
+    addParticle("flash", s.x, s.y + 22, 20, 0, 0, 0, 6, 16);
+    for (let i = 0; i < 8; i++) {
+      addParticle("fire", s.x, s.y + 22, 20, uniform(-2, 2), uniform(-1, 1), uniform(1, 4), 14, 4, "#ffb347");
+    }
+  }
+  const y = HEIGHT / 2 - 30;
+  soldiers = [{ x: CASTLE_X - 70, y, reload: 0, kind: "golem", cloudTime: 0, ragdoll: null, recoil: 0, ammo: null,
+                health, maxHealth, cost, collector: false, returning: false, homeX: CASTLE_X - 70, homeY: y, armor: 0 }];
+  addParticle("flash", CASTLE_X - 70, y + 22, 60, 0, 0, 0, 10, 80);
+  for (let i = 0; i < 24; i++) {
+    addParticle("dust", CASTLE_X - 70 + uniform(-40, 40), y + 22, 5, uniform(-3, 3), uniform(-1, 1), uniform(0.5, 2),
+                40, uniform(8, 16));
+  }
+  tone(60, 30, 1.2, "sawtooth", 0.2);
+  tone(120, 240, 0.6, "square", 0.06, 0.3);
+  showBanner("GOLEM!", health.toLocaleString() + " health · smashes the giant boss in one hit", true);
+}
+
+function mechCount() {
+  return soldiers.filter((s) => s.kind === "mech").length;
+}
+
+function walkTo(s, x, y) {
+  // move a mech a step toward (x, y); returns true once it is there
+  const dx = x - s.x;
+  const dy = y - s.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance < 1) {
+    return true;
+  }
+  const step = Math.min(COLLECTOR_SPEED, distance);
+  s.x += dx / distance * step;
+  s.y += dy / distance * step;
+  return false;
+}
+
+function moveCollectors() {
+  for (const s of soldiers) {
+    if (s.collector && mechCount() < 2) {
+      // with only one mech left, it has to go back and fight
+      s.collector = false;
+      s.returning = true;
+      toast("Only one Mech left: the collector goes back to fighting", "warn");
+    }
+    if (s.collector) {
+      // head for the closest coin; the coin lies on the ground, at the mech's feet (s.y + 22)
+      let goal = null;
+      for (const c of coins) {
+        if (!goal || Math.hypot(c.x - s.x, c.y - 22 - s.y) < Math.hypot(goal.x - s.x, goal.y - 22 - s.y)) {
+          goal = c;
+        }
+      }
+      if (goal) {
+        walkTo(s, goal.x, goal.y - 22);
+        if (Math.hypot(goal.x - s.x, goal.y - 22 - s.y) < COLLECTOR_REACH) {
+          collectCoin(goal);
+        }
+      } else {
+        walkTo(s, s.homeX, s.homeY);   // nothing to pick up: wait by the castle
+      }
+    } else if (s.returning && walkTo(s, s.homeX, s.homeY)) {
+      s.returning = false;
+    }
+  }
+}
+
 function coinRadius(c) {
   return { 5: 6, 50: 9, 250: 12 }[c.value] ?? 16;
 }
@@ -1114,6 +1417,7 @@ function coinRadius(c) {
 function collectCoin(c) {
   coins = coins.filter((other) => other !== c);
   money += c.value;
+  floaters.push({ x: c.x, y: c.y - 14, words: "+$" + c.value, color: "#ffd84d", life: 24 });
   for (let i = 0; i < 6; i++) {
     addParticle("fire", c.x, c.y, 6, uniform(-2, 2), uniform(-1, 1), uniform(1, 3), 10, 3, "gold");
   }
@@ -1307,7 +1611,9 @@ function drawMonster(m) {
     body = "#5f7a2e";
   }
   const gy = groundY(m);
-  if (isGiant(m)) {
+  if (m.kind === "titan") {
+    drawTankShape(m.x, gy, 4.0, 1, body || "#3a1f4a", "#1a0d22");
+  } else if (isGiant(m)) {
     drawTankShape(m.x, gy, 3.0, 1, body || "#5a2a26", "#2e1614");
   } else if (isMega(m)) {
     drawTankShape(m.x, gy, 2.0, 1, body || "#5a5a52", "#33332e");
@@ -1336,6 +1642,8 @@ function drawCorpse(c) {
   if (c.wreck) {
     if (c.kind === "boss") {
       drawApc(c.x, c.y, "#2e2a26");
+    } else if (c.kind === "titan") {
+      drawTankShape(c.x, c.y, 4.0, 1, "#2e2a26", "#1b1917");
     } else if (c.kind === "giant") {
       drawTankShape(c.x, c.y, 3.0, 1, "#2e2a26", "#1b1917");
     } else {
@@ -1487,6 +1795,33 @@ function drawMech(s) {
   rect(x - 44 + recoil, gy - 47, x - 26 + recoil, gy - 41, "#2a2f35");      // cannon barrel
 }
 
+function drawGolem(s) {
+  // a giant stone golem facing left, with glowing cracks; its throwing arm swings back when it throws
+  const x = s.x;
+  const gy = s.y + 22;
+  const stone = "#7d7466";
+  const dark = "#544c42";
+  const glow = "#ff9a2e";
+  const swing = s.recoil * 2;
+  oval(x - 44, gy - 8, x + 44, gy + 8, SHADOW);
+  for (const dx of [-24, 6]) {
+    polygon([x + dx, gy - 40, x + dx + 20, gy - 40, x + dx + 22, gy, x + dx - 4, gy], dark, true);   // legs
+  }
+  rect(x + 18, gy - 92, x + 34, gy - 44, dark, true);                                              // back arm
+  polygon([x - 30, gy - 96, x + 30, gy - 100, x + 34, gy - 40, x - 32, gy - 36], stone, true);     // body
+  polygon([x - 14, gy - 118, x + 12, gy - 120, x + 14, gy - 96, x - 16, gy - 94], stone, true);    // head
+  rect(x - 12, gy - 112, x - 4, gy - 107, glow);                                                   // eyes
+  rect(x + 1, gy - 112, x + 8, gy - 107, glow);
+  line(x - 10, gy - 84, x + 2, gy - 70, glow, 2);                                                  // glowing cracks
+  line(x + 2, gy - 70, x - 6, gy - 54, glow, 2);
+  line(x + 12, gy - 90, x + 20, gy - 76, glow, 2);
+  rect(x - 50 + swing, gy - 94, x - 26 + swing, gy - 50, dark, true);                              // throwing arm
+  oval(x - 56 + swing, gy - 58, x - 34 + swing, gy - 38, stone, true);                             // fist
+  for (const [rx, ry] of [[-20, -80], [16, -60], [-6, -46], [22, -88]]) {
+    oval(x + rx - 3, gy + ry - 2, x + rx + 3, gy + ry + 2, dark);                                  // rocky bumps
+  }
+}
+
 function drawSoldier(s) {
   let top = s.y - 42;
   let half = 12;
@@ -1494,12 +1829,25 @@ function drawSoldier(s) {
     drawMech(s);
     top = s.y - 58;
     half = 22;
+  } else if (s.kind === "golem") {
+    drawGolem(s);
+    top = s.y - 112;
+    half = 34;
   } else {
     drawPerson(s);
   }
   // health bar above the soldier's head
   rect(s.x - half, top, s.x + half, top + 4, "black");
-  rect(s.x - half, top, s.x - half + 2 * half * Math.max(s.health, 0) / SOLDIER_TYPES[s.kind].health, top + 4, "lime");
+  rect(s.x - half, top, s.x - half + 2 * half * Math.max(s.health, 0) / (s.maxHealth ?? SOLDIER_TYPES[s.kind].health), top + 4, "lime");
+  if (s.collector) {
+    rect(s.x - 8, s.y - 30, s.x + 8, s.y - 16, "gold", true, "#6b4f00");
+    text(s.x - 4, s.y - 29, "$", "#6b4f00", 12);
+  }
+  if (s.armor > 0) {
+    // armor bar above the health bar
+    rect(s.x - half, top - 6, s.x + half, top - 2, "black");
+    rect(s.x - half, top - 6, s.x - half + 2 * half * s.armor / COLLECTOR_ARMOR_MAX, top - 2, "#8fb3d9");
+  }
   if (s.ammo !== null) {
     // bullets left, shown next to the sniper's head
     if (s.ammo > 0) {
@@ -1735,6 +2083,9 @@ function drawProjectile(p) {
   } else if (weapon === "grenade") {
     oval(sx - 3.5, sy - 3.5, sx + 3.5, sy + 3.5, "#333333");
     oval(sx - 1.5, sy - 1.5, sx + 1.5, sy + 1.5, stats.shot);
+  } else if (weapon === "shell" && p.kind === "golem") {
+    oval(sx - 8, sy - 7, sx + 8, sy + 7, stats.shot, true);   // a big boulder
+    oval(sx - 4, sy - 4, sx, sy - 1, "#8a8072");
   } else if (weapon === "shell") {
     line(sx - dx * 0.8, sy - dy * 0.8, sx, sy, stats.shot, 3);
     oval(sx - 3, sy - 3, sx + 3, sy + 3, "#2a2a2a");
@@ -1816,14 +2167,342 @@ function drawAll() {
   for (const q of particles) {
     drawParticle(q);
   }
+  ctx.textAlign = "center";
+  for (const f of floaters) {
+    ctx.globalAlpha = Math.min(1, f.life / 10);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.font = "bold 13px system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.strokeText(f.words, f.x, f.y);
+    text(f.x, f.y, f.words, f.color, 13);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "left";
+}
+
+// ---------- feedback: toasts, banners, flashes ----------
+
+function replay(el, className) {
+  // restart a CSS animation, even if it is already running
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+}
+
+function bump(el) {
+  replay(el, "bump");
+}
+
+function toast(words, kind = "info") {
+  const note = document.createElement("div");
+  note.className = "toast " + kind;
+  note.textContent = words;
+  toasts.appendChild(note);
+  while (toasts.children.length > 3) {
+    toasts.firstChild.remove();
+  }
+  note.addEventListener("animationend", () => note.remove());
+}
+
+let lastDenied = "";
+let lastDeniedTime = 0;
+
+function denied(el, words) {
+  // shake the button and say why, but don't repeat the same message over and over
+  replay(el, "shake-once");
+  deniedSound();
+  const now = performance.now();
+  if (words !== lastDenied || now - lastDeniedTime > 1500) {
+    toast(words, "warn");
+    lastDenied = words;
+    lastDeniedTime = now;
+  }
+}
+
+function showBanner(title, sub, bossWave = false) {
+  bannerTitle.textContent = title;
+  bannerSub.textContent = sub;
+  banner.classList.toggle("boss-wave", bossWave);
+  banner.hidden = true;
+  void banner.offsetWidth;   // hiding and showing again restarts the animation
+  banner.hidden = false;
+}
+
+// ---------- title and game over screens ----------
+
+function loadBest() {
+  try {
+    return Number(localStorage.getItem("castleDefenseBest")) || 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+function saveBest(best) {
+  try {
+    localStorage.setItem("castleDefenseBest", String(best));
+  } catch (error) {
+    // private windows can block storage: the best score just isn't remembered
+  }
+}
+
+// ---------- leaderboard ----------
+// Scores are shared between all players through a Supabase database. GitHub Pages can't
+// store anything itself, so the game talks to Supabase directly. Every score is also kept
+// in this browser, so the leaderboard still works offline or if Supabase is down.
+
+const SUPABASE_URL = "https://havjhzdkkpbftmimnsbm.supabase.co";
+// the publishable key is meant to be public: the database only lets it read scores and add new ones
+const SUPABASE_KEY = "sb_publishable_IhIlOX6AEPUwMZVO7i_iTA_W5bpHvHJ";
+const SCORES_URL = `${SUPABASE_URL}/rest/v1/scores`;
+
+const LEADERBOARD_SIZE = 10;
+let topScores = [];        // what the leaderboard shows: [{name, score, wave, level}]
+let leaderboardNote = "Loading scores…";   // shown under the leaderboard, "" for nothing
+let pendingScore = null;   // the finished game waiting for a name: {score, wave, level}
+let lastEntry = null;      // the entry just saved, so it can be highlighted
+
+async function fetchOnlineScores() {
+  const response = await fetch(
+    `${SCORES_URL}?select=name,score,wave,level&order=score.desc&limit=${LEADERBOARD_SIZE}`,
+    { headers: { apikey: SUPABASE_KEY } },
+  );
+  if (!response.ok) {
+    throw new Error(`Supabase said ${response.status}`);
+  }
+  return response.json();
+}
+
+async function sendOnlineScore(entry) {
+  const response = await fetch(SCORES_URL, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(entry),
+  });
+  if (!response.ok) {
+    throw new Error(`Supabase said ${response.status}`);
+  }
+}
+
+function loadLocalScores() {
+  try {
+    const list = JSON.parse(localStorage.getItem("castleDefenseLeaderboard"));
+    return Array.isArray(list) ? list : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLocalScore(entry) {
+  const list = [...loadLocalScores(), entry];
+  list.sort((a, b) => b.score - a.score);
+  try {
+    localStorage.setItem("castleDefenseLeaderboard", JSON.stringify(list.slice(0, LEADERBOARD_SIZE)));
+  } catch (error) {
+    // private windows can block storage: the score just isn't kept in this browser
+  }
+}
+
+async function refreshLeaderboard() {
+  try {
+    topScores = await fetchOnlineScores();
+    leaderboardNote = topScores.length ? "" : "No scores yet. Be the first!";
+  } catch (error) {
+    topScores = loadLocalScores();
+    leaderboardNote = "Offline: showing scores from this computer";
+  }
+  showLeaderboard();
+}
+
+function makesLeaderboard(points) {
+  return points > 0 &&
+    (topScores.length < LEADERBOARD_SIZE || points > topScores[topScores.length - 1].score);
+}
+
+async function addToLeaderboard(name, result) {
+  lastEntry = { name, ...result };
+  saveLocalScore(lastEntry);
+  try {
+    localStorage.setItem("castleDefenseName", name);   // fill it in for next time
+  } catch (error) {
+    // not remembered, that's fine
+  }
+  try {
+    await sendOnlineScore(lastEntry);
+  } catch (error) {
+    toast("Couldn't reach the online leaderboard. Saved on this computer only.", "warn");
+  }
+  await refreshLeaderboard();
+}
+
+function isLastEntry(entry) {
+  return lastEntry && entry.name === lastEntry.name && entry.score === lastEntry.score &&
+    entry.wave === lastEntry.wave && entry.level === lastEntry.level;
+}
+
+function showLeaderboard() {
+  leaderboardList.replaceChildren();
+  for (const entry of topScores) {
+    const row = document.createElement("li");
+    if (isLastEntry(entry)) {
+      row.className = "mine";
+    }
+    const name = document.createElement("span");
+    name.className = "who";
+    name.textContent = entry.name;   // textContent, so a name can't break the page
+    const info = document.createElement("span");
+    info.className = "how";
+    info.textContent = `wave ${entry.wave} · ${entry.level}`;
+    const points = document.createElement("b");
+    points.textContent = entry.score.toLocaleString();
+    row.append(name, info, points);
+    leaderboardList.appendChild(row);
+  }
+  leaderboardStatus.textContent = leaderboardNote;
+  leaderboardStatus.hidden = !leaderboardNote;
+}
+
+function askForName() {
+  nameForm.hidden = false;
+  try {
+    playerName.value = localStorage.getItem("castleDefenseName") || "";
+  } catch (error) {
+    playerName.value = "";
+  }
+  playerName.focus();
+  playerName.select();
+}
+
+function saveName(event) {
+  event.preventDefault();   // stop the form from reloading the page
+  const name = playerName.value.trim().slice(0, 16);
+  if (!name || !pendingScore) {
+    return;
+  }
+  const result = pendingScore;
+  pendingScore = null;   // so pressing Save twice doesn't add the score twice
+  nameForm.hidden = true;
+  playerName.blur();
+  titleMessage.textContent = "Saved! Play again?";
+  addToLeaderboard(name, result);
+}
+
+function showTitle(message, stats = null) {
+  titleHeading.textContent = stats ? "GAME OVER" : "CASTLE DEFENSE";
+  titleMessage.textContent = message;
+  summary.hidden = !stats;
+  summary.replaceChildren();
+  if (stats) {
+    for (const [label, value] of stats) {
+      const box = document.createElement("div");
+      const big = document.createElement("b");
+      big.textContent = value;
+      const small = document.createElement("span");
+      small.textContent = label;
+      box.append(big, small);
+      summary.appendChild(box);
+    }
+  }
+  nameForm.hidden = true;
+  showLeaderboard();
+  titleBox.hidden = false;
+}
+
+function gameOver() {
+  const best = loadBest();
+  const newBest = score > best;
+  if (newBest) {
+    saveBest(score);
+  }
+  showTitle(newBest ? "New best score! Play again?" : "The castle has fallen. Play again?", [
+    ["Wave reached", String(wave)],
+    ["Score", score.toLocaleString()],
+    ["Best", Math.max(best, score).toLocaleString()],
+  ]);
+  pendingScore = null;
+  if (makesLeaderboard(score)) {
+    const level = Object.keys(DIFFICULTIES).find((name) => DIFFICULTIES[name] === difficulty);
+    pendingScore = { score, wave, level };
+    askForName();
+  }
+  refreshLeaderboard();   // pick up scores other players added during this game
+  tone(400, 90, 1.2, "sawtooth", 0.12);
 }
 
 // ---------- buttons and clicks ----------
 
+function setSpeed(level) {
+  monsterSpeedUp = level;
+  for (const button of speedGroup.querySelectorAll("button")) {
+    button.setAttribute("aria-pressed", String(Number(button.dataset.speed) === level));
+  }
+}
+
 function changeMonsterSpeed() {
-  // each click: x1 -> x2 -> x3 -> back to x1
-  monsterSpeedUp = monsterSpeedUp % 3 + 1;
-  speedButton.textContent = "Enemy speed x" + monsterSpeedUp;
+  // each press: x1 -> x2 -> x3 -> back to x1
+  setSpeed(monsterSpeedUp % 3 + 1);
+}
+
+function showModeHint() {
+  stage.classList.toggle("mode-sell", sellMode);
+  stage.classList.toggle("mode-delete", deleteMode);
+  stage.classList.toggle("mode-collect", collectMode);
+  modeHint.hidden = !sellMode && !deleteMode && !collectMode;
+  modeHint.classList.toggle("delete", deleteMode);
+  if (sellMode) {
+    modeHint.textContent = "SELL: click a soldier for a full refund · Esc to cancel";
+  } else if (deleteMode) {
+    modeHint.textContent = "DELETE: click a soldier to remove it (no refund) · Esc to cancel";
+  } else if (collectMode) {
+    modeHint.textContent = "COLLECTOR: click a Mech to send it collecting coins · Esc to cancel";
+  }
+}
+
+function toggleCollectMode() {
+  if (!collectMode && mechCount() < 2 && !soldiers.some((s) => s.collector)) {
+    denied(collectorButton, "You need 2 Mechs to send one collecting coins.");
+    return;
+  }
+  collectMode = !collectMode;
+  if (collectMode && sellMode) {
+    toggleSellMode();
+  }
+  if (collectMode && deleteMode) {
+    toggleDeleteMode();
+  }
+  collectorButton.classList.toggle("active", collectMode);
+  showModeHint();
+}
+
+function chooseCollectorAt(x, y) {
+  // click a mech to make it the collector; click the collector again to send it back to fight
+  const mech = soldiers.find((s) => s.kind === "mech" && Math.abs(s.x - x) < 30 && y - s.y > -60 && y - s.y < 26);
+  if (!mech) {
+    toast("Click one of your Mechs", "warn");
+    return;
+  }
+  if (mech.collector) {
+    mech.collector = false;
+    mech.returning = true;
+    toast("The Mech is going back to fighting");
+  } else {
+    for (const other of soldiers) {
+      if (other.collector) {
+        other.collector = false;
+        other.returning = true;
+      }
+    }
+    if (!mech.returning) {
+      mech.homeX = mech.x;   // remember where it stood, so it can come back
+      mech.homeY = mech.y;
+    }
+    mech.collector = true;
+    mech.returning = false;
+    toast("Collector Mech is out! It picks up coins but won't shoot", "good");
+  }
+  toggleCollectMode();
+  updateInfo();
 }
 
 function toggleDeleteMode() {
@@ -1831,8 +2510,11 @@ function toggleDeleteMode() {
   if (deleteMode && sellMode) {
     toggleSellMode();
   }
-  deleteButton.textContent = deleteMode ? "Deleting... (click a soldier)" : "Delete soldier";
+  if (deleteMode && collectMode) {
+    toggleCollectMode();
+  }
   deleteButton.classList.toggle("active", deleteMode);
+  showModeHint();
 }
 
 function toggleSellMode() {
@@ -1840,27 +2522,102 @@ function toggleSellMode() {
   if (sellMode && deleteMode) {
     toggleDeleteMode();
   }
-  sellButton.textContent = sellMode ? "Selling... (click a soldier)" : "Sell soldier";
+  if (sellMode && collectMode) {
+    toggleCollectMode();
+  }
   sellButton.classList.toggle("active", sellMode);
+  showModeHint();
+}
+
+function setPaused(on) {
+  paused = on && playing;
+  pauseScreen.hidden = !paused;
+  pauseButton.querySelector(".label").textContent = paused ? "▶" : "⏸";
+  pauseButton.title = paused ? "Resume (P)" : "Pause (P)";
+}
+
+function togglePause() {
+  setPaused(!paused);
 }
 
 function toggleSound() {
   soundOn = !soundOn;
-  soundButton.textContent = soundOn ? "Sound: on" : "Sound: off";
+  soundButton.textContent = soundOn ? "🔊" : "🔇";
+  soundButton.setAttribute("aria-label", soundOn ? "Sound on" : "Sound off");
   if (soundOn) {
     startAudio();
   }
+}
+
+let combineArmedAt = 0;
+
+function askCombine() {
+  // combining can't be undone, so it needs a second click to make sure
+  if (!playing) {
+    return;
+  }
+  const golem = soldiers.some((s) => s.kind === "golem");
+  if (soldiers.length < GOLEM_MIN && !(golem && soldiers.length >= 2)) {
+    denied(combineButton, golem ? "Recruit more soldiers to add to the Golem."
+                                : "You need at least " + GOLEM_MIN + " soldiers to make a Golem.");
+    return;
+  }
+  if (combineArmedAt && performance.now() - combineArmedAt < 2500) {
+    combineArmedAt = 0;
+    combineButton.classList.remove("armed");
+    combineSoldiers();
+    updateInfo();
+    return;
+  }
+  combineArmedAt = performance.now();
+  combineButton.label.textContent = "Combine all " + soldiers.length + "?";
+  combineButton.classList.add("armed");
+  setTimeout(() => {
+    if (combineArmedAt && performance.now() - combineArmedAt >= 2500) {
+      combineArmedAt = 0;
+      combineButton.classList.remove("armed");
+      updateInfo();
+    }
+  }, 2600);
+}
+
+let resetArmedAt = 0;
+
+function askReset() {
+  // in the middle of a game, Reset needs a second click so you don't lose your game by accident
+  if (!playing || (resetArmedAt && performance.now() - resetArmedAt < 2500)) {
+    resetArmedAt = 0;
+    resetButton.textContent = "Reset";
+    resetButton.classList.remove("armed");
+    resetGame();
+    return;
+  }
+  resetArmedAt = performance.now();
+  resetButton.textContent = "Sure?";
+  resetButton.classList.add("armed");
+  setTimeout(() => {
+    if (resetArmedAt && performance.now() - resetArmedAt >= 2500) {
+      resetArmedAt = 0;
+      resetButton.textContent = "Reset";
+      resetButton.classList.remove("armed");
+    }
+  }, 2600);
 }
 
 function sellSoldierAt(x, y, refund = true) {
   // check the newest soldier first, because it is drawn on top
   for (let i = soldiers.length - 1; i >= 0; i--) {
     const s = soldiers[i];
-    const reach = s.kind === "mech" ? 30 : 25;
-    const top = s.kind === "mech" ? -60 : -37;
+    const reach = { mech: 30, golem: 45 }[s.kind] ?? 25;
+    const top = { mech: -60, golem: -120 }[s.kind] ?? -37;
     if (Math.abs(s.x - x) < reach && y - s.y > top && y - s.y < 26) {
+      const value = s.cost ?? SOLDIER_TYPES[s.kind].cost;   // a golem is worth what its soldiers cost
       if (refund) {
-        money += SOLDIER_TYPES[s.kind].cost;   // full money back
+        money += value;   // full money back
+        floaters.push({ x: s.x, y: s.y - 50, words: "+$" + value, color: "#9be36b", life: 24 });
+        coinSound();
+      } else {
+        floaters.push({ x: s.x, y: s.y - 50, words: "removed", color: "#ff8a80", life: 24 });
       }
       soldiers.splice(i, 1);
       updateInfo();
@@ -1893,6 +2650,10 @@ function clicked(event) {
     sellSoldierAt(x, y, false);
     return;
   }
+  if (collectMode) {
+    chooseCollectorAt(x, y);
+    return;
+  }
   for (const m of monsters) {
     const reach = monsterSize(m) + 15;
     if (Math.abs(m.x - x) < reach && Math.abs(m.y - y) < reach) {
@@ -1903,72 +2664,236 @@ function clicked(event) {
 }
 
 function keyPressed(event) {
-  // cheat key: Tab kills every enemy on the field, and they all drop their coins
-  if (event.key !== "Tab") {
+  if (event.target.tagName === "INPUT") {
+    return;   // typing a name for the leaderboard, so the letters aren't shortcuts
+  }
+  if (event.ctrlKey || event.metaKey || event.altKey) {
     return;
   }
-  event.preventDefault();   // stop Tab from moving between the buttons
-  if (playing) {
-    for (const m of [...monsters]) {
-      hitMonster(m, m.health);
+  const key = event.key.toLowerCase();
+  if (key === "tab") {
+    // cheat key: Tab kills every enemy on the field, and they all drop their coins
+    event.preventDefault();   // stop Tab from moving between the buttons
+    if (playing && !paused) {
+      for (const m of [...monsters]) {
+        hitMonster(m, m.health);
+      }
+      updateInfo();
     }
-    updateInfo();
+    return;
   }
+  if (key === "escape") {
+    if (sellMode) {
+      toggleSellMode();
+    } else if (deleteMode) {
+      toggleDeleteMode();
+    } else if (collectMode) {
+      toggleCollectMode();
+    } else {
+      togglePause();
+    }
+    return;
+  }
+  if (key === "m") {
+    toggleSound();
+    return;
+  }
+  if (!playing) {
+    return;
+  }
+  const recruit = RECRUIT_ORDER[Number(key) - 1];
+  if (recruit) {
+    buySoldier(recruit);
+    return;
+  }
+  const actions = { p: togglePause, " ": togglePause, f: changeMonsterSpeed, s: toggleSellMode,
+                    d: toggleDeleteMode, c: toggleCollectMode, u: buyUpgrade, a: buyArmor, b: buyAmmo,
+                    k: buyCollectorArmor, g: askCombine };
+  if (actions[key]) {
+    event.preventDefault();   // stop Space from scrolling the page or clicking a focused button
+    actions[key]();
+  }
+}
+
+// ---------- building the shop ----------
+
+// a short line under each card's name
+const ROLES = {
+  "strong": "Fast, accurate rifle",
+  "archer": "Arcing arrows, long range",
+  "poison": "Poison gas + toxic clouds",
+  "freezer": "Slows enemies down",
+  "boss killer": "Kills armored cars, 5 shots",
+  "mech": "Beats the giant boss in 2 hits",
+};
+const RECRUIT_ORDER = [...SHOP_ORDER, "mech"];
+
+function drawPortrait(kind) {
+  // draw the soldier with the game's own drawing code onto a small canvas for its card
+  const portrait = document.createElement("canvas");
+  portrait.width = 112;
+  portrait.height = 112;
+  const saved = ctx;
+  ctx = portrait.getContext("2d");
+  const fake = { x: 0, y: 0, kind, ragdoll: newRagdoll(), recoil: 0 };
+  if (kind === "mech") {
+    ctx.setTransform(1.3, 0, 0, 1.3, 66, 66);
+    drawMech(fake);
+  } else {
+    ctx.setTransform(1.5, 0, 0, 1.5, 64, 58);
+    drawPerson(fake);
+  }
+  ctx = saved;
+  return portrait;
+}
+
+function makeCard(kind, key) {
+  const stats = SOLDIER_TYPES[kind];
+  const card = document.createElement("button");
+  card.className = "card" + (kind === "mech" ? " mech" : "");
+  const range = stats.range;
+  card.title = stats.name + ": " + stats.health.toLocaleString() + " health, range " + range +
+               (stats.damage ? ", " + stats.damage + " damage per shot" : "");
+  const hotkey = document.createElement("kbd");
+  hotkey.textContent = key;
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = stats.name;
+  const role = document.createElement("span");
+  role.className = "role";
+  role.textContent = ROLES[kind];
+  const cost = document.createElement("span");
+  cost.className = "cost";
+  cost.textContent = "$" + stats.cost;
+  card.badge = document.createElement("span");
+  card.badge.className = "badge";
+  card.append(hotkey, drawPortrait(kind), name, role, cost, card.badge);
+  card.addEventListener("click", () => buySoldier(kind));
+  return card;
+}
+
+function makeTool(words, price, key, action) {
+  const button = document.createElement("button");
+  button.className = "tool";
+  button.label = document.createElement("span");
+  button.label.textContent = words;
+  button.price = document.createElement("span");
+  button.price.className = "price";
+  button.price.textContent = price;
+  const hotkey = document.createElement("kbd");
+  hotkey.textContent = key;
+  button.append(button.label, button.price, hotkey);
+  button.addEventListener("click", action);
+  upgrades.appendChild(button);
+  return button;
 }
 
 const shop = document.getElementById("shop");
+const upgrades = document.getElementById("upgrades");
 const buyButtons = {};
-for (const kind of SHOP_ORDER) {
-  const stats = SOLDIER_TYPES[kind];
-  const button = document.createElement("button");
-  button.textContent = stats.name + " ($" + stats.cost + ")";
-  button.addEventListener("click", () => buySoldier(kind));
-  shop.appendChild(button);
-  buyButtons[kind] = button;
-}
-const upgradeButton = document.createElement("button");
-upgradeButton.addEventListener("click", buyUpgrade);
-shop.appendChild(upgradeButton);
-const armorButton = document.createElement("button");
-armorButton.textContent = "Armor +" + ARMOR_PACK + " ($" + ARMOR_COST + ")";
-armorButton.addEventListener("click", buyArmor);
-shop.appendChild(armorButton);
-const ammoButton = document.createElement("button");
-ammoButton.textContent = "Sniper ammo x" + AMMO_PACK + " ($" + AMMO_COST + ")";
-ammoButton.addEventListener("click", buyAmmo);
-shop.appendChild(ammoButton);
+RECRUIT_ORDER.forEach((kind, i) => {
+  buyButtons[kind] = makeCard(kind, String(i + 1));
+  shop.appendChild(buyButtons[kind]);
+});
+const mechButton = buyButtons.mech;
+const upgradeButton = makeTool("Weapons Lv 1", "$" + UPGRADE_COST, "U", buyUpgrade);
+upgradeButton.title = "+1 damage on every shot, up to level " + MAX_WEAPON_LEVEL;
+const armorButton = makeTool("Armor +" + ARMOR_PACK, "$" + ARMOR_COST, "A", buyArmor);
+armorButton.title = "Each armor point blocks 1 damage to the castle (max " + MAX_ARMOR + ")";
+const ammoButton = makeTool("Ammo ×" + AMMO_PACK, "$" + AMMO_COST, "B", buyAmmo);
+ammoButton.title = "Gives " + AMMO_PACK + " bullets to the sniper who has the fewest";
+const collectorArmorButton = makeTool("Mech armor +20k", "$" + COLLECTOR_ARMOR_COST, "K", buyCollectorArmor);
+collectorArmorButton.title = "Armor for the collector Mech: used up before its health (max " +
+                             COLLECTOR_ARMOR_MAX.toLocaleString() + ")";
 
+const LEVEL_INFO = {
+  Easy: "40 castle health · $60 to start · fewer, slower enemies",
+  Medium: "30 castle health · the classic fight",
+  Hard: "20 castle health · 40% more enemies, and faster",
+};
 const levels = document.getElementById("levels");
 for (const level of Object.keys(DIFFICULTIES)) {
   const button = document.createElement("button");
-  button.textContent = level;
+  button.className = "level " + level.toLowerCase();
+  const name = document.createElement("span");
+  name.className = "level-name";
+  name.textContent = level;
+  const info = document.createElement("span");
+  info.className = "level-info";
+  info.textContent = LEVEL_INFO[level];
+  button.append(name, info);
   button.addEventListener("click", () => startGame(level));
   levels.appendChild(button);
 }
 
-const mechButton = document.getElementById("mech");
-mechButton.textContent = "Mech ($" + SOLDIER_TYPES.mech.cost + ")";
-mechButton.addEventListener("click", () => buySoldier("mech"));
-buyButtons.mech = mechButton;
 const deleteButton = document.getElementById("delete");
+const combineButton = document.getElementById("combine");
+combineButton.label = combineButton.querySelector(".label");
+const collectorButton = document.getElementById("collector");
 const sellButton = document.getElementById("sell");
-const speedButton = document.getElementById("speed");
+const pauseButton = document.getElementById("pause");
+const speedGroup = document.getElementById("speed");
 const soundButton = document.getElementById("sound");
+const resetButton = document.getElementById("reset");
 const moneyText = document.getElementById("money");
-const infoText = document.getElementById("info");
+const waveText = document.getElementById("wave");
+const scoreText = document.getElementById("score");
+const castleStat = document.getElementById("castle-stat");
+const castleText = document.getElementById("castle");
+const castleFill = document.getElementById("castle-fill");
+const armorText = document.getElementById("armor");
+const armyText = document.getElementById("army");
+const weaponsText = document.getElementById("weapons");
+const stage = document.getElementById("stage");
+const bossBox = document.getElementById("boss");
+const bossName = document.getElementById("boss-name");
+const bossFill = document.getElementById("boss-fill");
+const bossHp = document.getElementById("boss-hp");
+const modeHint = document.getElementById("mode-hint");
+const banner = document.getElementById("banner");
+const bannerTitle = document.getElementById("banner-title");
+const bannerSub = document.getElementById("banner-sub");
+const toasts = document.getElementById("toasts");
+const pauseScreen = document.getElementById("pause-screen");
 const titleBox = document.getElementById("title");
+const titleHeading = titleBox.querySelector("h1");
 const titleMessage = document.getElementById("title-message");
+const summary = document.getElementById("summary");
+const nameForm = document.getElementById("name-form");
+const playerName = document.getElementById("player-name");
+const leaderboard = document.getElementById("leaderboard");
+const leaderboardList = document.getElementById("leaderboard-list");
+const leaderboardStatus = document.getElementById("leaderboard-status");
 
 sellButton.addEventListener("click", toggleSellMode);
 deleteButton.addEventListener("click", toggleDeleteMode);
-document.addEventListener("keydown", keyPressed);
-speedButton.addEventListener("click", changeMonsterSpeed);
+collectorButton.addEventListener("click", toggleCollectMode);
+combineButton.addEventListener("click", askCombine);
+pauseButton.addEventListener("click", togglePause);
+pauseScreen.addEventListener("click", togglePause);
+speedGroup.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (button) {
+    setSpeed(Number(button.dataset.speed));
+  }
+});
 soundButton.addEventListener("click", toggleSound);
-document.getElementById("reset").addEventListener("click", resetGame);
+resetButton.addEventListener("click", askReset);
+document.addEventListener("keydown", keyPressed);
+nameForm.addEventListener("submit", saveName);
 board.addEventListener("pointerdown", clicked);
+banner.addEventListener("animationend", () => { banner.hidden = true; });
+// pause by itself when you switch to another tab
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    setPaused(true);
+  }
+});
 
 drawBackground();
-updateMoney();
+updateInfo();
+showLeaderboard();
+refreshLeaderboard();
 drawAll();
 setInterval(gameLoop, 50);
 setInterval(spawnMonster, 1000);

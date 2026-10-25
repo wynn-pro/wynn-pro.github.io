@@ -3,12 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
   <title>Castle Defense</title>
   <meta name="description" content="Defend the castle with riflemen, ragdoll archers, gas grenadiers, snipers and a giant mech.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.05.0">
 </head>
 <body>
   <main class="game">
@@ -50,9 +53,11 @@
       <div class="group">
         <button id="sell" class="tool"><span class="label">Sell</span><kbd>S</kbd></button>
         <button id="delete" class="tool"><span class="label">Delete</span><kbd>D</kbd></button>
+        <button id="combine" class="tool combine" title="Combine every soldier into one giant Golem that smashes the giant boss"><span class="label">🗿 Combine</span><kbd>G</kbd></button>
+        <button id="collector" class="tool collect" hidden title="With 2 or more Mechs, send one to collect coins"><span class="label">💰 Collector</span><kbd>C</kbd></button>
       </div>
       <div class="group group-end">
-        <button id="pause" class="tool icon" title="Pause (P)"><span class="label">⏸</span><kbd>P</kbd></button>
+        <button id="pause" class="tool icon" title="Pause (P)" aria-label="Pause"><span class="label">⏸</span></button>
         <div class="segmented" id="speed" role="group" aria-label="Enemy speed" title="Enemy speed (F)">
           <button data-speed="1" aria-pressed="true">1×</button>
           <button data-speed="2" aria-pressed="false">2×</button>
@@ -87,6 +92,18 @@
         <h1>CASTLE<br>DEFENSE</h1>
         <p id="title-message">Choose your difficulty</p>
         <div class="summary" id="summary" hidden></div>
+        <form class="name-form" id="name-form" hidden>
+          <label for="player-name">You made the leaderboard! Write your name:</label>
+          <div class="name-row">
+            <input id="player-name" maxlength="16" autocomplete="nickname" placeholder="Your name" required>
+            <button type="submit">Save</button>
+          </div>
+        </form>
+        <div class="leaderboard" id="leaderboard">
+          <h3>Leaderboard</h3>
+          <ol id="leaderboard-list"></ol>
+          <p class="leaderboard-status" id="leaderboard-status"></p>
+        </div>
         <div class="levels" id="levels">
           <!-- difficulty cards are added by game.js -->
         </div>
@@ -97,10 +114,11 @@
       <strong>Click enemies</strong> to hit them yourself and <strong>click coins</strong> to collect them before enemies pick them up.
       Every 3rd wave ends with a <strong>giant boss</strong>: only a Mech can stop it.
       Keys: <kbd>1</kbd>–<kbd>6</kbd> recruit, <kbd>U</kbd> upgrade, <kbd>A</kbd> armor, <kbd>B</kbd> ammo,
-      <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
+      <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>C</kbd> collector, <kbd>K</kbd> Mech armor, <kbd>G</kbd> combine into a Golem, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
       <kbd>Esc</kbd> cancel, <kbd>Tab</kbd> wipe out every enemy.
     </p>
+    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.05.0</span></footer>
   </main>
-  <script src="game.js"></script>
+  <script src="game.js?v=1.05.0"></script>
 </body>
 </html>
