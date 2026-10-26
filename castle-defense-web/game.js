@@ -16,7 +16,7 @@ const GIANT_BOSS_HEALTH = 90000;
 const GIANT_BOSS_DAMAGE = 30; // castle health lost if the giant boss gets through (the whole castle!)
 const TITAN_WAVE = 6;         // every 6th wave, the giant GIANT boss comes instead of the giant boss
 const TITAN_HEALTH = 900000;  // it acts like the giant boss, only bigger: a Golem needs 3 hits, a Mech 20
-const GORILLA_WAVE = 10;        // every 10th wave, the giant gorilla comes instead of any other boss
+const GORILLA_WAVE = 7;         // every 7th wave, the giant gorilla comes instead of any other boss
 const GORILLA_HEALTH = 9000000; // it acts like the giant boss too: a Golem needs 10 hits, a Mech 100
 // enemies shoot back at your soldiers:
 // damage per shot, ticks between shots, how far they can shoot, shot speed, shot size and color

@@ -48,7 +48,7 @@ to show a new `index.html`; to see it right away, press **Ctrl+Shift+R** (**Cmd+
   **Delete** removes one with no money back. Press **Esc** to cancel either mode.
 - Every **6th wave** ends with the **giant giant boss** instead: 900,000 health and bigger than the giant
   boss. A Golem's boulder takes a third of its health (3 hits); a Mech's shell only a twentieth (20 hits).
-- Every **10th wave** ends with the **giant gorilla**: 9,000,000 health, and each boulder it throws does
+- Every **7th wave** ends with the **giant gorilla**: 9,000,000 health, and each boulder it throws does
   300,000 damage. A Golem's boulder takes a tenth of its health (10 hits); a Mech's shell a hundredth (100 hits).
 - From **wave 5** on, every enemy has **10× health** (except the giant boss).
 - Every 2nd wave ends with a heavy tank. Every 3rd wave ends with a **giant boss** with 90,000 health
