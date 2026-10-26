@@ -16,6 +16,8 @@ const GIANT_BOSS_HEALTH = 90000;
 const GIANT_BOSS_DAMAGE = 30; // castle health lost if the giant boss gets through (the whole castle!)
 const TITAN_WAVE = 6;         // every 6th wave, the giant GIANT boss comes instead of the giant boss
 const TITAN_HEALTH = 900000;  // it acts like the giant boss, only bigger: a Golem needs 3 hits, a Mech 20
+const GORILLA_WAVE = 10;        // every 10th wave, the giant gorilla comes instead of any other boss
+const GORILLA_HEALTH = 9000000; // it acts like the giant boss too: a Golem needs 10 hits, a Mech 100
 // enemies shoot back at your soldiers:
 // damage per shot, ticks between shots, how far they can shoot, shot speed, shot size and color
 const ENEMY_GUNS = {
@@ -26,6 +28,8 @@ const ENEMY_GUNS = {
   // each giant boss shell takes 150,000 health: more than a whole mech
   giant:    { damage: 150000, reload: 60, range: 2000, speed: 10, size: 6, color: "red" },
   titan:    { damage: 250000, reload: 70, range: 2000, speed: 10, size: 9, color: "magenta" },
+  // the giant gorilla throws huge boulders: 300,000 damage each
+  gorilla:  { damage: 300000, reload: 80, range: 2000, speed: 9, size: 12, color: "#6b5a4a" },
 };
 const CASTLE_HEALTH = 30;     // the castle starts with 30 health
 const HARD_WAVE = 5;          // from wave 5 on...
@@ -247,6 +251,11 @@ const KILL_SOUNDS = {
   },
 };
 KILL_SOUNDS.titan = KILL_SOUNDS.giant;
+KILL_SOUNDS.gorilla = () => {
+  // a long, falling roar
+  tone(180, 40, 1.8, "sawtooth", 0.22);
+  tone(90, 30, 1.6, "square", 0.1, 0.15);
+};
 
 function buySound() {
   tone(520, 780, 0.07, "square", 0.05);
@@ -427,7 +436,7 @@ function updateMoney() {
 
 function strongestBoss() {
   // the boss bar shows the biggest boss on the field
-  const rank = { titan: 4, giant: 3, megaboss: 2, boss: 1 };
+  const rank = { gorilla: 5, titan: 4, giant: 3, megaboss: 2, boss: 1 };
   let best = null;
   for (const m of monsters) {
     if (rank[m.kind] && (!best || rank[m.kind] > rank[best.kind])) {
@@ -456,7 +465,7 @@ function updateInfo() {
   const boss = playing ? strongestBoss() : null;
   bossBox.hidden = !boss;
   if (boss) {
-    setText(bossName, { titan: "GIANT GIANT BOSS", giant: "GIANT BOSS", megaboss: "HEAVY TANK", boss: "ARMORED CAR" }[boss.kind]);
+    setText(bossName, { gorilla: "GIANT GORILLA", titan: "GIANT GIANT BOSS", giant: "GIANT BOSS", megaboss: "HEAVY TANK", boss: "ARMORED CAR" }[boss.kind]);
     bossFill.style.width = (100 * Math.max(boss.health, 0) / boss.max) + "%";
     setText(bossHp, Math.max(boss.health, 0).toLocaleString() + " / " + boss.max.toLocaleString());
   }
@@ -472,7 +481,8 @@ function isMega(m) {
 }
 
 function isGiant(m) {
-  return m.kind === "giant" || m.kind === "titan";   // the giant giant boss does everything the giant boss does
+  // the giant giant boss and the gorilla do everything the giant boss does
+  return m.kind === "giant" || m.kind === "titan" || m.kind === "gorilla";
 }
 
 function isBoss(m) {
@@ -484,6 +494,7 @@ function isTough(m) {
 }
 
 function monsterSize(m) {
+  if (m.kind === "gorilla") return 250;
   if (m.kind === "titan") return 200;
   if (isGiant(m)) return 150;
   if (isMega(m)) return 100;
@@ -493,11 +504,11 @@ function monsterSize(m) {
 }
 
 function monsterHeight(m) {
-  return { normal: 38, tough: 54, boss: 64, megaboss: 104, giant: 156, titan: 208 }[m.kind];
+  return { normal: 38, tough: 54, boss: 64, megaboss: 104, giant: 156, titan: 208, gorilla: 250 }[m.kind];
 }
 
 function monsterHalfWidth(m) {
-  return { normal: 11, tough: 16, boss: 50, megaboss: 95, giant: 143, titan: 190 }[m.kind];
+  return { normal: 11, tough: 16, boss: 50, megaboss: 95, giant: 143, titan: 190, gorilla: 130 }[m.kind];
 }
 
 function groundY(m) {
@@ -637,7 +648,9 @@ function startWave() {
   waveTotal = Math.round((5 + 3 * wave) * difficulty.monsters);
   waveSpawned = 0;
   // the same order spawnMonster uses to pick the boss at the end of the wave
-  if (wave % TITAN_WAVE === 0) {
+  if (wave % GORILLA_WAVE === 0) {
+    showBanner("WAVE " + wave, "A GIANT GORILLA is coming: 9,000,000 health! Build a Golem!", true);
+  } else if (wave % TITAN_WAVE === 0) {
     showBanner("WAVE " + wave, "The GIANT GIANT BOSS is coming: 900,000 health! Build a Golem!", true);
   } else if (wave % GIANT_BOSS_WAVE === 0) {
     showBanner("WAVE " + wave, "A GIANT BOSS is coming. Only a Mech can stop it!", true);
@@ -653,7 +666,7 @@ function startWave() {
 }
 
 function addMonster(y, health, speed, kind) {
-  if (wave >= HARD_WAVE && !["giant", "titan"].includes(kind)) {
+  if (wave >= HARD_WAVE && !["giant", "titan", "gorilla"].includes(kind)) {
     health *= HARD_HEALTH;   // the giant boss stays the same: a Mech still kills it in 2 hits
   }
   // gunTime is random so enemies do not all shoot at once; carried holds the coins it has picked up
@@ -680,7 +693,10 @@ function spawnMonster() {
   const y = randint(60, HEIGHT - 60);
   const speed = Math.min(3 + 0.25 * (wave - 1), 6) * difficulty.speed;   // enemies get faster
   const toughChance = Math.min(0.08 * wave, 0.6);                        // and more of them are armored
-  if (wave % TITAN_WAVE === 0 && waveSpawned === waveTotal) {
+  if (wave % GORILLA_WAVE === 0 && waveSpawned === waveTotal) {
+    // the giant gorilla: taller than every tank, and it stomps slowly toward the castle
+    addMonster(HEIGHT / 2 - 40, GORILLA_HEALTH, 0.25, "gorilla");
+  } else if (wave % TITAN_WAVE === 0 && waveSpawned === waveTotal) {
     // the giant giant boss: even bigger and slower than the giant boss
     addMonster(HEIGHT / 2, TITAN_HEALTH, 0.3, "titan");
   } else if (wave % GIANT_BOSS_WAVE === 0 && waveSpawned === waveTotal) {
@@ -721,7 +737,10 @@ function hitMonster(m, damage, pushX = 0, pushZ = 0) {
   if (m.health <= 0) {
     monsters = monsters.filter((other) => other !== m);
     let value = 5;
-    if (m.kind === "titan") {
+    if (m.kind === "gorilla") {
+      score += 4000;
+      value = 100000;
+    } else if (m.kind === "titan") {
       score += 2000;
       value = 10000;
     } else if (isGiant(m)) {
@@ -1003,11 +1022,14 @@ function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = fals
         }
         if (giantHalf && isGiant(m)) {
           // half of the giant boss's max health, rounded up; only a twentieth of the giant giant boss's
-          hurt = Math.ceil(m.max / (m.kind === "titan" ? 20 : 2));
+          // and a hundredth of the gorilla's
+          hurt = Math.ceil(m.max / ({ titan: 20, gorilla: 100 }[m.kind] ?? 2));
         }
         if (giantKill && isGiant(m)) {
-          // the golem's boulder smashes the giant boss in one hit, and the giant giant boss in three
-          hurt = m.kind === "titan" ? Math.ceil(m.max / 3) : m.health;
+          // the golem's boulder smashes the giant boss in one hit, the giant giant boss in three
+          // and the gorilla in ten
+          const hits = { titan: 3, gorilla: 10 }[m.kind];
+          hurt = hits ? Math.ceil(m.max / hits) : m.health;
         }
         const away = m.x >= x ? 1 : -1;   // the blast pushes enemies away from it
         hitMonster(m, hurt, away * 6, 6);
@@ -1545,6 +1567,71 @@ function drawApc(x, gy, body) {
   oval(x - 8, gy - 60, x + 4, gy - 55, "#2a2a2a");                                   // hatch
 }
 
+function drawGorilla(m, fur) {
+  // a giant gorilla knuckle-walking toward the castle
+  const x = m.x;
+  const gy = groundY(m);
+  const swing = Math.sin(m.step) * 14;
+  const pt = (dx, dz) => [x + dx, gy - dz];
+  const dark = "#171311";
+  const face = "#4a3f3a";
+  oval(x - 130, gy - 12, x + 130, gy + 12, SHADOW);
+  // back arm and back leg, behind the body
+  let [ax, ay] = pt(30, 185);
+  let [hx, hy] = pt(80 - swing, 12);
+  line(ax, ay, hx, hy, dark, 34);
+  oval(hx - 20, hy - 14, hx + 20, hy + 12, dark);
+  let [lx, ly] = pt(-55, 95);
+  let [fx, fy] = pt(-40 + swing, 6);
+  line(lx, ly, fx, fy, dark, 36);
+  oval(fx - 24, fy - 10, fx + 20, fy + 6, dark);
+  // front leg
+  [lx, ly] = pt(-20, 95);
+  [fx, fy] = pt(-5 - swing, 6);
+  line(lx, ly, fx, fy, fur, 38);
+  oval(fx - 24, fy - 10, fx + 22, fy + 6, fur);
+  // huge hairy body with a grey back, and a bare chest
+  const [bx, by] = pt(-10, 140);
+  oval(bx - 90, by - 75, bx + 90, by + 75, fur, true);
+  oval(bx - 70, by - 70, bx + 20, by - 20, "#4b4440");   // silverback
+  const [cx, cy] = pt(30, 135);
+  oval(cx - 42, cy - 48, cx + 42, cy + 48, face);
+  line(cx - 18, cy - 10, cx + 18, cy - 10, dark, 2);
+  // front arm, reaching down to its knuckles
+  [ax, ay] = pt(45, 190);
+  [hx, hy] = pt(95 + swing, 12);
+  line(ax, ay, hx, hy, fur, 38);
+  oval(hx - 22, hy - 16, hx + 22, hy + 12, fur, true);
+  // head with a tall crest, a heavy brow, angry red eyes and big teeth
+  const [kx, ky] = pt(78, 212);
+  oval(kx - 42, ky - 40, kx + 38, ky + 38, fur, true);
+  oval(kx - 30, ky - 50, kx + 14, ky - 14, fur);                      // crest
+  oval(kx - 10, ky - 14, kx + 36, ky + 30, face);                     // face
+  rect(kx - 8, ky - 16, kx + 38, ky - 6, dark);                       // brow
+  oval(kx + 6, ky - 6, kx + 14, ky + 2, "red");
+  oval(kx + 22, ky - 6, kx + 30, ky + 2, "red");
+  oval(kx + 24, ky + 6, kx + 30, ky + 12, dark);                      // nostrils
+  oval(kx + 31, ky + 6, kx + 36, ky + 12, dark);
+  rect(kx + 8, ky + 16, kx + 36, ky + 26, "#5a1a1a");                 // roaring mouth
+  for (const tx of [kx + 10, kx + 30]) {
+    polygon([tx, ky + 16, tx + 5, ky + 16, tx + 2.5, ky + 23], "white");   // fangs
+  }
+}
+
+function drawDeadGorilla(x, gy) {
+  // knocked out flat on its back
+  const fur = "#2e2a26";
+  oval(x - 130, gy - 10, x + 130, gy + 12, SHADOW);
+  oval(x - 110, gy - 70, x + 70, gy + 4, fur, true);
+  line(x - 60, gy - 50, x - 110, gy - 95, fur, 30);    // arm flopped up
+  line(x + 20, gy - 50, x + 60, gy - 100, fur, 30);
+  oval(x + 50, gy - 72, x + 125, gy + 2, fur, true);   // head
+  for (const ex of [x + 80, x + 100]) {
+    line(ex - 5, gy - 48, ex + 5, gy - 38, "black", 3);   // X eyes
+    line(ex - 5, gy - 38, ex + 5, gy - 48, "black", 3);
+  }
+}
+
 function drawInfantry(m) {
   const x = m.x;
   const gy = groundY(m);
@@ -1611,7 +1698,9 @@ function drawMonster(m) {
     body = "#5f7a2e";
   }
   const gy = groundY(m);
-  if (m.kind === "titan") {
+  if (m.kind === "gorilla") {
+    drawGorilla(m, body || "#2b2522");
+  } else if (m.kind === "titan") {
     drawTankShape(m.x, gy, 4.0, 1, body || "#3a1f4a", "#1a0d22");
   } else if (isGiant(m)) {
     drawTankShape(m.x, gy, 3.0, 1, body || "#5a2a26", "#2e1614");
@@ -1642,6 +1731,8 @@ function drawCorpse(c) {
   if (c.wreck) {
     if (c.kind === "boss") {
       drawApc(c.x, c.y, "#2e2a26");
+    } else if (c.kind === "gorilla") {
+      drawDeadGorilla(c.x, c.y);
     } else if (c.kind === "titan") {
       drawTankShape(c.x, c.y, 4.0, 1, "#2e2a26", "#1b1917");
     } else if (c.kind === "giant") {
