@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wynn Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #0a84ff;
+      --blue-dark: #0057d9;
+      --sky: #e6f4ff;
+      --yellow: #ffd23f;
+      --pink: #ff5d8f;
+      --green: #2ed47a;
+      --orange: #ff8c42;
+      --ink: #12223b;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      color: var(--ink);
+      background: var(--sky);
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .logo, .btn { font-family: 'Fredoka', sans-serif; }
+
+    /* ---------- Top bar ---------- */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--white);
+      border-bottom: 4px solid var(--blue);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .logo svg { width: 40px; height: 40px; }
+    nav ul { display: flex; gap: 20px; list-style: none; }
+    nav a.link {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    nav a.link:hover { color: var(--blue); }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      position: relative;
+      background: linear-gradient(135deg, var(--blue) 0%, #36b3ff 100%);
+      color: var(--white);
+      padding: 70px 24px 110px;
+      overflow: hidden;
+    }
+    .hero-inner {
+      max-width: 1050px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      align-items: center;
+      gap: 30px;
+    }
+    .tag {
+      display: inline-block;
+      background: var(--yellow);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      line-height: 1.05;
+      margin-bottom: 18px;
+    }
+    .hero h1 span { color: var(--yellow); }
+    .hero p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      max-width: 520px;
+      margin-bottom: 26px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 16px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-3px) scale(1.04); }
+    .btn-yellow { background: var(--yellow); color: var(--ink); box-shadow: 0 6px 0 #d9a800; }
+    .btn-white { background: var(--white); color: var(--blue); box-shadow: 0 6px 0 #b9d9ff; margin-left: 10px; }
+
+    .dragon-big { width: 100%; max-width: 380px; justify-self: center; animation: float 3s ease-in-out infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-16px) rotate(2deg); }
+    }
+
+    /* floating shapes */
+    .shape { position: absolute; opacity: 0.35; animation: spin 12s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .wave {
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 70px;
+    }
+
+    /* ---------- Sections ---------- */
+    section { padding: 70px 24px; }
+    .wrap { max-width: 1050px; margin: 0 auto; }
+    .section-title {
+      text-align: center;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      color: var(--blue-dark);
+      margin-bottom: 10px;
+    }
+    .section-sub {
+      text-align: center;
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+      opacity: 0.8;
+    }
+
+    /* ---------- About ---------- */
+    .about-card {
+      background: var(--white);
+      border-radius: 28px;
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 30px;
+      align-items: center;
+      box-shadow: 0 10px 0 #bcdcff;
+    }
+    .about-side { display: flex; flex-direction: column; gap: 18px; }
+    .hero-photo {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 24px;
+      border: 5px solid var(--blue);
+      box-shadow: 8px 8px 0 var(--yellow);
+      transform: rotate(-2deg);
+      transition: transform 0.2s;
+    }
+    .hero-photo:hover { transform: rotate(0deg) scale(1.03); }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .stat {
+      border-radius: 20px;
+      padding: 18px;
+      text-align: center;
+      color: var(--white);
+    }
+    .stat b { display: block; font-family: 'Fredoka', sans-serif; font-size: 2rem; }
+    .stat:nth-child(1) { background: var(--blue); }
+    .stat:nth-child(2) { background: var(--pink); }
+    .stat:nth-child(3) { background: var(--green); }
+    .stat:nth-child(4) { background: var(--orange); }
+    .about-text h3 { font-size: 1.8rem; color: var(--blue); margin-bottom: 12px; }
+    .about-text p { font-size: 1.1rem; line-height: 1.7; margin-bottom: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .chip {
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: var(--sky);
+      color: var(--blue-dark);
+      border: 3px solid var(--blue);
+    }
+
+    /* ---------- Games ---------- */
+    #games { background: var(--white); }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 28px;
+    }
+    .game {
+      border-radius: 28px;
+      overflow: hidden;
+      background: var(--sky);
+      border: 4px solid var(--ink);
+      box-shadow: 8px 8px 0 var(--ink);
+      transition: transform 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .game:hover { transform: translateY(-6px) rotate(-1deg); }
+    .game-art { height: 190px; position: relative; overflow: hidden; }
+    .game-art svg { width: 100%; height: 100%; display: block; }
+    .game-body { padding: 22px; display: flex; flex-direction: column; flex: 1; }
+    .game-body h3 { font-size: 1.7rem; margin-bottom: 6px; }
+    .game-body p { line-height: 1.6; margin-bottom: 14px; flex: 1; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--white);
+      border: 2px solid var(--ink);
+    }
+    .btn-play { background: var(--blue); color: var(--white); box-shadow: 0 6px 0 var(--blue-dark); text-align: center; }
+
+    .mystery .game-art {
+      background: repeating-linear-gradient(45deg, #1b2a4a, #1b2a4a 20px, #243659 20px, #243659 40px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mystery .qmark {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 6rem;
+      font-weight: 700;
+      color: var(--yellow);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); text-shadow: 0 0 10px var(--yellow); }
+      50% { transform: scale(1.15); text-shadow: 0 0 30px var(--yellow); }
+    }
+    .btn-locked { background: #9aa7bd; color: var(--white); box-shadow: 0 6px 0 #6f7c93; text-align: center; }
+
+    /* ---------- Mission ---------- */
+    #mission {
+      background: linear-gradient(135deg, var(--pink), var(--orange));
+      color: var(--white);
+      text-align: center;
+    }
+    #mission h2 { font-size: clamp(2rem, 5vw, 3.2rem); margin-bottom: 18px; }
+    #mission p { font-size: 1.25rem; line-height: 1.7; max-width: 720px; margin: 0 auto 30px; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .step {
+      background: rgba(255, 255, 255, 0.2);
+      border: 3px solid var(--white);
+      border-radius: 22px;
+      padding: 20px;
+    }
+    .step .num { font-family: 'Fredoka', sans-serif; font-size: 2.2rem; font-weight: 700; }
+    .step.done { background: var(--white); color: var(--pink); }
+
+    /* ---------- Footer ---------- */
+    footer {
+      background: var(--ink);
+      color: var(--white);
+      text-align: center;
+      padding: 30px 20px;
+    }
+    footer .logo { justify-content: center; color: var(--yellow); margin-bottom: 8px; }
+
+    /* ---------- Phones ---------- */
+    @media (max-width: 760px) {
+      nav ul { display: none; }
+      .hero-inner, .about-card { grid-template-columns: 1fr; }
+      .hero { text-align: center; padding-top: 40px; }
+      .hero p { margin-left: auto; margin-right: auto; }
+      .dragon-big { max-width: 240px; order: -1; }
+      .btn-white { margin-left: 0; margin-top: 14px; }
+      section { padding: 50px 16px; }
+      .about-card { padding: 24px; }
+      .hero-photo { max-width: 320px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- The dragon mascot, drawn once and reused -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="dragon" viewBox="0 0 200 200">
+        <!-- tail -->
+        <path d="M60 150 Q20 160 22 120 Q24 100 40 110 Q34 135 64 136 Z" fill="#0057d9"/>
+        <polygon points="18,118 30,96 40,114" fill="#ffd23f"/>
+        <!-- wings -->
+        <path d="M70 90 Q30 40 40 20 Q60 50 85 60 Z" fill="#36b3ff" stroke="#0057d9" stroke-width="4"/>
+        <path d="M130 90 Q170 40 160 20 Q140 50 115 60 Z" fill="#36b3ff" stroke="#0057d9" stroke-width="4"/>
+        <!-- body -->
+        <ellipse cx="100" cy="135" rx="45" ry="42" fill="#0a84ff" stroke="#0057d9" stroke-width="4"/>
+        <ellipse cx="100" cy="145" rx="26" ry="26" fill="#ffd23f"/>
+        <path d="M80 140 h40 M82 152 h36" stroke="#e6b400" stroke-width="3"/>
+        <!-- feet -->
+        <ellipse cx="78" cy="175" rx="14" ry="9" fill="#0057d9"/>
+        <ellipse cx="122" cy="175" rx="14" ry="9" fill="#0057d9"/>
+        <!-- head -->
+        <circle cx="100" cy="72" r="38" fill="#0a84ff" stroke="#0057d9" stroke-width="4"/>
+        <!-- horns -->
+        <polygon points="74,44 68,16 86,38" fill="#ffd23f" stroke="#e6b400" stroke-width="3"/>
+        <polygon points="126,44 132,16 114,38" fill="#ffd23f" stroke="#e6b400" stroke-width="3"/>
+        <!-- spikes -->
+        <polygon points="92,36 100,22 108,36" fill="#ff5d8f"/>
+        <!-- eyes -->
+        <circle cx="86" cy="68" r="10" fill="#fff"/>
+        <circle cx="114" cy="68" r="10" fill="#fff"/>
+        <circle cx="88" cy="70" r="5" fill="#12223b"/>
+        <circle cx="116" cy="70" r="5" fill="#12223b"/>
+        <circle cx="90" cy="67" r="2" fill="#fff"/>
+        <circle cx="118" cy="67" r="2" fill="#fff"/>
+        <!-- snout and smile -->
+        <ellipse cx="100" cy="90" rx="20" ry="12" fill="#36b3ff"/>
+        <circle cx="93" cy="88" r="2.5" fill="#0057d9"/>
+        <circle cx="107" cy="88" r="2.5" fill="#0057d9"/>
+        <path d="M90 96 Q100 104 110 96" stroke="#12223b" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- cheeks -->
+        <circle cx="72" cy="84" r="5" fill="#ff5d8f" opacity="0.6"/>
+        <circle cx="128" cy="84" r="5" fill="#ff5d8f" opacity="0.6"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <nav>
+    <a class="logo" href="#top">
+      <svg><use href="#dragon"/></svg>
+      Wynn Studios
+    </a>
+    <ul>
+      <li><a class="link" href="#about">About</a></li>
+      <li><a class="link" href="#games">Games</a></li>
+      <li><a class="link" href="#mission">Mission</a></li>
+    </ul>
+  </nav>
+
+  <header class="hero" id="top">
+    <svg class="shape" style="top:30px;left:6%;width:60px" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" fill="#ffd23f"/></svg>
+    <svg class="shape" style="top:65%;left:45%;width:40px" viewBox="0 0 10 10"><rect width="10" height="10" fill="#ff5d8f"/></svg>
+    <svg class="shape" style="top:15%;right:8%;width:50px" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#2ed47a"/></svg>
+
+    <div class="hero-inner">
+      <div>
+        <span class="tag">🐉 A young game master is rising...</span>
+        <h1>Legends say a <span>9-year-old</span> builds whole worlds.</h1>
+        <p>
+          Nobody knows how far this power will reach. Armed only with Python and JavaScript,
+          Wynn creates games that defend castles and flip gravity itself.
+          This is where the legend begins.
+        </p>
+        <a class="btn btn-yellow" href="#games">🎮 Play My Games</a>
+        <a class="btn btn-white" href="#about">Who is Wynn?</a>
+      </div>
+      <svg class="dragon-big" viewBox="0 0 200 200"><use href="#dragon"/></svg>
+    </div>
+
+    <svg class="wave" viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0 40 Q360 0 720 35 T1440 30 V70 H0 Z" fill="#e6f4ff"/>
+    </svg>
+  </header>
+
+  <section id="about">
+    <div class="wrap">
+      <h2 class="section-title">The Hero's Story</h2>
+      <p class="section-sub">Every legend has a beginning.</p>
+
+      <div class="about-card">
+        <div class="about-side">
+          <img class="hero-photo" src="images/wynn.jpg" alt="Wynn in an explorer suit and bubble helmet, deep under the sea">
+          <div class="stats">
+            <div class="stat"><b>9</b>years old</div>
+            <div class="stat"><b>2</b>games made</div>
+            <div class="stat"><b>2</b>coding languages</div>
+            <div class="stat"><b>∞</b>ideas</div>
+          </div>
+        </div>
+        <div class="about-text">
+          <h3>I am Wynn.</h3>
+          <p>
+            Some heroes fight with swords. I fight with code. I started my quest
+            learning Python, making clickers, a flappy bird and even my own Minecraft world.
+            Then I leveled up to JavaScript and built games that anyone can play in a web browser.
+          </p>
+          <p>
+            My dragon sidekick guards every game I make. Together, we're on a mission
+            to become the <b>most famous game creators in the world</b>.
+          </p>
+          <div class="chips">
+            <span class="chip">🐍 Python</span>
+            <span class="chip">⚡ JavaScript</span>
+            <span class="chip">🎨 HTML &amp; CSS</span>
+            <span class="chip">🐉 Dragon sidekick</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="games">
+    <div class="wrap">
+      <h2 class="section-title">The Game Vault</h2>
+      <p class="section-sub">Click a game to play it right now in your browser!</p>
+
+      <div class="games">
+
+        <article class="game">
+          <div class="game-art">
+            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+              <rect width="320" height="190" fill="#7cc8ff"/>
+              <circle cx="270" cy="40" r="22" fill="#ffd23f"/>
+              <rect y="150" width="320" height="40" fill="#2ed47a"/>
+              <!-- castle -->
+              <rect x="30" y="70" width="90" height="80" fill="#9aa7bd" stroke="#12223b" stroke-width="3"/>
+              <rect x="20" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
+              <rect x="100" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
+              <rect x="62" y="110" width="26" height="40" rx="13" fill="#12223b"/>
+              <line x1="115" y1="50" x2="115" y2="22" stroke="#12223b" stroke-width="3"/>
+              <polygon points="115,22 140,30 115,38" fill="#ff5d8f"/>
+              <!-- enemies -->
+              <rect x="230" y="128" width="40" height="22" rx="4" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
+              <rect x="244" y="118" width="18" height="12" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
+              <line x1="244" y1="124" x2="222" y2="124" stroke="#12223b" stroke-width="4"/>
+              <circle cx="295" cy="132" r="7" fill="#ff8c42" stroke="#12223b" stroke-width="2"/>
+              <line x1="295" y1="139" x2="295" y2="150" stroke="#12223b" stroke-width="3"/>
+              <!-- arrow -->
+              <path d="M140 80 Q180 50 215 110" fill="none" stroke="#12223b" stroke-width="2" stroke-dasharray="5 5"/>
+              <polygon points="215,110 206,104 214,100" fill="#12223b"/>
+            </svg>
+          </div>
+          <div class="game-body">
+            <h3>🏰 Castle Defense</h3>
+            <p>
+              Waves of soldiers, armored cars, heavy tanks and a GIANT boss are coming for your castle!
+              Hire archers, snipers and a giant Mech, then watch real physics send enemies flying.
+            </p>
+            <div class="badges">
+              <span class="badge">Strategy</span>
+              <span class="badge">Boss fights</span>
+              <span class="badge">Online leaderboard</span>
+            </div>
+            <a class="btn btn-play" href="castle-defense-web/index.html">▶ Play Castle Defense</a>
+          </div>
+        </article>
+
+        <article class="game">
+          <div class="game-art">
+            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+              <rect width="320" height="190" fill="#120a2e"/>
+              <circle cx="30" cy="25" r="2" fill="#fff"/>
+              <circle cx="290" cy="160" r="2" fill="#fff"/>
+              <circle cx="250" cy="30" r="1.5" fill="#fff"/>
+              <circle cx="60" cy="150" r="1.5" fill="#fff"/>
+              <rect x="105" y="15" width="110" height="160" fill="none" stroke="#36b3ff" stroke-width="3"/>
+              <g stroke="#120a2e" stroke-width="2">
+                <rect x="105" y="155" width="20" height="20" fill="#ff5d8f"/>
+                <rect x="125" y="155" width="20" height="20" fill="#ff5d8f"/>
+                <rect x="145" y="155" width="20" height="20" fill="#2ed47a"/>
+                <rect x="165" y="155" width="20" height="20" fill="#ffd23f"/>
+                <rect x="185" y="155" width="20" height="20" fill="#0a84ff"/>
+                <rect x="105" y="135" width="20" height="20" fill="#ff5d8f"/>
+                <rect x="165" y="135" width="20" height="20" fill="#ffd23f"/>
+                <rect x="185" y="135" width="20" height="20" fill="#ffd23f"/>
+                <rect x="145" y="55" width="20" height="20" fill="#36b3ff"/>
+                <rect x="145" y="75" width="20" height="20" fill="#36b3ff"/>
+                <rect x="125" y="75" width="20" height="20" fill="#36b3ff"/>
+                <rect x="165" y="75" width="20" height="20" fill="#36b3ff"/>
+              </g>
+              <!-- gravity flip arrows -->
+              <g fill="#ffd23f">
+                <polygon points="60,80 75,100 45,100"/>
+                <polygon points="60,130 75,110 45,110"/>
+                <polygon points="260,80 275,100 245,100"/>
+                <polygon points="260,130 275,110 245,110"/>
+              </g>
+            </svg>
+          </div>
+          <div class="game-body">
+            <h3>🌌 Neon Flip</h3>
+            <p>
+              A block-stacking game in outer space with a crazy twist: gravity can FLIP to any of the
+              4 sides of the board! Can you survive the boss on Hard mode?
+            </p>
+            <div class="badges">
+              <span class="badge">Puzzle</span>
+              <span class="badge">Gravity flip</span>
+              <span class="badge">Easy · Medium · Hard</span>
+            </div>
+            <a class="btn btn-play" href="neon-flip/index.html">▶ Play Neon Flip</a>
+          </div>
+        </article>
+
+        <article class="game mystery">
+          <div class="game-art"><span class="qmark">?</span></div>
+          <div class="game-body">
+            <h3>🔒 Secret Game</h3>
+            <p>
+              Deep in the dragon's lair, something new is being forged...
+              Nobody knows what it is yet. Keep watching. It's coming.
+            </p>
+            <div class="badges">
+              <span class="badge">???</span>
+              <span class="badge">Top secret</span>
+            </div>
+            <span class="btn btn-locked">Coming soon...</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="mission">
+    <div class="wrap">
+      <h2>🏆 The Quest</h2>
+      <p>
+        My mission: become the <b>world's most famous game creator</b>,
+        and make games that kids everywhere can't stop playing.
+      </p>
+      <div class="steps">
+        <div class="step done"><div class="num">✓</div>Learn to code in Python</div>
+        <div class="step done"><div class="num">✓</div>Build my first web games</div>
+        <div class="step"><div class="num">3</div>Release the secret game</div>
+        <div class="step"><div class="num">4</div>Become a legend 🌍</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="logo">
+      <svg><use href="#dragon"/></svg>
+      Wynn Studios
+    </div>
+    <p>Made with code and dragon fire by Wynn · Est. 2026</p>
+  </footer>
+
+</body>
+</html>

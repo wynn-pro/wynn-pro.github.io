@@ -2247,6 +2247,11 @@ function saveBest(best) {
   }
 }
 
+// ---------- Ko-fi donation links ----------
+// Paste your Ko-fi page between the quotes, like "https://ko-fi.com/yourname".
+// While it's empty, the Ko-fi links stay hidden.
+const KOFI_URL = "https://ko-fi.com/wynnpro";
+
 // ---------- leaderboard ----------
 // Scores are shared between all players through a Supabase database. GitHub Pages can't
 // store anything itself, so the game talks to Supabase directly. Every score is also kept
@@ -2392,6 +2397,7 @@ function showTitle(message, stats = null) {
   titleHeading.textContent = stats ? "GAME OVER" : "CASTLE DEFENSE";
   titleMessage.textContent = message;
   summary.hidden = !stats;
+  supportOver.hidden = !KOFI_URL || !stats;   // only on the game over screen
   summary.replaceChildren();
   if (stats) {
     for (const [label, value] of stats) {
@@ -2864,6 +2870,8 @@ const playerName = document.getElementById("player-name");
 const leaderboard = document.getElementById("leaderboard");
 const leaderboardList = document.getElementById("leaderboard-list");
 const leaderboardStatus = document.getElementById("leaderboard-status");
+const supportLink = document.getElementById("support");
+const supportOver = document.getElementById("support-over");
 
 sellButton.addEventListener("click", toggleSellMode);
 deleteButton.addEventListener("click", toggleDeleteMode);
@@ -2892,6 +2900,8 @@ document.addEventListener("visibilitychange", () => {
 
 drawBackground();
 updateInfo();
+supportLink.href = supportOver.href = KOFI_URL;
+supportLink.hidden = !KOFI_URL;
 showLeaderboard();
 refreshLeaderboard();
 drawAll();

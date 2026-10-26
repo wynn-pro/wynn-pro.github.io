@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Neon Flip</title>
+  <meta name="description" content="A space block-stacking game where gravity flips to all four sides, with bosses, a shop and spaceship pets.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <main class="game">
+    <!-- the HUD: game stats on the left, buttons on the right -->
+    <header class="hud">
+      <div class="brand">NEON<span>FLIP</span></div>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="score">0</span></div>
+        <div class="stat"><span class="stat-label">Lines</span><span class="stat-value" id="lines">0</span></div>
+        <div class="stat"><span class="stat-label">Level</span><span class="stat-value" id="level">1</span></div>
+        <div class="stat"><span class="stat-label">Coins</span><span class="stat-value coin" id="coins">0</span></div>
+        <div class="stat"><span class="stat-label">Mode</span><span class="stat-value" id="mode">Medium</span></div>
+      </div>
+      <div class="hud-buttons">
+        <button class="icon-btn" id="pause-btn" title="Pause (P)" aria-label="Pause">⏸</button>
+        <button class="icon-btn" id="sound-btn" title="Sound on or off (M)" aria-label="Sound">🔊</button>
+      </div>
+    </header>
+
+    <section class="play">
+      <aside class="side side-left">
+        <div class="panel">
+          <h2>Hold <kbd>C</kbd></h2>
+          <div class="holds">
+            <canvas id="hold-0"></canvas>
+            <canvas id="hold-1" hidden></canvas>
+          </div>
+          <p class="hint" id="hold2-hint" hidden>2nd slot: <kbd>V</kbd></p>
+        </div>
+        <div class="panel">
+          <h2>Power-ups</h2>
+          <button class="power" id="laser-btn">🔫 Laser <b id="laser-count">0</b> <kbd>1</kbd></button>
+          <button class="power" id="slowmo-btn">🐢 Slow-mo <b id="slowmo-count">0</b> <kbd>2</kbd></button>
+          <div class="slowmo-bar" id="slowmo-bar" hidden><div id="slowmo-fill"></div></div>
+        </div>
+        <div class="panel">
+          <h2>Pet</h2>
+          <p class="hint" id="pet-info">No pet yet. Buy one in the shop!</p>
+        </div>
+      </aside>
+
+      <div class="board-wrap">
+        <canvas id="board"></canvas>
+        <div class="gravity-tag" id="gravity-tag">Gravity ⬇</div>
+      </div>
+
+      <aside class="side side-right">
+        <div class="panel">
+          <h2>Next</h2>
+          <canvas id="next"></canvas>
+        </div>
+        <div class="panel boss-panel" id="boss-panel">
+          <h2 id="boss-name">Boss</h2>
+          <canvas id="boss"></canvas>
+          <div class="bar" id="boss-bar" hidden><div class="bar-fill" id="boss-fill"></div><span class="bar-text" id="boss-hp"></span></div>
+          <p class="hint" id="boss-note">Bosses appear as you clear lines.</p>
+        </div>
+        <div class="panel">
+          <h2>Controls</h2>
+          <!-- the arrows change after every gravity flip -->
+          <ul class="controls">
+            <li><b id="ctl-move">⬅ ➡</b> move</li>
+            <li><b id="ctl-turn">⬆</b> or <kbd>X</kbd> turn</li>
+            <li><b id="ctl-drop">⬇</b> fall faster</li>
+            <li><kbd>Space</kbd> drop</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <!-- touch buttons for phones and tablets: the arrows are screen directions, like the keys -->
+    <div class="touch" id="touch">
+      <button data-arrow="-1,0" aria-label="Left">◀</button>
+      <button data-arrow="0,-1" aria-label="Up">▲</button>
+      <button data-arrow="0,1" aria-label="Down">▼</button>
+      <button data-arrow="1,0" aria-label="Right">▶</button>
+      <button data-action="turn" aria-label="Turn">⟳</button>
+      <button data-action="drop" aria-label="Drop">⤓</button>
+      <button data-action="hold" aria-label="Hold">Hold</button>
+    </div>
+  </main>
+
+  <!-- start menu -->
+  <div class="screen" id="menu-screen">
+    <div class="card">
+      <h1 class="title">NEON<span>FLIP</span></h1>
+      <p class="tagline">Stack blocks in space. But watch out: gravity can flip to <b>any side</b> of the board!</p>
+
+      <div class="difficulty" role="radiogroup" aria-label="Difficulty">
+        <button data-difficulty="easy" role="radio">Easy<small>Slow blocks, weak bosses</small></button>
+        <button data-difficulty="medium" role="radio">Medium<small>Bosses throw meteors · coins ×1.5</small></button>
+        <button data-difficulty="hard" role="radio">Hard<small>Fast flips, angry bosses · coins ×2</small></button>
+      </div>
+
+      <div class="menu-buttons">
+        <button class="primary" id="play-btn">▶ Play</button>
+        <button id="menu-shop-btn">🛒 Shop</button>
+      </div>
+      <p class="wallet">🪙 <b class="coin-total">0</b> coins · Best score <b id="best">0</b></p>
+
+      <details class="howto">
+        <summary>How to play</summary>
+        <ul>
+          <li>Fill a whole line to clear it. The <b>glowing edge</b> of the board is the floor.</li>
+          <li>At random times a <b>3‑2‑1 countdown</b> appears and gravity flips: down, up, left or right.
+            Every block falls to the new floor, and lines that fill up count <b>double</b>!</li>
+          <li>Arrow keys follow the screen: the arrow pointing at the floor makes the block fall faster,
+            the opposite arrow turns it, and the other two move it.</li>
+          <li>Clear lines to call a <b>boss</b>. Clear more lines to hurt it before its junk rows and meteors bury you.</li>
+          <li>Spend coins in the <b>shop</b> on lasers, slow-mo, an extra hold slot and spaceship pets that zap blocks for you.</li>
+        </ul>
+      </details>
+
+      <h2>Leaderboard</h2>
+      <ol class="leaderboard-list"></ol>
+      <p class="leaderboard-status"></p>
+      <a class="kofi" href="https://ko-fi.com/wynnpro" target="_blank" rel="noopener">☕ Buy me a hot chocolate</a>
+    </div>
+  </div>
+
+  <!-- shop -->
+  <div class="screen" id="shop-screen" hidden>
+    <div class="card wide">
+      <h1>Shop</h1>
+      <p class="wallet">🪙 <b class="coin-total">0</b> coins</p>
+      <h2>Power-ups</h2>
+      <div class="shop-grid" id="shop-powerups"></div>
+      <h2>Spaceship pets</h2>
+      <p class="hint">A pet flies around your board and zaps away the highest block. It hurts bosses too!</p>
+      <div class="shop-grid" id="shop-pets"></div>
+      <button id="shop-back">Back</button>
+    </div>
+  </div>
+
+  <!-- pause -->
+  <div class="screen" id="pause-screen" hidden>
+    <div class="card">
+      <h1>Paused</h1>
+      <div class="menu-buttons column">
+        <button class="primary" id="resume-btn">▶ Resume</button>
+        <button id="pause-shop-btn">🛒 Shop</button>
+        <button id="quit-btn">Quit to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- game over -->
+  <div class="screen" id="over-screen" hidden>
+    <div class="card">
+      <h1>Game over</h1>
+      <p class="tagline" id="over-reason"></p>
+      <div class="over-stats">
+        <div><span>Score</span><b id="over-score">0</b></div>
+        <div><span>Lines</span><b id="over-lines">0</b></div>
+        <div><span>Bosses beaten</span><b id="over-bosses">0</b></div>
+        <div><span>Coins earned</span><b id="over-coins">0</b></div>
+      </div>
+      <form class="name-form" id="name-form" hidden>
+        <label for="player-name">You made the top 10! Write your name:</label>
+        <div class="name-row">
+          <input id="player-name" maxlength="16" autocomplete="off" required>
+          <button class="primary" type="submit">Save</button>
+        </div>
+      </form>
+      <h2>Leaderboard</h2>
+      <ol class="leaderboard-list"></ol>
+      <p class="leaderboard-status"></p>
+      <div class="menu-buttons">
+        <button class="primary" id="again-btn">▶ Play again</button>
+        <button id="over-shop-btn">🛒 Shop</button>
+        <button id="over-menu-btn">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
