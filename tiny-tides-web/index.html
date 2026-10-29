@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Tiny Tides</title>
+  <meta name="description" content="Cast from a tiny boat, fight the fish on the line and fill your journal with all 12 species.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: name on the left, coins and clock in the middle, buttons on the right -->
+    <header class="hud">
+      <div class="brand">TINY<span>TIDES</span></div>
+      <div class="stats">
+        <div class="stat" title="Coins: spend them in the shop"><span class="stat-label">🪙 Coins</span><span class="stat-value" id="coins">0</span></div>
+        <div class="stat" title="Time of day: some fish only come out at night"><span class="stat-label" id="sky-icon">☀️ Day 1</span><span class="stat-value" id="clock">06:00</span></div>
+        <div class="stat" title="How deep your lure is"><span class="stat-label">📏 Depth</span><span class="stat-value" id="depth">-</span></div>
+        <div class="stat" title="Species found"><span class="stat-label">📖 Journal</span><span class="stat-value" id="found">0/12</span></div>
+      </div>
+      <div class="controls">
+        <button id="open-shop" class="tool" title="Shop (S)">🛒 Shop</button>
+        <button id="open-journal" class="tool" title="Journal (J)">📖 Journal</button>
+        <button id="mute" class="tool icon" title="Sound on/off (M)" aria-label="Sound on/off">🔊</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <canvas id="board" width="960" height="560" aria-label="The lake. Hold to cast, hold to reel."></canvas>
+
+      <!-- title screen -->
+      <section class="overlay" id="title-screen">
+        <div class="card">
+          <h1>TINY<span>TIDES</span></h1>
+          <p class="lead">Cast from your little boat, fight the fish on the line and fill your journal with all 12 species.</p>
+          <ul class="how">
+            <li><b>Hold</b> to charge your cast, <b>let go</b> to throw.</li>
+            <li>The lure sinks by itself. <b>Hold</b> to reel it back up.</li>
+            <li>When a fish bites, <b>click fast</b> to hook it!</li>
+            <li>Then <b>hold</b> to reel it in, but <b>let go</b> when the line turns red, or it snaps.</li>
+          </ul>
+          <div class="buttons">
+            <button class="big" id="new-game">🎣 New Game</button>
+            <button class="big ghost" id="continue">Continue</button>
+          </div>
+          <p class="small">Mouse, touch or the <kbd>Space</kbd> bar all work.</p>
+        </div>
+      </section>
+
+      <!-- a fish you just caught -->
+      <section class="overlay hidden" id="catch-screen">
+        <div class="card catch">
+          <div class="new-badge hidden" id="catch-new">NEW!</div>
+          <canvas id="catch-art" width="260" height="140"></canvas>
+          <h2 id="catch-name">Fish</h2>
+          <p class="rarity" id="catch-rarity">Common</p>
+          <div class="catch-stats">
+            <div><span>Size</span><b id="catch-size">0 cm</b></div>
+            <div><span>Sold for</span><b id="catch-value">0</b></div>
+          </div>
+          <p class="small" id="catch-note"></p>
+          <button class="big" id="catch-ok">Keep fishing</button>
+        </div>
+      </section>
+
+      <!-- the shop -->
+      <section class="overlay hidden" id="shop-screen">
+        <div class="card wide">
+          <h2>🛒 Bait &amp; Tackle</h2>
+          <p class="small">You have <b id="shop-coins">0</b> 🪙</p>
+          <div class="shop-list" id="shop-list"></div>
+          <button class="big ghost" data-close>Close</button>
+        </div>
+      </section>
+
+      <!-- the journal -->
+      <section class="overlay hidden" id="journal-screen">
+        <div class="card wide">
+          <h2>📖 Fish Journal</h2>
+          <p class="small" id="journal-summary"></p>
+          <div class="journal-grid" id="journal-grid"></div>
+          <button class="big ghost" data-close>Close</button>
+        </div>
+      </section>
+
+      <!-- found every fish -->
+      <section class="overlay hidden" id="win-screen">
+        <div class="card">
+          <h1>MASTER<span>ANGLER</span></h1>
+          <p class="lead">You found all 12 fish, even the Old Gulper! The lake has no secrets left.</p>
+          <p class="small">Keep fishing for bigger records.</p>
+          <button class="big" data-close>Keep fishing</button>
+        </div>
+      </section>
+    </div>
+
+    <footer class="tips">
+      <a href="../index.html">← Back to Wynn's games</a>
+      <span><kbd>Space</kbd> cast &amp; reel · <kbd>S</kbd> shop · <kbd>J</kbd> journal · <kbd>M</kbd> sound</span>
+    </footer>
+  </main>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
