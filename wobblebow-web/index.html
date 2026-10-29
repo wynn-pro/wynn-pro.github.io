@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Wobblebow</title>
+  <meta name="description" content="Floppy ragdoll archers duel across a windy valley. Beat 8 rivals, or challenge a friend.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: name on the left, duel info in the middle, buttons on the right -->
+    <header class="hud">
+      <div class="brand">WOBBLE<span>BOW</span></div>
+      <div class="stats">
+        <div class="stat" title="Which duel you are on"><span class="stat-label">⚔️ Duel</span><span class="stat-value" id="duel">-</span></div>
+        <div class="stat" title="Wind pushes arrows sideways"><span class="stat-label">🌬️ Wind</span><span class="stat-value" id="wind">-</span></div>
+        <div class="stat" title="Your best ladder run"><span class="stat-label">🏆 Best</span><span class="stat-value" id="best">-</span></div>
+      </div>
+      <div class="controls">
+        <button id="open-menu" class="tool" title="Back to the title screen (Esc)">☰ Menu</button>
+        <button id="mute" class="tool icon" title="Sound on/off (M)" aria-label="Sound on/off">🔊</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <canvas id="board" width="960" height="560" aria-label="The valley. Drag back to pull your bow, let go to shoot."></canvas>
+
+      <!-- title screen -->
+      <section class="overlay" id="title-screen">
+        <div class="card">
+          <h1>WOBBLE<span>BOW</span></h1>
+          <p class="lead">Two floppy archers, one windy valley. Take turns shooting until somebody falls over.</p>
+          <ul class="how">
+            <li><b>Drag back</b> anywhere, like pulling a bowstring, then <b>let go</b> to shoot.</li>
+            <li>Watch the <b>wind</b>. It pushes your arrows sideways.</li>
+            <li><b>Headshots</b> hurt the most. Feet and arms hurt the least.</li>
+            <li>Win a duel and pick a <b>perk</b>. Beat all 8 rivals to win the Golden Bow!</li>
+          </ul>
+          <div class="buttons">
+            <button class="big" id="play-ladder">🏹 Ladder vs CPU</button>
+            <button class="big ghost" id="play-duo">👥 2 Players</button>
+          </div>
+          <p class="small">Keyboard: <kbd>↑</kbd><kbd>↓</kbd> aim, <kbd>←</kbd><kbd>→</kbd> power, <kbd>Space</kbd> shoot.</p>
+        </div>
+      </section>
+
+      <!-- pick a perk after winning a duel -->
+      <section class="overlay hidden" id="perk-screen">
+        <div class="card wide">
+          <h2 id="perk-title">You won!</h2>
+          <p class="small" id="perk-sub">Pick a perk for the next duel.</p>
+          <div class="perk-list" id="perk-list"></div>
+        </div>
+      </section>
+
+      <!-- end of a match -->
+      <section class="overlay hidden" id="result-screen">
+        <div class="card">
+          <h1 id="result-title">KNOCKED<span>OUT</span></h1>
+          <p class="lead" id="result-text"></p>
+          <div class="buttons">
+            <button class="big" id="result-again">Play again</button>
+            <button class="big ghost" id="result-menu">Menu</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="tips">
+      <a href="../index.html">← Back to Wynn's games</a>
+      <span>Drag back &amp; let go to shoot · <kbd>M</kbd> sound · <kbd>Esc</kbd> menu</span>
+    </footer>
+  </main>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
