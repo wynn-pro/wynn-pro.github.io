@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Slice Master</title>
+  <meta name="description" content="Swipe your blade through everything the dojo throws at you. Earn all 8 belts, but don't cut the dragon eggs!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: name on the left, round info in the middle, buttons on the right -->
+    <header class="hud">
+      <div class="brand">SLICE<span>MASTER</span></div>
+      <div class="stats">
+        <div class="stat" title="Which belt you are trying to earn"><span class="stat-label">🥋 Belt</span><span class="stat-value" id="belt">-</span></div>
+        <div class="stat" title="Your points this round"><span class="stat-label">⭐ Score</span><span class="stat-value" id="score">-</span></div>
+        <div class="stat" title="Seconds left"><span class="stat-label">⏱️ Time</span><span class="stat-value" id="time">-</span></div>
+        <div class="stat" title="Your best"><span class="stat-label">🏆 Best</span><span class="stat-value" id="best">-</span></div>
+      </div>
+      <div class="controls">
+        <button id="open-menu" class="tool" title="Back to the title screen (Esc)">☰ Menu</button>
+        <button id="mute" class="tool icon" title="Sound on/off (M)" aria-label="Sound on/off">🔊</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <canvas id="board" width="960" height="560" aria-label="The dojo. Swipe fast across things to slice them."></canvas>
+
+      <!-- title screen -->
+      <section class="overlay" id="title-screen">
+        <div class="card">
+          <h1>SLICE<span>MASTER</span></h1>
+          <p class="lead">The dojo throws things in the air. You slice them in half. How hard can it be?</p>
+          <ul class="how">
+            <li><b>Hold and swipe fast</b> across things to slice them. A finger works too.</li>
+            <li>Cut right through the <b>middle</b> for a <b>PERFECT</b> slice and double points.</li>
+            <li>Slice 3 or more in one swipe for a <b>COMBO</b>. Iron blocks need <b>2 cuts</b>.</li>
+            <li><b>Never cut a dragon egg!</b> The baby dragon gets grumpy and steals 5 seconds.</li>
+          </ul>
+          <div class="belt-row" id="title-belts"></div>
+          <div class="buttons">
+            <button class="big" id="play-belts">🥋 Belt Trials</button>
+            <button class="big ghost" id="play-blitz">⚡ 60-Second Blitz</button>
+          </div>
+          <p class="small">Grab an ⌛ hourglass for slow-motion. Gold coins are worth a lot!</p>
+        </div>
+      </section>
+
+      <!-- end of a round -->
+      <section class="overlay hidden" id="result-screen">
+        <div class="card">
+          <h1 id="result-title">BELT<span>EARNED</span></h1>
+          <p class="lead" id="result-text"></p>
+          <div class="belt-row" id="result-belts"></div>
+          <div class="result-stats" id="result-stats"></div>
+          <div class="buttons">
+            <button class="big" id="result-again">Next belt</button>
+            <button class="big ghost" id="result-menu">Menu</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="tips">
+      <a href="../index.html">← Back to Wynn's games</a>
+      <span>Hold &amp; swipe to slice · <kbd>M</kbd> sound · <kbd>Esc</kbd> menu</span>
+    </footer>
+  </main>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
