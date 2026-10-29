@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Frostfall</title>
+  <meta name="description" content="Keep a tiny town alive through 30 days of deadly cold: burn coal, build shelters and fight off wolves.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: day and temperature on the left, supplies in the middle, controls on the right -->
+    <header class="hud">
+      <div class="brand">FROST<span>FALL</span></div>
+      <div class="clock">
+        <span class="day" id="day">Day 1</span>
+        <span class="time" id="time">06:00</span>
+      </div>
+      <div class="temp" id="temp" title="Temperature outside">-9°</div>
+      <div class="stats">
+        <div class="stat" title="Wood: for building"><span class="stat-label">🪵 Wood</span><span class="stat-value" id="wood">0</span></div>
+        <div class="stat" title="Coal: the beacon burns it for heat"><span class="stat-label">🪨 Coal</span><span class="stat-value" id="coal">0</span></div>
+        <div class="stat" title="Food: everyone eats 1 a day"><span class="stat-label">🍖 Food</span><span class="stat-value" id="food">0</span></div>
+        <div class="stat" title="Steel: for upgrades"><span class="stat-label">🔩 Steel</span><span class="stat-value" id="steel">0</span></div>
+        <div class="stat" title="Survivors (sick)"><span class="stat-label">👥 People</span><span class="stat-value" id="people">0</span></div>
+        <div class="stat stat-hope" title="Hope: if it reaches 0, everyone leaves">
+          <span class="stat-label">✨ Hope</span>
+          <div class="bar"><div class="bar-fill" id="hope-fill"></div><span class="bar-text" id="hope">0</span></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="pause" class="tool icon" title="Pause (P)" aria-label="Pause">⏸</button>
+        <div class="segmented" id="speed" role="group" aria-label="Game speed" title="Game speed (F)">
+          <button data-speed="1" aria-pressed="true">1×</button>
+          <button data-speed="2" aria-pressed="false">2×</button>
+          <button data-speed="3" aria-pressed="false">3×</button>
+        </div>
+        <button id="sound" class="tool icon" title="Sound (M)" aria-label="Sound on">🔊</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="stage" id="stage">
+        <canvas id="board" width="960" height="560" aria-label="Frostfall town"></canvas>
+
+        <div class="banner" id="banner" hidden>
+          <div class="banner-title" id="banner-title">DAY 1</div>
+          <div class="banner-sub" id="banner-sub"></div>
+        </div>
+        <div class="toasts" id="toasts" aria-live="polite"></div>
+
+        <div class="screen" id="pause-screen" hidden>
+          <h2>PAUSED</h2>
+          <p>Press <kbd>P</kbd> or click to keep going</p>
+        </div>
+
+        <div class="screen title" id="title">
+          <h1>FROST<br>FALL</h1>
+          <p id="title-message">The world froze. Keep the beacon burning for 30 days.</p>
+          <div class="summary" id="summary" hidden></div>
+          <button class="continue" id="continue" hidden>▶ Continue day <span id="continue-day">1</span></button>
+          <div class="levels" id="levels">
+            <!-- difficulty cards are added by game.js -->
+          </div>
+          <p class="best" id="best"></p>
+        </div>
+      </div>
+
+      <!-- what you can do with the beacon, a building or an empty plot: filled in by game.js -->
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+
+    <p class="help">
+      <strong>Click the beacon</strong> to set its power, <strong>click an empty plot</strong> to build, and
+      <strong>click a building</strong> to give it workers. <strong>Click wolves</strong> to chase them with a torch.
+      Keys: <kbd>B</kbd> beacon, <kbd>1</kbd>–<kbd>4</kbd> beacon power, <kbd>+</kbd>/<kbd>−</kbd> workers,
+      <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute, <kbd>Esc</kbd> close.
+    </p>
+    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.00.0</span></footer>
+  </main>
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
