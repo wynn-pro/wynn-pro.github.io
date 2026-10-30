@@ -1,0 +1,501 @@
+:root {
+  --page: #c9b48d;
+  --panel: #fbf6ea;
+  --panel-2: #f1e8d3;
+  --line: rgba(60, 40, 20, 0.14);
+  --line-strong: rgba(60, 40, 20, 0.3);
+  --text: #2e2418;
+  --muted: #7a6a52;
+  --red: #e4572e;
+  --green: #5c9e45;
+  --blue: #3d6fb0;
+  --bad: #d23c2a;
+  --display: "Patrick Hand", "Comic Sans MS", cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* kraft paper with little fibres */
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.14) 0 2px, transparent 3px) 0 0 / 38px 38px,
+    radial-gradient(circle at 70% 60%, rgba(80, 50, 20, 0.08) 0 1px, transparent 2px) 0 0 / 23px 23px,
+    var(--page);
+  color: var(--text);
+  font-family: Nunito, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  justify-content: center;
+}
+
+.game {
+  width: 100%;
+  max-width: 980px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  box-shadow: 4px 4px 0 rgba(60, 40, 20, 0.22);
+  transform: rotate(-0.3deg);
+}
+
+.brand {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--green);
+}
+
+.brand span,
+h1 span {
+  color: var(--red);
+  margin-left: 4px;
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 82px;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.stat-value {
+  font-family: var(--display);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.tool {
+  font: 700 14px Nunito, sans-serif;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(60, 40, 20, 0.2);
+}
+
+.tool:hover {
+  background: #fff;
+}
+
+.tool.icon {
+  padding: 8px 10px;
+}
+
+/* ---------- the board ---------- */
+
+.stage {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 6px 6px 0 rgba(60, 40, 20, 0.28);
+  background: #9fd3ef;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(46, 36, 24, 0.45);
+  overflow-y: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.card {
+  background: var(--panel);
+  border-radius: 4px;
+  padding: 24px 28px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 8px 8px 0 rgba(46, 36, 24, 0.35);
+  transform: rotate(-0.6deg);
+  margin: auto;
+}
+
+.card.wide {
+  max-width: 900px;
+  text-align: left;
+  transform: none;
+  padding: 18px 20px;
+}
+
+h1 {
+  font-family: var(--display);
+  font-size: clamp(40px, 8vw, 64px);
+  line-height: 1;
+  margin: 0 0 10px;
+  color: var(--green);
+}
+
+h2 {
+  font-family: var(--display);
+  font-size: 32px;
+  margin: 0;
+}
+
+.lead {
+  font-size: 17px;
+  margin: 0 0 14px;
+}
+
+.how {
+  text-align: left;
+  margin: 0 0 18px;
+  padding-left: 20px;
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.big {
+  font-family: var(--display);
+  font-size: 24px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 4px;
+  background: var(--red);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 rgba(46, 36, 24, 0.35);
+  transition: transform 0.12s;
+}
+
+.big:hover {
+  transform: translate(-1px, -2px) rotate(-1deg);
+}
+
+.big.ghost {
+  background: var(--green);
+}
+
+.big:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+.small {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+
+/* ---------- bag ---------- */
+
+.bag-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bag-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(9, 46px);
+  gap: 4px;
+}
+
+.slot {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.slot.hot {
+  background: #ead9b4;
+  margin-bottom: 8px;
+}
+
+.slot.picked {
+  outline: 3px solid var(--red);
+}
+
+.slot.current {
+  border: 2px solid var(--blue);
+}
+
+.slot img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  margin: auto;
+}
+
+.slot b {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: 13px;
+  text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+}
+
+.recipes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.recipe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 4px 8px;
+}
+
+.recipe.locked {
+  opacity: 0.55;
+}
+
+.recipe .out {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 170px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.recipe img {
+  width: 28px;
+  height: 28px;
+}
+
+.recipe .needs {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  align-items: center;
+}
+
+.recipe .needs span {
+  display: flex;
+  align-items: center;
+}
+
+.recipe .needs img {
+  width: 22px;
+  height: 22px;
+}
+
+.recipe .needs .short {
+  color: var(--bad);
+  font-weight: 800;
+}
+
+.recipe .at {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.recipe button {
+  font: 800 13px Nunito, sans-serif;
+  border: none;
+  border-radius: 3px;
+  padding: 6px 10px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+}
+
+.recipe button:disabled {
+  background: #b9ad97;
+  cursor: default;
+}
+
+/* ---------- touch buttons ---------- */
+
+.touch {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 70px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.touch .pad {
+  display: flex;
+  gap: 10px;
+}
+
+.touch button {
+  pointer-events: auto;
+  width: 62px;
+  height: 62px;
+  font-size: 26px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: rgba(46, 36, 24, 0.35);
+  color: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- under the board ---------- */
+
+.quest {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 rgba(60, 40, 20, 0.2);
+}
+
+.quest em {
+  font-style: normal;
+  color: var(--red);
+  font-family: var(--display);
+  font-size: 19px;
+  margin-right: 6px;
+}
+
+.tips {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a3b28;
+}
+
+.tips a {
+  color: #2e2418;
+  font-weight: 800;
+}
+
+kbd {
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .stats {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .stat {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .controls {
+    margin-left: auto;
+  }
+
+  .bag-body {
+    grid-template-columns: 1fr;
+  }
+
+  .slots {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+
+  .slot {
+    width: auto;
+    aspect-ratio: 1;
+    height: auto;
+  }
+
+  .slot img {
+    width: 80%;
+    height: 80%;
+  }
+
+  .recipe .out {
+    min-width: 0;
+  }
+}

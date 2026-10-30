@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Paperland</title>
+  <meta name="description" content="Dig, build and craft in a world cut out of paper. Smelt gold, find a crystal and beat the Ink Blots to craft the Golden Quill!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@400;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body>
+  <main class="game">
+    <!-- the HUD: name on the left, world info in the middle, buttons on the right -->
+    <header class="hud">
+      <div class="brand">PAPER<span>LAND</span></div>
+      <div class="stats">
+        <div class="stat" title="How many days you have survived"><span class="stat-label">📅 Day</span><span class="stat-value" id="day">-</span></div>
+        <div class="stat" title="Ink Blots come out at night"><span class="stat-label">🕐 Time</span><span class="stat-value" id="clock">-</span></div>
+        <div class="stat" title="How deep you are"><span class="stat-label">📏 Depth</span><span class="stat-value" id="depth">-</span></div>
+      </div>
+      <div class="controls">
+        <button id="open-bag" class="tool" title="Your bag and crafting (E)">🎒 Bag</button>
+        <button id="open-menu" class="tool" title="Save and go to the title screen (Esc)">☰ Menu</button>
+        <button id="mute" class="tool icon" title="Sound on/off (M)" aria-label="Sound on/off">🔊</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <canvas id="board" width="960" height="560" aria-label="The paper world. Hold the mouse on a block to dig it, right-click to build."></canvas>
+
+      <!-- buttons for tablets and phones -->
+      <div class="touch hidden" id="touch">
+        <div class="pad">
+          <button data-key="left" aria-label="Walk left">◀</button>
+          <button data-key="right" aria-label="Walk right">▶</button>
+        </div>
+        <div class="pad">
+          <button id="touch-mode" aria-label="Switch between digging and building">⛏️</button>
+          <button data-key="jump" aria-label="Jump">⤒</button>
+        </div>
+      </div>
+
+      <!-- title screen -->
+      <section class="overlay" id="title-screen">
+        <div class="card">
+          <h1>PAPER<span>LAND</span></h1>
+          <p class="lead">A whole world cut out of paper. Dig it, build it, and craft the legendary <b>Golden Quill</b>.</p>
+          <ul class="how">
+            <li><b>A / D</b> or arrows to walk, <b>W</b> or <b>Space</b> to jump.</li>
+            <li><b>Hold the left mouse button</b> on a block to dig it. Click Ink Blots to bop them.</li>
+            <li><b>Right-click</b> to build with the block in your hand. <b>1-9</b> or the mouse wheel picks.</li>
+            <li><b>E</b> opens your bag. Craft tools there. Some things need a workbench or furnace nearby.</li>
+            <li>At night <b>Ink Blots</b> come out. They hate sunshine and can't appear near torches.</li>
+          </ul>
+          <div class="buttons">
+            <button class="big" id="play-continue">▶ Continue</button>
+            <button class="big ghost" id="play-new">🌱 New World</button>
+          </div>
+          <p class="small">Your world saves by itself on this computer.</p>
+        </div>
+      </section>
+
+      <!-- bag and crafting -->
+      <section class="overlay hidden" id="bag-screen">
+        <div class="card wide">
+          <div class="bag-head">
+            <h2>🎒 Bag</h2>
+            <button class="tool" id="bag-close">Close (E)</button>
+          </div>
+          <div class="bag-body">
+            <div>
+              <p class="hint">Click a slot, then another slot, to swap them. The top row is your hotbar.</p>
+              <div class="slots" id="slots"></div>
+            </div>
+            <div>
+              <p class="hint" id="station-hint"></p>
+              <div class="recipes" id="recipes"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- crumpled -->
+      <section class="overlay hidden" id="dead-screen">
+        <div class="card">
+          <h1>CRUMPLED<span>!</span></h1>
+          <p class="lead">Ouch. You got scrunched up, but you keep everything in your bag.</p>
+          <div class="buttons">
+            <button class="big" id="respawn">↺ Unfold and try again</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- the Golden Quill -->
+      <section class="overlay hidden" id="win-screen">
+        <div class="card">
+          <h1>GOLDEN<span>QUILL</span></h1>
+          <p class="lead" id="win-text"></p>
+          <div class="buttons">
+            <button class="big" id="win-keep">Keep building</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="quest" id="quest"></div>
+
+    <footer class="tips">
+      <a href="../index.html">← Back to Wynn's games</a>
+      <span><kbd>E</kbd> bag · <kbd>M</kbd> sound · <kbd>Esc</kbd> menu</span>
+    </footer>
+  </main>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
