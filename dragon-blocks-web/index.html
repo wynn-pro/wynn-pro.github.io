@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Dragon Blocks</title>
+  <meta name="description" content="A 3D block world. Dig, build anything, and find the 5 Dragon Crystals hidden underground.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body class="in-menu">
+  <canvas id="view" aria-label="The block world"></canvas>
+
+  <!-- the HUD: things that sit on top of the 3D world while you play -->
+  <div class="hud">
+    <div class="hud-top">
+      <div class="pill" title="Dragon Crystals found">💎 <b id="crystals">0 / 5</b></div>
+      <div class="pill" title="Crystal radar: the hotter, the closer you are to a crystal">📡 <b id="radar">-</b></div>
+      <div class="pill" id="clock">☀️ Day</div>
+      <div class="pill hidden" id="fly">🪽 Flying</div>
+    </div>
+    <div class="crosshair"></div>
+    <div class="toast" id="toast"></div>
+    <div class="bottom">
+      <div class="block-name" id="block-name"></div>
+      <div class="hotbar" id="hotbar"></div>
+    </div>
+  </div>
+
+  <!-- title screen -->
+  <section class="overlay" id="title-screen">
+    <div class="card">
+      <h1>DRAGON<span>BLOCKS</span></h1>
+      <p class="lead" id="title-text">The dragon egg won't hatch until you find the <b>5 Dragon Crystals</b> buried deep underground. Dig down, follow the radar, and build whatever you like on the way!</p>
+      <div class="keys">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</div>
+        <div><kbd>Mouse</kbd> look around</div>
+        <div><kbd>Space</kbd> jump</div>
+        <div><kbd>Shift</kbd> run</div>
+        <div><kbd>Left click</kbd> dig</div>
+        <div><kbd>Right click</kbd> build</div>
+        <div><kbd>1</kbd>-<kbd>9</kbd> or <kbd>Scroll</kbd> pick block</div>
+        <div><kbd>F</kbd> fly on / off</div>
+      </div>
+      <div class="buttons">
+        <button class="big" id="play">▶ Play</button>
+        <button class="big ghost" id="new-world">🌍 New world</button>
+      </div>
+      <p class="small">📡 The radar says <b>Cold</b>, <b>Cool</b>, <b>Warm</b> or <b>HOT!</b> as you get closer to a crystal. Needs a keyboard and mouse. Your world saves by itself.</p>
+      <a class="back" href="../index.html">← Back to Wynn's games</a>
+    </div>
+  </section>
+
+  <!-- pause: shows when you press Esc -->
+  <section class="overlay hidden" id="pause-screen">
+    <div class="card">
+      <h1>PAUSED</h1>
+      <p class="lead">Your world is saved. Take a break!</p>
+      <div class="buttons">
+        <button class="big" id="resume">▶ Keep playing</button>
+        <button class="big ghost" id="pause-new-world">🌍 New world</button>
+      </div>
+      <p class="small"><kbd>M</kbd> turns the sound on and off.</p>
+      <a class="back" href="../index.html">← Back to Wynn's games</a>
+    </div>
+  </section>
+
+  <!-- you found every crystal -->
+  <section class="overlay hidden" id="win-screen">
+    <div class="card">
+      <div class="dragon">🥚➡️🐉</div>
+      <h1>EGG<span>HATCHED!</span></h1>
+      <p class="lead" id="win-text"></p>
+      <div class="buttons">
+        <button class="big" id="keep-building">🧱 Keep building</button>
+        <button class="big ghost" id="win-new-world">🌍 New world, new crystals</button>
+      </div>
+      <a class="back" href="../index.html">← Back to Wynn's games</a>
+    </div>
+  </section>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
