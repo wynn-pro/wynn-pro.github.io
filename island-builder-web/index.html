@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <!-- ask the browser to check for a new page every time, so new versions show up right away -->
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Island Builder</title>
+  <meta name="description" content="Grow a tiny camp on a desert island into a busy town, and build the Great Lighthouse.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;700;800&display=swap">
+  <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
+  <link rel="stylesheet" href="style.css?v=1.00.0">
+</head>
+<body class="in-menu">
+  <canvas id="view" aria-label="Your island"></canvas>
+
+  <!-- the HUD: things that sit on top of the island while you play -->
+  <div class="hud">
+    <div class="hud-top">
+      <div class="pill" title="Islanders / homes">👥 <b id="pop">3</b><small>/<span id="homes">3</span></small></div>
+      <div class="pill" id="jobs-pill" title="Jobs filled. If there aren't enough islanders, buildings work slower.">💼 <b id="jobs">0/0</b></div>
+      <div class="pill" title="Food">🍞 <b id="food">0</b><small id="food-rate"></small></div>
+      <div class="pill" title="Wood">🪵 <b id="wood">0</b><small id="wood-rate"></small></div>
+      <div class="pill" title="Stone">🪨 <b id="stone">0</b><small id="stone-rate"></small></div>
+      <div class="pill" title="Gold">🪙 <b id="gold">0</b><small id="gold-rate"></small></div>
+      <div class="pill" title="Day"><span id="day-icon">☀️</span> Day <b id="day">1</b></div>
+      <div class="spacer"></div>
+      <div class="hud-buttons">
+        <button class="icon-btn" id="btn-zoom-out" aria-label="Zoom out">➖</button>
+        <button class="icon-btn" id="btn-zoom-in" aria-label="Zoom in">➕</button>
+        <button class="icon-btn" id="btn-sound" aria-label="Sound on or off">🔊</button>
+        <button class="icon-btn" id="btn-pause" aria-label="Pause">⏸</button>
+      </div>
+    </div>
+    <div class="quest">
+      <div class="quest-label">🎯 <span id="quest-step">Goal 1</span></div>
+      <div id="quest-text"></div>
+      <div class="quest-reward" id="quest-reward"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="bottom">
+      <div class="tool-info hidden" id="tool-info"></div>
+      <div class="toolbar" id="toolbar"></div>
+    </div>
+  </div>
+
+  <!-- title screen -->
+  <section class="overlay" id="title-screen">
+    <div class="card">
+      <div class="hero">🏝️🛖🗼</div>
+      <h1>ISLAND <span>BUILDER</span></h1>
+      <p class="lead">You and 2 friends just landed on a wild island with a tent and a campfire.
+        Build homes, farms and docks, raise new land from the sea, and grow your camp into a town
+        big enough for the <b>Great Lighthouse</b>!</p>
+      <div class="keys">
+        <div><b>Click</b> a building below, then click the island</div>
+        <div><b>Drag</b> to move around, <b>wheel</b> to zoom</div>
+        <div><kbd>1</kbd>–<kbd>9</kbd> buildings, <kbd>R</kbd> <kbd>T</kbd> <kbd>C</kbd> tools</div>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows move</div>
+        <div><kbd>Esc</kbd> stop building / pause</div>
+        <div><kbd>M</kbd> sound on and off</div>
+      </div>
+      <div class="buttons">
+        <button class="big" id="btn-continue">▶ Continue</button>
+        <button class="big" id="btn-new">🏝️ New island</button>
+      </div>
+      <p class="small">Every island is different. Watch out for bottles floating near the beach. Click them for a present!</p>
+      <a class="back" href="../index.html">← Back to Wynn's games</a>
+    </div>
+  </section>
+
+  <!-- pause -->
+  <section class="overlay hidden" id="pause-screen">
+    <div class="card">
+      <h1>PAUSED</h1>
+      <p class="lead">Your island is saved.</p>
+      <div class="buttons">
+        <button class="big" id="btn-resume">▶ Keep playing</button>
+        <button class="big ghost" id="btn-pause-title">🏠 Title screen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- you built the Great Lighthouse -->
+  <section class="overlay hidden" id="win-screen">
+    <div class="card">
+      <div class="hero">🗼🎉🏝️</div>
+      <h1>YOU <span>DID IT!</span></h1>
+      <p class="lead" id="win-text"></p>
+      <div class="buttons">
+        <button class="big" id="btn-keep">🛠️ Keep building</button>
+        <button class="big ghost" id="btn-win-new">🏝️ New island</button>
+      </div>
+      <a class="back" href="../index.html">← Back to Wynn's games</a>
+    </div>
+  </section>
+
+  <script src="game.js?v=1.00.0"></script>
+</body>
+</html>
