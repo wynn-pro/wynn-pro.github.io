@@ -1,0 +1,157 @@
+/* Star Snackers: the game fills the window, and the HUD and menus float on top of it */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #07041a;
+  color: #fff;
+  font-family: Nunito, system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+.hud {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+}
+body.in-menu .hud { display: none; }
+.spacer { flex: 1; }
+
+.pill {
+  background: rgba(30, 14, 70, 0.62);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 3px 10px;
+  font-weight: 800;
+  font-size: 1rem;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.pill b { font-family: "Lilita One", sans-serif; font-weight: 400; letter-spacing: 0.5px; }
+.pill small { font-size: 0.75rem; margin-left: 2px; opacity: 0.8; }
+.pill.hot { border-color: #ffb03b; background: rgba(140, 60, 0, 0.75); }
+
+.icon-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  width: 38px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(30, 14, 70, 0.62);
+  color: #fff;
+  font-size: 1rem;
+  padding: 0;
+}
+.icon-btn:hover { background: rgba(70, 40, 140, 0.8); }
+
+@media (max-width: 640px) {
+  .pill { font-size: 0.85rem; padding: 2px 7px; }
+  .pill small { display: none; }
+}
+
+/* ---------- menus ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 4, 30, 0.5);
+  overflow-y: auto;
+}
+
+.card {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 26px 26px 22px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #4b2a9e, #2a1767);
+  border: 4px solid #ffd27a;
+  box-shadow: 0 10px 0 #170b3d, 0 20px 50px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.hero { font-size: 2.6rem; line-height: 1; margin-bottom: 4px; }
+
+h1 {
+  margin: 0 0 10px;
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  letter-spacing: 1px;
+  font-size: clamp(2.2rem, 8vw, 3.4rem);
+  color: #fff;
+  text-shadow: 0 4px 0 #170b3d;
+}
+h1 span { color: #ffd34d; }
+
+.lead { font-size: 1.08rem; line-height: 1.45; margin: 0 0 14px; }
+.lead b { color: #ffe36b; }
+.small { font-size: 0.9rem; opacity: 0.9; line-height: 1.4; margin: 12px 0 0; }
+.small:empty { display: none; }
+
+.keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  text-align: left;
+}
+@media (max-width: 480px) { .keys { grid-template-columns: 1fr; } }
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  margin-right: 2px;
+  border-radius: 6px;
+  background: #fff;
+  color: #2a1767;
+  font: 800 0.85rem Nunito, sans-serif;
+  text-align: center;
+  box-shadow: 0 2px 0 #a99ad6;
+}
+
+.buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+button.big {
+  cursor: pointer;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 14px;
+  background: #ff8a2a;
+  color: #fff;
+  font: 400 1.3rem "Lilita One", sans-serif;
+  letter-spacing: 0.5px;
+  box-shadow: 0 5px 0 #b3520c;
+  transition: transform 0.08s;
+}
+button.big:hover { transform: translateY(-2px); }
+button.big:active { transform: translateY(3px); box-shadow: 0 2px 0 #b3520c; }
+button.big.ghost { background: #5b3dbb; box-shadow: 0 5px 0 #170b3d; }
+
+.back { display: inline-block; margin-top: 14px; color: #e3d9ff; font-weight: 700; }
