@@ -228,6 +228,56 @@
     }
     .btn-play { background: var(--blue); color: var(--white); box-shadow: 0 6px 0 var(--blue-dark); text-align: center; }
 
+    /* Jump links to each game type */
+    .vault-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 44px; }
+    .vault-nav .chip { text-decoration: none; font-family: 'Fredoka', sans-serif; transition: transform 0.15s; }
+    .vault-nav .chip:hover { background: var(--blue); color: var(--white); transform: translateY(-2px); }
+
+    .group { margin-bottom: 60px; scroll-margin-top: 90px; }
+    .group:last-child { margin-bottom: 0; }
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+      color: var(--ink);
+      padding-bottom: 8px;
+      border-bottom: 4px dashed var(--blue);
+      margin-bottom: 8px;
+    }
+    .group-title span {
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 3px 12px;
+      border-radius: 999px;
+      background: var(--sky);
+      color: var(--blue-dark);
+    }
+    .group-sub { opacity: 0.8; margin-bottom: 24px; }
+
+    /* Wynn's favourites */
+    .favourites {
+      background: linear-gradient(135deg, #fff6cc, #ffe27a);
+      border: 4px solid var(--ink);
+      border-radius: 32px;
+      padding: 28px;
+    }
+    .favourites .group-title { border-bottom-color: var(--orange); }
+    .game.featured { background: var(--white); }
+    .ribbon {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--yellow);
+      border: 3px solid var(--ink);
+      transform: rotate(-4deg);
+    }
+
     .mystery .game-art {
       background: repeating-linear-gradient(45deg, #1b2a4a, #1b2a4a 20px, #243659 20px, #243659 40px);
       display: flex;
@@ -291,6 +341,7 @@
       section { padding: 50px 16px; }
       .about-card { padding: 24px; }
       .hero-photo { max-width: 320px; margin: 0 auto; }
+      .favourites { padding: 18px 14px; border-radius: 24px; }
     }
   </style>
 </head>
@@ -386,7 +437,7 @@
           <img class="hero-photo" src="images/wynn.jpg" alt="Wynn in an explorer suit and bubble helmet, deep under the sea">
           <div class="stats">
             <div class="stat"><b>9</b>years old</div>
-            <div class="stat"><b>19</b>games made</div>
+            <div class="stat"><b>20</b>games made</div>
             <div class="stat"><b>2</b>coding languages</div>
             <div class="stat"><b>∞</b>ideas</div>
           </div>
@@ -418,974 +469,1040 @@
       <h2 class="section-title">The Game Vault</h2>
       <p class="section-sub">Click a game to play it right now in your browser!</p>
 
-      <div class="games">
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#7cc8ff"/>
-              <circle cx="270" cy="40" r="22" fill="#ffd23f"/>
-              <rect y="150" width="320" height="40" fill="#2ed47a"/>
-              <!-- castle -->
-              <rect x="30" y="70" width="90" height="80" fill="#9aa7bd" stroke="#12223b" stroke-width="3"/>
-              <rect x="20" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
-              <rect x="100" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
-              <rect x="62" y="110" width="26" height="40" rx="13" fill="#12223b"/>
-              <line x1="115" y1="50" x2="115" y2="22" stroke="#12223b" stroke-width="3"/>
-              <polygon points="115,22 140,30 115,38" fill="#ff5d8f"/>
-              <!-- enemies -->
-              <rect x="230" y="128" width="40" height="22" rx="4" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
-              <rect x="244" y="118" width="18" height="12" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
-              <line x1="244" y1="124" x2="222" y2="124" stroke="#12223b" stroke-width="4"/>
-              <circle cx="295" cy="132" r="7" fill="#ff8c42" stroke="#12223b" stroke-width="2"/>
-              <line x1="295" y1="139" x2="295" y2="150" stroke="#12223b" stroke-width="3"/>
-              <!-- arrow -->
-              <path d="M140 80 Q180 50 215 110" fill="none" stroke="#12223b" stroke-width="2" stroke-dasharray="5 5"/>
-              <polygon points="215,110 206,104 214,100" fill="#12223b"/>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏰 Castle Defense</h3>
-            <p>
-              Waves of soldiers, armored cars, heavy tanks and a GIANT boss are coming for your castle!
-              Hire archers, snipers and a giant Mech, then watch real physics send enemies flying.
-            </p>
-            <div class="badges">
-              <span class="badge">Strategy</span>
-              <span class="badge">Boss fights</span>
-              <span class="badge">Online leaderboard</span>
-            </div>
-            <a class="btn btn-play" href="castle-defense-web/index.html">▶ Play Castle Defense</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#120a2e"/>
-              <circle cx="30" cy="25" r="2" fill="#fff"/>
-              <circle cx="290" cy="160" r="2" fill="#fff"/>
-              <circle cx="250" cy="30" r="1.5" fill="#fff"/>
-              <circle cx="60" cy="150" r="1.5" fill="#fff"/>
-              <rect x="105" y="15" width="110" height="160" fill="none" stroke="#36b3ff" stroke-width="3"/>
-              <g stroke="#120a2e" stroke-width="2">
-                <rect x="105" y="155" width="20" height="20" fill="#ff5d8f"/>
-                <rect x="125" y="155" width="20" height="20" fill="#ff5d8f"/>
-                <rect x="145" y="155" width="20" height="20" fill="#2ed47a"/>
-                <rect x="165" y="155" width="20" height="20" fill="#ffd23f"/>
-                <rect x="185" y="155" width="20" height="20" fill="#0a84ff"/>
-                <rect x="105" y="135" width="20" height="20" fill="#ff5d8f"/>
-                <rect x="165" y="135" width="20" height="20" fill="#ffd23f"/>
-                <rect x="185" y="135" width="20" height="20" fill="#ffd23f"/>
-                <rect x="145" y="55" width="20" height="20" fill="#36b3ff"/>
-                <rect x="145" y="75" width="20" height="20" fill="#36b3ff"/>
-                <rect x="125" y="75" width="20" height="20" fill="#36b3ff"/>
-                <rect x="165" y="75" width="20" height="20" fill="#36b3ff"/>
-              </g>
-              <!-- gravity flip arrows -->
-              <g fill="#ffd23f">
-                <polygon points="60,80 75,100 45,100"/>
-                <polygon points="60,130 75,110 45,110"/>
-                <polygon points="260,80 275,100 245,100"/>
-                <polygon points="260,130 275,110 245,110"/>
-              </g>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🌌 Neon Flip</h3>
-            <p>
-              A block-stacking game in outer space with a crazy twist: gravity can FLIP to any of the
-              4 sides of the board! Can you survive the boss on Hard mode?
-            </p>
-            <div class="badges">
-              <span class="badge">Puzzle</span>
-              <span class="badge">Gravity flip</span>
-              <span class="badge">Easy · Medium · Hard</span>
-            </div>
-            <a class="btn btn-play" href="neon-flip/index.html">▶ Play Neon Flip</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#1d3556"/>
-              <rect y="130" width="320" height="60" fill="#e6f0f8"/>
-              <ellipse cx="160" cy="140" rx="110" ry="30" fill="#ffab4a" opacity="0.35"/>
-              <!-- beacon -->
-              <polygon points="145,140 152,80 168,80 175,140" fill="#9aa7bd" stroke="#12223b" stroke-width="3"/>
-              <rect x="146" y="72" width="28" height="9" fill="#4c5563" stroke="#12223b" stroke-width="3"/>
-              <path d="M148 72 Q150 45 160 30 Q170 45 172 72 Z" fill="#ff8c42" stroke="#12223b" stroke-width="3"/>
-              <path d="M155 72 Q158 58 160 50 Q162 58 165 72 Z" fill="#ffd23f"/>
-              <!-- huts -->
-              <rect x="60" y="118" width="44" height="26" fill="#8a5a3c" stroke="#12223b" stroke-width="3"/>
-              <polygon points="54,120 82,98 110,120" fill="#f4f8fb" stroke="#12223b" stroke-width="3"/>
-              <rect x="70" y="124" width="8" height="7" fill="#ffd23f"/>
-              <rect x="216" y="118" width="44" height="26" fill="#8a5a3c" stroke="#12223b" stroke-width="3"/>
-              <polygon points="210,120 238,98 266,120" fill="#f4f8fb" stroke="#12223b" stroke-width="3"/>
-              <rect x="244" y="124" width="8" height="7" fill="#ffd23f"/>
-              <!-- wolf eyes in the dark -->
-              <circle cx="20" cy="110" r="2.5" fill="#ffd23f"/>
-              <circle cx="28" cy="110" r="2.5" fill="#ffd23f"/>
-              <circle cx="292" cy="96" r="2.5" fill="#ffd23f"/>
-              <circle cx="300" cy="96" r="2.5" fill="#ffd23f"/>
-              <!-- snow -->
-              <g fill="#fff">
-                <circle cx="40" cy="30" r="2"/><circle cx="90" cy="60" r="2"/><circle cx="230" cy="40" r="2"/>
-                <circle cx="280" cy="20" r="2"/><circle cx="200" cy="80" r="1.5"/><circle cx="120" cy="20" r="1.5"/>
-                <circle cx="300" cy="60" r="1.5"/><circle cx="20" cy="70" r="1.5"/>
-              </g>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>❄️ Frostfall</h3>
-            <p>
-              The whole world has frozen! Keep the beacon burning, build shelters, dig coal and
-              fight off hungry wolves. Can your town survive 30 days of deadly cold?
-            </p>
-            <div class="badges">
-              <span class="badge">Survival</span>
-              <span class="badge">Town building</span>
-              <span class="badge">Easy · Medium · Hard</span>
-            </div>
-            <a class="btn btn-play" href="frostfall-web/index.html">▶ Play Frostfall</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="70" fill="#8fd6f2"/>
-              <circle cx="260" cy="30" r="16" fill="#ffd75e"/>
-              <rect y="70" width="320" height="120" fill="#1d78a0"/>
-              <rect y="140" width="320" height="50" fill="#0b2c48"/>
-              <!-- boat and angler -->
-              <rect x="50" y="34" width="12" height="18" fill="#ff7a4a" stroke="#12223b" stroke-width="2"/>
-              <circle cx="56" cy="28" r="7" fill="#ffd9b0" stroke="#12223b" stroke-width="2"/>
-              <polygon points="20,52 100,52 88,72 32,72" fill="#a0603a" stroke="#12223b" stroke-width="3"/>
-              <path d="M62 44 Q100 10 130 18" stroke="#6b4a2f" stroke-width="3" fill="none"/>
-              <!-- line down to a hooked fish -->
-              <path d="M130 18 Q150 80 190 118" stroke="#fff" stroke-width="1.5" fill="none"/>
-              <ellipse cx="214" cy="120" rx="24" ry="11" fill="#ff6f61" stroke="#12223b" stroke-width="3"/>
-              <polygon points="238,120 254,108 252,132" fill="#c8443a" stroke="#12223b" stroke-width="3"/>
-              <circle cx="200" cy="117" r="2.5" fill="#12223b"/>
-              <!-- small fish and bubbles -->
-              <ellipse cx="80" cy="110" rx="12" ry="6" fill="#ffcf5a"/>
-              <polygon points="92,110 100,104 100,116" fill="#ff8c42"/>
-              <ellipse cx="270" cy="165" rx="16" ry="7" fill="#3a3d66"/>
-              <circle cx="286" cy="152" r="3" fill="#fff3a0"/>
-              <g fill="none" stroke="#fff" stroke-width="1.5" opacity="0.7">
-                <circle cx="150" cy="100" r="3"/><circle cx="156" cy="88" r="2"/><circle cx="60" cy="96" r="2"/>
-              </g>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🎣 Tiny Tides</h3>
-            <p>
-              Cast from your little boat and fight the fish on the line, but don't let it snap!
-              Dive deeper, buy better gear and hunt the Old Gulper that only comes out at night.
-            </p>
-            <div class="badges">
-              <span class="badge">Fishing</span>
-              <span class="badge">Collecting</span>
-              <span class="badge">12 fish to find</span>
-            </div>
-            <a class="btn btn-play" href="tiny-tides-web/index.html">▶ Play Tiny Tides</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#ffcf9a"/>
-              <circle cx="230" cy="50" r="20" fill="#fff5c8"/>
-              <circle cx="90" cy="190" r="90" fill="#c98b8f"/>
-              <circle cx="260" cy="200" r="80" fill="#a56f80"/>
-              <!-- two cliffs -->
-              <path d="M0 120 L70 120 Q95 120 110 175 L210 175 Q225 120 250 120 L320 120 L320 190 L0 190 Z" fill="#7a5a44"/>
-              <path d="M0 120 L70 120 Q95 120 110 175 L210 175 Q225 120 250 120 L320 120" stroke="#6fbf5a" stroke-width="5" fill="none"/>
-              <!-- left archer drawing a bow -->
-              <g stroke-linecap="round" stroke="#4fc3f7" stroke-width="5">
-                <line x1="40" y1="92" x2="40" y2="106"/><line x1="40" y1="106" x2="34" y2="118"/><line x1="40" y1="106" x2="46" y2="118"/>
-                <line x1="40" y1="92" x2="56" y2="86"/><line x1="40" y1="92" x2="44" y2="88"/>
-              </g>
-              <circle cx="40" cy="83" r="7" fill="#ffd9b0" stroke="#2a1f2f" stroke-width="2"/>
-              <rect x="33" y="78" width="14" height="3" fill="#e53935"/>
-              <path d="M54 72 Q66 86 58 100" stroke="#8d5a2b" stroke-width="3" fill="none"/>
-              <!-- arrow in the air -->
-              <path d="M70 80 Q160 10 236 92" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/>
-              <line x1="222" y1="78" x2="240" y2="96" stroke="#5d4037" stroke-width="2.5"/>
-              <!-- floppy rival falling over -->
-              <g stroke-linecap="round" stroke="#9ccc65" stroke-width="5">
-                <line x1="270" y1="108" x2="285" y2="114"/><line x1="285" y1="114" x2="292" y2="104"/><line x1="285" y1="114" x2="300" y2="118"/>
-                <line x1="270" y1="108" x2="262" y2="96"/><line x1="270" y1="108" x2="276" y2="96"/>
-              </g>
-              <circle cx="262" cy="110" r="7" fill="#ffd9b0" stroke="#2a1f2f" stroke-width="2"/>
-              <text x="250" y="70" font-family="Impact, sans-serif" font-size="18" fill="#ffcf5a" stroke="#2a1f2f" stroke-width="1">BONK!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏹 Wobblebow</h3>
-            <p>
-              Floppy ragdoll archers take turns shooting across a windy valley. Aim for the head,
-              watch the wind and beat 8 rivals, or challenge a friend on the same computer!
-            </p>
-            <div class="badges">
-              <span class="badge">Archery</span>
-              <span class="badge">Ragdoll physics</span>
-              <span class="badge">2 players</span>
-            </div>
-            <a class="btn btn-play" href="wobblebow-web/index.html">▶ Play Wobblebow</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#2a2238"/>
-              <!-- round window with the moon -->
-              <circle cx="160" cy="80" r="62" fill="#2d4272" stroke="#3a2618" stroke-width="8"/>
-              <circle cx="182" cy="62" r="18" fill="#fff3c4"/>
-              <rect y="150" width="320" height="40" fill="#6b4428"/>
-              <!-- a log cut in half, flying apart -->
-              <g transform="rotate(-20 70 95)">
-                <path d="M70 61 A34 34 0 0 0 70 129 Z" fill="#e2b07a" stroke="#2a1d14" stroke-width="3"/>
-              </g>
-              <g transform="rotate(20 90 95)">
-                <path d="M90 61 A34 34 0 0 1 90 129 Z" fill="#e2b07a" stroke="#2a1d14" stroke-width="3"/>
-              </g>
-              <!-- bamboo sliced through -->
-              <rect x="240" y="40" width="16" height="44" fill="#6fbf4f" stroke="#2a1d14" stroke-width="3" transform="rotate(25 248 62)"/>
-              <rect x="252" y="96" width="16" height="44" fill="#6fbf4f" stroke="#2a1d14" stroke-width="3" transform="rotate(25 260 118)"/>
-              <!-- a dragon egg, don't cut it! -->
-              <ellipse cx="165" cy="160" rx="14" ry="18" fill="#f1e4ff" stroke="#2a1d14" stroke-width="3"/>
-              <circle cx="160" cy="154" r="3.5" fill="#a46be0"/><circle cx="170" cy="164" r="4" fill="#a46be0"/>
-              <!-- the blade swoosh -->
-              <path d="M20 150 Q140 70 300 30" stroke="#a0dcff" stroke-width="9" fill="none" stroke-linecap="round" opacity="0.5"/>
-              <path d="M20 150 Q140 70 300 30" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
-              <text x="200" y="182" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#2a1d14" stroke-width="1">PERFECT!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🔪 Slice Master</h3>
-            <p>
-              The dojo throws logs, lanterns and iron blocks in the air. Swipe to slice them right
-              down the middle and earn all 8 belts, but never cut a dragon egg!
-            </p>
-            <div class="badges">
-              <span class="badge">Swipe to slice</span>
-              <span class="badge">8 belts</span>
-              <span class="badge">Works on tablets</span>
-            </div>
-            <a class="btn btn-play" href="slice-master-web/index.html">▶ Play Slice Master</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#87c7fa"/>
-              <!-- blocky hills: grass on top, dirt below -->
-              <g stroke="#2a1d14" stroke-width="2">
-                <rect x="0" y="100" width="40" height="40" fill="#5ca63c"/><rect x="40" y="100" width="40" height="40" fill="#5ca63c"/>
-                <rect x="80" y="60" width="40" height="40" fill="#5ca63c"/><rect x="80" y="100" width="40" height="40" fill="#86603f"/>
-                <rect x="120" y="100" width="40" height="40" fill="#5ca63c"/><rect x="160" y="100" width="40" height="40" fill="#5ca63c"/>
-                <rect x="200" y="100" width="40" height="40" fill="#5ca63c"/><rect x="280" y="100" width="40" height="40" fill="#5ca63c"/>
-                <rect x="0" y="140" width="320" height="50" fill="#808084"/>
-                <!-- a dug hole leading down to a dragon crystal -->
-                <rect x="240" y="100" width="40" height="40" fill="#5e6f8a"/>
-                <rect x="240" y="140" width="40" height="40" fill="#463a5c"/>
-                <!-- a tree -->
-                <rect x="20" y="40" width="20" height="60" fill="#6c5032"/>
-                <rect x="0" y="10" width="60" height="40" fill="#38842f"/>
-              </g>
-              <polygon points="260,146 272,160 260,174 248,160" fill="#f08cff" stroke="#fff" stroke-width="2"/>
-              <!-- the outline around the block you're pointing at -->
-              <rect x="160" y="60" width="40" height="40" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="6 4"/>
-              <text x="140" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#2a1d14" stroke-width="1">💎 3 / 5</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🐉 Dragon Blocks</h3>
-            <p>
-              A whole 3D world made of blocks. Dig, build anything you like, and follow the radar
-              to the 5 Dragon Crystals buried deep underground so the dragon egg can hatch.
-            </p>
-            <div class="badges">
-              <span class="badge">3D world</span>
-              <span class="badge">Dig &amp; build</span>
-              <span class="badge">Saves your world</span>
-            </div>
-            <a class="btn btn-play" href="dragon-blocks-web/index.html">▶ Play Dragon Blocks</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#7cc8ff"/>
-              <ellipse cx="70" cy="160" rx="90" ry="70" fill="#9be08a"/>
-              <ellipse cx="250" cy="165" rx="80" ry="60" fill="#9be08a"/>
-              <!-- grassy ground with a gap -->
-              <rect x="0" y="150" width="190" height="40" fill="#b06c34"/>
-              <rect x="0" y="150" width="190" height="8" fill="#52c447"/>
-              <rect x="230" y="150" width="90" height="40" fill="#b06c34"/>
-              <rect x="230" y="150" width="90" height="8" fill="#52c447"/>
-              <!-- gem boxes -->
-              <g stroke="#b9791a" stroke-width="2">
-                <rect x="90" y="70" width="22" height="22" fill="#f5b82e"/>
-                <rect x="112" y="70" width="22" height="22" fill="#c8603a"/>
-                <rect x="134" y="70" width="22" height="22" fill="#f5b82e"/>
-              </g>
-              <polygon points="101,74 107,81 101,88 95,81" fill="#9ff3ff"/>
-              <polygon points="145,74 151,81 145,88 139,81" fill="#9ff3ff"/>
-              <!-- coins -->
-              <ellipse cx="205" cy="105" rx="5" ry="8" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
-              <ellipse cx="225" cy="95" rx="5" ry="8" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
-              <!-- a beetle -->
-              <path d="M150 150 a12 14 0 0 1 24 0 z" fill="#6b3fa0"/>
-              <circle cx="156" cy="143" r="2.5" fill="#fff"/><circle cx="162" cy="143" r="2.5" fill="#fff"/>
-              <!-- the bell -->
-              <rect x="289" y="50" width="3" height="100" fill="#e6e9f0"/>
-              <path d="M280 62 q0 -14 10.5 -14 q10.5 0 10.5 14 z" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
-              <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🔔 20 LEVELS</text>
-              <!-- Pip jumping -->
-              <text x="40" y="128" font-size="38">🦊</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🦊 Pip's Quest</h3>
-            <p>
-              Run, jump and stomp through 20 levels in 5 worlds, from sunny meadows to a lava volcano.
-              Bonk gem boxes, throw sparks, and beat Grumbo the Rock Beetle King to ring the Sun Bells.
-            </p>
-            <div class="badges">
-              <span class="badge">20 levels</span>
-              <span class="badge">Boss fights</span>
-              <span class="badge">Phone buttons</span>
-            </div>
-            <a class="btn btn-play" href="pip-quest-web/index.html">▶ Play Pip's Quest</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#8fd0f0"/>
-              <!-- paper sun and hills -->
-              <circle cx="260" cy="40" r="22" fill="#ffd447" stroke="#fffaf0" stroke-width="4"/>
-              <path d="M0 110 Q80 70 160 100 T320 90 V190 H0 Z" fill="#9ccf8a" stroke="#fffaf0" stroke-width="4"/>
-              <!-- the ground: grass, dirt and stone -->
-              <rect x="0" y="130" width="320" height="10" fill="#6fbf4f"/>
-              <rect x="0" y="140" width="320" height="22" fill="#8a5a36"/>
-              <rect x="0" y="162" width="320" height="28" fill="#9a968f"/>
-              <!-- a dug-out tunnel with a torch and gold -->
-              <rect x="190" y="140" width="66" height="50" fill="#5e4a3a"/>
-              <rect x="206" y="160" width="4" height="12" fill="#8b5a2b"/>
-              <ellipse cx="208" cy="157" rx="4" ry="6" fill="#ff8a2b"/>
-              <rect x="262" y="166" width="20" height="20" fill="#8c8880"/>
-              <circle cx="268" cy="172" r="3" fill="#ffcc33"/><circle cx="276" cy="180" r="3" fill="#ffcc33"/>
-              <!-- a tree -->
-              <rect x="56" y="80" width="12" height="50" fill="#8b5a2b"/>
-              <rect x="34" y="52" width="56" height="36" fill="#3f8a3a" stroke="#fffaf0" stroke-width="3"/>
-              <!-- the paper kid -->
-              <g stroke="#fffaf0" stroke-width="2">
-                <rect x="132" y="117" width="5" height="13" fill="#3d5a80"/>
-                <rect x="139" y="117" width="5" height="13" fill="#3d5a80"/>
-                <rect x="131" y="102" width="14" height="16" fill="#e4572e"/>
-                <rect x="131" y="89" width="14" height="13" fill="#f2c9a0"/>
-              </g>
-              <rect x="131" y="89" width="14" height="4" fill="#3b2a1e"/>
-              <!-- an ink blot -->
-              <ellipse cx="100" cy="121" rx="12" ry="10" fill="#1c1a2b" stroke="#fffaf0" stroke-width="3"/>
-              <circle cx="96" cy="119" r="3" fill="#fff"/><circle cx="104" cy="119" r="3" fill="#fff"/>
-              <!-- the golden quill -->
-              <path d="M150 60 Q152 30 182 22 Q176 48 150 60 Z" fill="#ffcc33" stroke="#fffaf0" stroke-width="3"/>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>✂️ Paperland</h3>
-            <p>
-              A whole world cut out of paper! Dig for coal, iron and gold, build anything you like,
-              and beat the Ink Blots at night to craft the legendary Golden Quill.
-            </p>
-            <div class="badges">
-              <span class="badge">Dig &amp; build</span>
-              <span class="badge">Crafting</span>
-              <span class="badge">Saves your world</span>
-            </div>
-            <a class="btn btn-play" href="paperland-web/index.html">▶ Play Paperland</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#5fb8ff"/>
-              <!-- grass, then layers of dirt, clay and stone going down -->
-              <rect x="0" y="50" width="320" height="10" fill="#4cbb3f"/>
-              <rect x="0" y="60" width="320" height="40" fill="#9a6236"/>
-              <rect x="0" y="100" width="320" height="40" fill="#b5583a"/>
-              <rect x="0" y="140" width="320" height="50" fill="#7d7f88"/>
-              <!-- the dug shaft with a ladder -->
-              <rect x="140" y="50" width="30" height="110" fill="#26272d"/>
-              <g fill="#e0aa66">
-                <rect x="144" y="50" width="4" height="80"/><rect x="162" y="50" width="4" height="80"/>
-                <rect x="144" y="62" width="22" height="4"/><rect x="144" y="82" width="22" height="4"/>
-                <rect x="144" y="102" width="22" height="4"/><rect x="144" y="122" width="22" height="4"/>
-              </g>
-              <!-- ores -->
-              <g stroke="#1c1a1a" stroke-width="1">
-                <polygon points="60,72 68,80 60,88 52,80" fill="#262626"/>
-                <polygon points="230,78 238,86 230,94 222,86" fill="#e07a3a"/>
-                <polygon points="90,116 98,124 90,132 82,124" fill="#d6dee8"/>
-                <polygon points="250,118 258,126 250,134 242,126" fill="#ffc61a"/>
-                <polygon points="210,160 218,168 210,176 202,168" fill="#2fd67a"/>
-                <polygon points="60,160 70,170 60,180 50,170" fill="#ff2f55"/>
-              </g>
-              <!-- the miner, digging at the bottom of the shaft -->
-              <rect x="146" y="150" width="18" height="10" fill="#3a6fc4"/>
-              <rect x="146" y="140" width="18" height="10" fill="#d9452b"/>
-              <circle cx="155" cy="134" r="6" fill="#f2c49b"/>
-              <path d="M147 132 a8 8 0 0 1 16 0 z" fill="#ffcc1f"/>
-              <circle cx="160" cy="129" r="2" fill="#fffbe0"/>
-              <path d="M164 146 L182 136" stroke="#8b5a2b" stroke-width="3"/>
-              <path d="M176 128 Q186 134 184 146" stroke="#c0c4cc" stroke-width="4" fill="none"/>
-              <!-- the camp cabin -->
-              <rect x="20" y="22" width="50" height="28" fill="#8b5a2b"/>
-              <polygon points="14,22 45,6 76,22" fill="#c0392b"/>
-              <rect x="50" y="32" width="10" height="18" fill="#3d230f"/>
-              <text x="200" y="36" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">💎 150 m</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>⛏️ Pickaxe Miner</h3>
-            <p>
-              Dig deep into the mountain for coal, gold, rubies and diamonds. Sell your ore at camp,
-              upgrade your pickaxe, lamp and bag, and reach the Heart of the Mountain 150 m down.
-            </p>
-            <div class="badges">
-              <span class="badge">Dig &amp; upgrade</span>
-              <span class="badge">6 layers</span>
-              <span class="badge">Saves your mine</span>
-            </div>
-            <a class="btn btn-play" href="pickaxe-miner-web/index.html">▶ Play Pickaxe Miner</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#2273b8"/>
-              <!-- the island: shallow sea, sand, grass -->
-              <ellipse cx="160" cy="110" rx="150" ry="78" fill="#45ace0"/>
-              <ellipse cx="160" cy="108" rx="128" ry="62" fill="#f2dc9b"/>
-              <ellipse cx="156" cy="104" rx="108" ry="50" fill="#79c75a"/>
-              <!-- waves -->
-              <g stroke="#fff" stroke-width="2" fill="none" opacity="0.6">
-                <path d="M20 30 q6 -5 12 0"/><path d="M270 22 q6 -5 12 0"/><path d="M40 170 q6 -5 12 0"/><path d="M280 165 q6 -5 12 0"/>
-              </g>
-              <!-- forest -->
-              <g fill="#2f7d32">
-                <circle cx="80" cy="84" r="11"/><circle cx="98" cy="76" r="10"/><circle cx="90" cy="98" r="10"/>
-              </g>
-              <!-- rocks -->
-              <ellipse cx="226" cy="92" rx="12" ry="8" fill="#bdbab2"/><ellipse cx="240" cy="102" rx="9" ry="6" fill="#a3a09a"/>
-              <!-- hut -->
-              <rect x="120" y="96" width="22" height="16" fill="#b07a45"/>
-              <polygon points="115,98 131,82 147,98" fill="#e2b65a"/>
-              <!-- stone house -->
-              <rect x="152" y="104" width="26" height="18" fill="#d6d1c6"/>
-              <polygon points="148,105 165,90 182,105" fill="#c8553d"/>
-              <!-- farm -->
-              <rect x="186" y="112" width="30" height="20" fill="#a0703f"/>
-              <g stroke="#f4d860" stroke-width="2"><path d="M190 118 h22"/><path d="M190 124 h22"/><path d="M190 130 h22"/></g>
-              <!-- the Great Lighthouse -->
-              <polygon points="262,140 266,70 278,70 282,140" fill="#f4f1ea"/>
-              <polygon points="263,124 264,112 280,112 281,124" fill="#d64545"/>
-              <polygon points="265,96 266,84 278,84 279,96" fill="#d64545"/>
-              <rect x="265" y="60" width="14" height="10" fill="#ffe680" stroke="#3b3b4f" stroke-width="2"/>
-              <polygon points="263,60 272,50 281,60" fill="#d64545"/>
-              <polygon points="272,64 320,40 320,80" fill="#fff6a0" opacity="0.45"/>
-              <!-- a palm tree and a bottle -->
-              <path d="M58 132 q4 -12 2 -22" stroke="#9b6b3c" stroke-width="3" fill="none"/>
-              <g fill="#3e9a3a"><ellipse cx="54" cy="110" rx="8" ry="3" transform="rotate(-25 54 110)"/><ellipse cx="66" cy="110" rx="8" ry="3" transform="rotate(25 66 110)"/></g>
-              <rect x="22" y="150" width="14" height="7" rx="2" fill="#7fd7a8" transform="rotate(20 29 153)"/>
-              <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🏝️ BUILD IT!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏝️ Island Builder</h3>
-            <p>
-              Turn a tiny camp on a wild island into a busy town. Build homes, farms and docks,
-              raise new land from the sea, and build the Great Lighthouse.
-            </p>
-            <div class="badges">
-              <span class="badge">Town building</span>
-              <span class="badge">13 goals</span>
-              <span class="badge">Saves your island</span>
-            </div>
-            <a class="btn btn-play" href="island-builder-web/index.html">▶ Play Island Builder</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#fff7e8"/>
-              <!-- soft paint splashes -->
-              <circle cx="24" cy="24" r="40" fill="#ff8000" opacity="0.16"/>
-              <circle cx="300" cy="170" r="46" fill="#009e40" opacity="0.14"/>
-              <!-- the colour to make, and the bowl -->
-              <circle cx="92" cy="80" r="46" fill="#a6578f" stroke="#3b2a55" stroke-width="5"/>
-              <text x="160" y="94" font-family="Impact, sans-serif" font-size="36" fill="#3b2a55" opacity="0.5" text-anchor="middle">=</text>
-              <circle cx="228" cy="80" r="46" fill="#a6578f" stroke="#3b2a55" stroke-width="5"/>
-              <ellipse cx="212" cy="58" rx="12" ry="6" fill="#fff" opacity="0.45" transform="rotate(-30 212 58)"/>
-              <!-- a drop falling in -->
-              <path d="M228 6 q-8 12 0 16 q8 -4 0 -16 Z" fill="#fbfbf7" stroke="#3b2a55" stroke-width="2"/>
-              <!-- paint pots -->
-              <g stroke="#3b2a55" stroke-width="3">
-                <rect x="38" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="58" cy="158" r="12" fill="#ff0000"/>
-                <rect x="88" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="108" cy="158" r="12" fill="#ffff00"/>
-                <rect x="138" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="158" cy="158" r="12" fill="#195cbf"/>
-                <rect x="188" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="208" cy="158" r="12" fill="#fff"/>
-                <rect x="238" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="258" cy="158" r="12" fill="#191919"/>
-              </g>
-              <text x="160" y="128" font-family="Impact, sans-serif" font-size="16" fill="#ff5d8f" text-anchor="middle">★ ★ ★</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🎨 Colour Match</h3>
-            <p>
-              Mix drops of red, yellow, blue, white and black paint until your bowl matches the colour
-              you see. Earn 3 stars on every level, then race the clock in Colour Rush.
-            </p>
-            <div class="badges">
-              <span class="badge">Paint mixing</span>
-              <span class="badge">20 levels</span>
-              <span class="badge">Colour Rush</span>
-            </div>
-            <a class="btn btn-play" href="colour-match-web/index.html">▶ Play Colour Match</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#e9d7a8"/>
-              <!-- hedges -->
-              <g fill="#3f9a45">
-                <rect x="0" y="0" width="320" height="18"/><rect x="0" y="172" width="320" height="18"/>
-                <rect x="0" y="0" width="18" height="190"/><rect x="302" y="0" width="18" height="190"/>
-                <rect x="50" y="48" width="70" height="20" rx="8"/><rect x="200" y="48" width="70" height="20" rx="8"/>
-                <rect x="150" y="18" width="20" height="50" rx="8"/>
-                <rect x="50" y="122" width="70" height="20" rx="8"/><rect x="200" y="122" width="70" height="20" rx="8"/>
-                <rect x="120" y="86" width="80" height="20" rx="8"/>
-              </g>
-              <!-- berries -->
-              <g fill="#d6264f">
-                <circle cx="34" cy="34" r="4"/><circle cx="64" cy="34" r="4"/><circle cx="94" cy="34" r="4"/><circle cx="124" cy="34" r="4"/>
-                <circle cx="34" cy="64" r="4"/><circle cx="34" cy="94" r="4"/><circle cx="34" cy="124" r="4"/><circle cx="34" cy="154" r="4"/>
-                <circle cx="64" cy="154" r="4"/><circle cx="94" cy="154" r="4"/><circle cx="124" cy="154" r="4"/><circle cx="154" cy="154" r="4"/>
-                <circle cx="184" cy="154" r="4"/><circle cx="214" cy="154" r="4"/><circle cx="244" cy="154" r="4"/>
-                <circle cx="196" cy="34" r="4"/><circle cx="226" cy="34" r="4"/><circle cx="256" cy="34" r="4"/>
-              </g>
-              <!-- a mushroom -->
-              <rect x="281" y="152" width="8" height="10" fill="#f6ead4"/>
-              <path d="M273 154 a12 12 0 0 1 24 0 z" fill="#c93a3a"/>
-              <circle cx="280" cy="149" r="2.5" fill="#fff"/><circle cx="289" cy="147" r="2" fill="#fff"/>
-              <!-- Hazel the hedgehog -->
-              <g transform="translate(240 96)">
-                <polygon points="-22,0 -18,-10 -12,-6 -8,-16 -2,-8 4,-14 6,-4 0,12 -16,10" fill="#5b3a22"/>
-                <ellipse cx="-6" cy="0" rx="13" ry="11" fill="#7a5233"/>
-                <ellipse cx="8" cy="2" rx="9" ry="7" fill="#e9c99a"/>
-                <polygon points="14,-2 22,2 14,6" fill="#e9c99a"/>
-                <circle cx="22" cy="2" r="2.5" fill="#222"/><circle cx="10" cy="-1" r="1.6" fill="#222"/>
-              </g>
-              <!-- a fox -->
-              <g transform="translate(100 94)">
-                <ellipse cx="-24" cy="0" rx="12" ry="6" fill="#e8672c"/><circle cx="-33" cy="0" r="4" fill="#fff"/>
-                <ellipse cx="-4" cy="0" rx="13" ry="9" fill="#e8672c"/>
-                <polygon points="4,-6 2,-18 12,-8" fill="#a8431a"/><polygon points="4,6 2,18 12,8" fill="#a8431a"/>
-                <circle cx="10" cy="0" r="9" fill="#e8672c"/><polygon points="14,-6 26,0 14,6" fill="#e8672c"/>
-                <circle cx="26" cy="0" r="2" fill="#222"/><circle cx="12" cy="-4" r="2" fill="#fff"/><circle cx="12" cy="4" r="2" fill="#fff"/>
-              </g>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🦔 Hedgehog Hustle</h3>
-            <p>
-              Help Hazel the hedgehog eat every berry in the garden maze before the foxes catch her.
-              Munch a mushroom to curl into a spiky ball and send the foxes running home!
-            </p>
-            <div class="badges">
-              <span class="badge">Maze chase</span>
-              <span class="badge">5 gardens</span>
-              <span class="badge">Works on phones</span>
-            </div>
-            <a class="btn btn-play" href="hedgehog-hustle-web/index.html">▶ Play Hedgehog Hustle</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <defs>
-                <linearGradient id="ss-sky" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#0b0626"/><stop offset="1" stop-color="#2a1150"/>
-                </linearGradient>
-              </defs>
-              <rect width="320" height="190" fill="url(#ss-sky)"/>
-              <!-- stars -->
-              <g fill="#fff">
-                <circle cx="20" cy="20" r="1.2"/><circle cx="90" cy="40" r="1"/><circle cx="150" cy="14" r="1.4"/><circle cx="230" cy="30" r="1"/>
-                <circle cx="300" cy="60" r="1.3"/><circle cx="40" cy="110" r="1"/><circle cx="280" cy="120" r="1.2"/><circle cx="200" cy="90" r="1"/>
-              </g>
-              <!-- the moon ground and the cookie jar -->
-              <rect y="170" width="320" height="20" fill="#8d88a8"/>
-              <rect x="140" y="134" width="40" height="38" rx="8" fill="#c8ebff" fill-opacity="0.2" stroke="#dcf5ff" stroke-width="2"/>
-              <rect x="143" y="128" width="34" height="8" rx="3" fill="#e2574c"/>
-              <g fill="#d9a05b" stroke="#9b6630"><circle cx="152" cy="163" r="5"/><circle cx="166" cy="163" r="5"/><circle cx="159" cy="152" r="5"/></g>
-              <!-- the snackers -->
-              <g stroke-width="2">
-                <circle cx="70" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
-                <circle cx="110" cy="50" r="12" fill="#b679ff" stroke="#6a34b8"/>
-                <circle cx="150" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
-                <circle cx="190" cy="50" r="12" fill="#b679ff" stroke="#6a34b8"/>
-                <circle cx="230" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
-                <rect x="78" y="74" width="22" height="22" rx="5" fill="#4fb3ff" stroke="#1f6aa8"/>
-                <rect x="198" y="74" width="22" height="22" rx="5" fill="#4fb3ff" stroke="#1f6aa8"/>
-                <circle cx="250" cy="118" r="12" fill="#ffd84a" stroke="#b8901a"/>
-              </g>
-              <rect x="239" y="111" width="22" height="7" rx="3" fill="#26203a"/>
-              <g fill="#fff">
-                <circle cx="66" cy="47" r="3"/><circle cx="74" cy="47" r="3"/><circle cx="106" cy="47" r="3"/><circle cx="114" cy="47" r="3"/>
-                <circle cx="146" cy="47" r="3"/><circle cx="154" cy="47" r="3"/><circle cx="186" cy="47" r="3"/><circle cx="194" cy="47" r="3"/>
-                <circle cx="226" cy="47" r="3"/><circle cx="234" cy="47" r="3"/><circle cx="246" cy="114" r="2.5"/><circle cx="254" cy="114" r="2.5"/>
-              </g>
-              <circle cx="250" cy="134" r="5" fill="#d9a05b" stroke="#9b6630"/>
-              <!-- shots and the rocket -->
-              <rect x="108" y="98" width="4" height="12" rx="2" fill="#ffe066"/>
-              <rect x="108" y="122" width="4" height="12" rx="2" fill="#ffe066"/>
-              <polygon points="104,166 110,178 116,166" fill="#ff8a2a"/>
-              <polygon points="102,154 94,166 102,164" fill="#e2574c"/><polygon points="118,154 126,166 118,164" fill="#e2574c"/>
-              <path d="M110 138 q10 12 8 28 h-16 q-2 -16 8 -28z" fill="#f4f1ea" stroke="#3b2350" stroke-width="2"/>
-              <circle cx="110" cy="154" r="4" fill="#5fd0ff" stroke="#3b2350" stroke-width="1.5"/>
-              <text x="200" y="26" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🍪 SAVE IT!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🚀 Star Snackers</h3>
-            <p>
-              Hungry space blobs want the cookies from your moon bakery! Fly your rocket, zap the
-              snackers, catch power-ups, and beat King Cruncher.
-            </p>
-            <div class="badges">
-              <span class="badge">Space shooter</span>
-              <span class="badge">15 waves</span>
-              <span class="badge">3 bosses</span>
-            </div>
-            <a class="btn btn-play" href="star-snackers-web/index.html">▶ Play Star Snackers</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#f0d6b4"/>
-              <rect y="150" width="320" height="40" fill="#b47c4b"/>
-              <!-- shelf with pots -->
-              <rect x="14" y="70" width="80" height="6" fill="#a36a3c"/>
-              <path d="M24 70 q-4 -14 4 -22 h10 q8 8 4 22 z" fill="#3fa0a0"/>
-              <path d="M56 70 l-4 -16 h20 l-4 16 z" fill="#e2b23c"/>
-              <ellipse cx="82" cy="66" rx="10" ry="4" fill="#d63e38"/><rect x="74" y="62" width="16" height="8" fill="#d63e38"/>
-              <!-- the wheel -->
-              <ellipse cx="160" cy="158" rx="92" ry="18" fill="#3c4c59"/>
-              <ellipse cx="160" cy="148" rx="64" ry="12" fill="#b6c3cc"/>
-              <!-- the pot being thrown -->
-              <path d="M128 148 q-14 -26 4 -48 q8 -10 2 -26 h52 q-6 16 2 26 q18 22 4 48 z" fill="#a8603e"/>
-              <ellipse cx="160" cy="74" rx="26" ry="6" fill="#c97a52"/><ellipse cx="160" cy="74" rx="20" ry="4" fill="#5a2c18"/>
-              <g stroke="#7a3f24" stroke-width="2" opacity="0.5"><path d="M134 118 h52"/><path d="M130 132 h60"/></g>
-              <!-- hands -->
-              <rect x="94" y="104" width="30" height="16" rx="7" fill="#f3c29c"/>
-              <rect x="196" y="104" width="30" height="16" rx="7" fill="#f3c29c"/>
-              <!-- the kiln glowing -->
-              <path d="M240 150 v-52 q0 -22 30 -22 q30 0 30 22 v52 z" fill="#a84f30"/>
-              <rect x="254" y="100" width="32" height="26" fill="#ffb347"/>
-              <path d="M260 146 q4 -12 8 0 q4 -12 8 0 q4 -12 8 0" fill="#ff7b3a"/>
-              <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🏺 SPIN IT!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏺 Pottery Master</h3>
-            <p>
-              Spin the potter's wheel, shape the clay with your hands, paint it with glaze and fire
-              it in the kiln. Make 15 pots for your customers. The last one is the Queen's Royal Vase!
-            </p>
-            <div class="badges">
-              <span class="badge">Make &amp; create</span>
-              <span class="badge">15 orders</span>
-              <span class="badge">Saves your pots</span>
-            </div>
-            <a class="btn btn-play" href="pottery-master-web/index.html">▶ Play Pottery Master</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#7cc8f5"/>
-              <!-- far hills and the ground -->
-              <path d="M0 120 q60 -40 120 -10 t120 -6 t80 0 V190 H0 Z" fill="#9fe08a"/>
-              <path d="M0 150 q80 -20 160 0 t160 -4 V190 H0 Z" fill="#5fcf4a"/>
-              <path d="M0 158 q80 -20 160 0 t160 -4 V190 H0 Z" fill="#c98a4a"/>
-              <!-- a loop -->
-              <circle cx="232" cy="104" r="44" fill="none" stroke="#a96f36" stroke-width="12"/>
-              <circle cx="232" cy="104" r="38" fill="none" stroke="#5fcf4a" stroke-width="3"/>
-              <!-- glow seeds -->
-              <g fill="#ffd23f" stroke="#b8860b" stroke-width="1.5">
-                <ellipse cx="232" cy="74" rx="4" ry="6"/><ellipse cx="256" cy="86" rx="4" ry="6"/><ellipse cx="208" cy="86" rx="4" ry="6"/>
-                <ellipse cx="150" cy="96" rx="4" ry="6"/><ellipse cx="170" cy="88" rx="4" ry="6"/>
-              </g>
-              <!-- speed lines -->
-              <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8">
-                <path d="M30 110 h40"/><path d="M20 124 h56"/><path d="M36 138 h36"/>
-              </g>
-              <!-- Zipper the armadillo, rolling -->
-              <circle cx="100" cy="124" r="26" fill="#b85a14"/>
-              <circle cx="100" cy="124" r="23" fill="#f08a2c"/>
-              <g stroke="#b85a14" stroke-width="3" fill="none">
-                <path d="M88 104 q8 20 0 40"/><path d="M100 101 q8 23 0 46"/><path d="M112 104 q8 20 0 40"/>
-              </g>
-              <circle cx="116" cy="134" r="7" fill="#f2c38b"/>
-              <circle cx="88" cy="138" r="5" fill="#2fbf71"/>
-              <circle cx="92" cy="114" r="6" fill="#fff" opacity="0.4"/>
-              <text x="190" y="30" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">⚡ ZOOM!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏃 Zipper Dash</h3>
-            <p>
-              Zipper the armadillo is super fast! Run, roll and loop through Wavy Cave, Spooky Cave,
-              the Plains and the Jungle, and beat the boss of every zone.
-            </p>
-            <div class="badges">
-              <span class="badge">Speed platformer</span>
-              <span class="badge">12 levels</span>
-              <span class="badge">4 bosses</span>
-            </div>
-            <a class="btn btn-play" href="zipper-dash-web/index.html">▶ Play Zipper Dash</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#0d0f2a"/>
-              <!-- stars and a ringed planet -->
-              <g fill="#fff">
-                <circle cx="24" cy="22" r="1.5"/><circle cx="90" cy="14" r="1"/><circle cx="150" cy="30" r="1.5"/>
-                <circle cx="300" cy="120" r="1"/><circle cx="12" cy="150" r="1"/><circle cx="200" cy="12" r="1"/>
-              </g>
-              <circle cx="276" cy="40" r="20" fill="#ff8ad8"/>
-              <ellipse cx="276" cy="40" rx="34" ry="7" fill="none" stroke="#ffd1f1" stroke-width="3" transform="rotate(-15 276 40)"/>
-              <!-- the asteroid base floor -->
-              <rect x="40" y="70" width="230" height="100" rx="14" fill="#5d4f7c"/>
-              <rect x="56" y="84" width="198" height="72" rx="6" fill="#2f3960"/>
-              <g stroke="#252d4d" stroke-width="2">
-                <path d="M89 84 v72 M122 84 v72 M155 84 v72 M188 84 v72 M221 84 v72 M56 120 h198"/>
-              </g>
-              <!-- landing pads -->
-              <circle cx="237" cy="102" r="11" fill="none" stroke="#4ff0ff" stroke-width="3"/>
-              <circle cx="204" cy="138" r="11" fill="none" stroke="#4ff0ff" stroke-width="3"/>
-              <!-- crates: one already loaded (green), one being pushed -->
-              <rect x="192" y="126" width="24" height="24" rx="4" fill="#5be38a" stroke="#2a9c55" stroke-width="3"/>
-              <rect x="126" y="90" width="26" height="26" rx="4" fill="#f39a2b" stroke="#b8641a" stroke-width="3"/>
-              <path d="M130 94 l18 18 M148 94 l-18 18" stroke="#b8641a" stroke-width="2.5"/>
-              <!-- Cosmo the astronaut -->
-              <rect x="80" y="94" width="10" height="16" rx="3" fill="#9aa6c8"/>
-              <circle cx="104" cy="103" r="14" fill="#f4f6ff"/>
-              <ellipse cx="110" cy="101" rx="8" ry="6" fill="#4fc3ff"/>
-              <line x1="100" y1="90" x2="98" y2="82" stroke="#9aa6c8" stroke-width="2"/><circle cx="98" cy="81" r="3" fill="#ff5d73"/>
-              <text x="14" y="58" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">📦 PUSH IT!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🚀 Cosmo Crates</h3>
-            <p>
-              Help Cosmo the astronaut load the cargo! Push every crate onto a glowing landing pad,
-              but don't get one stuck in a corner. The puzzles never run out.
-            </p>
-            <div class="badges">
-              <span class="badge">Puzzle</span>
-              <span class="badge">Endless levels</span>
-              <span class="badge">3 stars to win</span>
-            </div>
-            <a class="btn btn-play" href="cosmo-crates-web/index.html">▶ Play Cosmo Crates</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#3a1450"/>
-              <!-- number blocks -->
-              <g font-family="Impact, sans-serif" font-size="20" fill="#fff" text-anchor="middle">
-                <rect x="40" y="14" width="40" height="40" rx="7" fill="#ffa94d"/><text x="60" y="41">12</text>
-                <rect x="86" y="14" width="40" height="40" rx="7" fill="#c77dff"/><text x="106" y="41">7</text>
-                <rect x="178" y="14" width="40" height="40" rx="7" fill="#ffe14d"/><text x="198" y="41">25</text>
-                <rect x="224" y="14" width="40" height="40" rx="7" fill="#ff6b9a"/><text x="244" y="41">3</text>
-                <rect x="132" y="60" width="40" height="40" rx="7" fill="#6ee08a"/><text x="152" y="87">9</text>
-                <rect x="224" y="60" width="40" height="40" rx="7" fill="#7fe3ff"/><text x="244" y="87">4</text>
-              </g>
-              <!-- a +1 ring -->
-              <circle cx="60" cy="80" r="11" fill="none" stroke="#9cff8a" stroke-width="3"/>
-              <text x="60" y="85" font-family="Impact, sans-serif" font-size="12" fill="#9cff8a" text-anchor="middle">+1</text>
-              <!-- the aim line and flying balls -->
-              <g fill="#fff">
-                <circle cx="150" cy="150" r="2.5"/><circle cx="140" cy="140" r="2.5"/><circle cx="130" cy="130" r="2.5"/><circle cx="120" cy="120" r="2.5"/>
-              </g>
-              <g fill="#fff6b0"><circle cx="104" cy="104" r="6"/><circle cx="196" cy="110" r="6"/><circle cx="172" cy="66" r="6"/></g>
-              <!-- red line -->
-              <path d="M0 164 H320" stroke="#ff4d4d" stroke-width="3" stroke-dasharray="10 8"/>
-              <!-- Blip the robot -->
-              <rect x="148" y="160" width="30" height="10" rx="4" fill="#5a6688" transform="rotate(-135 160 172)"/>
-              <path d="M144 176 a16 16 0 0 1 32 0 z" fill="#e9eefc"/>
-              <rect x="150" y="163" width="20" height="9" rx="4" fill="#1d2240"/>
-              <circle cx="156" cy="167.5" r="2" fill="#7fe3ff"/><circle cx="164" cy="167.5" r="2" fill="#7fe3ff"/>
-              <circle cx="160" cy="154" r="3" fill="#ff5fb4"/>
-              <text x="200" y="182" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#6b1f6b" stroke-width="1">💥 BLAST!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>💥 Block Blaster</h3>
-            <p>
-              Aim Blip's blaster and bounce a stream of energy balls to knock the number blocks down
-              to zero before they reach the red line. Beat 4 giant boss blocks!
-            </p>
-            <div class="badges">
-              <span class="badge">Aim &amp; bounce</span>
-              <span class="badge">20 levels</span>
-              <span class="badge">4 bosses</span>
-            </div>
-            <a class="btn btn-play" href="block-blaster-web/index.html">▶ Play Block Blaster</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#ffd6e8"/>
-              <!-- sprinkles -->
-              <g stroke-width="4" stroke-linecap="round">
-                <path d="M20 20 l8 4" stroke="#ffd23f"/><path d="M290 30 l6 -6" stroke="#5fe3b4"/>
-                <path d="M40 170 l8 -3" stroke="#6fb8ff"/><path d="M280 165 l-6 -6" stroke="#b98cff"/>
-                <path d="M160 18 l7 5" stroke="#ff6fa5"/>
-              </g>
-              <!-- the tray -->
-              <rect x="34" y="46" width="252" height="104" rx="18" fill="#b0622b"/>
-              <rect x="34" y="40" width="252" height="104" rx="18" fill="#e89a5a"/>
-              <g fill="#fff3dc">
-                <rect x="46" y="52" width="54" height="80" rx="10"/><rect x="108" y="52" width="54" height="80" rx="10" fill="#ffe6bd"/>
-                <rect x="170" y="52" width="54" height="80" rx="10"/><rect x="232" y="52" width="42" height="80" rx="10" fill="#ffe6bd"/>
-              </g>
-              <!-- the candy-cane pipe full of syrup -->
-              <path d="M73 92 H210 V70 H253" fill="none" stroke="#8a3a5c" stroke-width="26"/>
-              <path d="M73 92 H210 V70 H253" fill="none" stroke="#fff" stroke-width="20"/>
-              <path d="M73 92 H210 V70 H253" fill="none" stroke="#ff8ab3" stroke-width="20" stroke-dasharray="5 6"/>
-              <path d="M73 92 H210 V70 H253" fill="none" stroke="#ff3f7f" stroke-width="11"/>
-              <!-- the lollipop -->
-              <circle cx="73" cy="92" r="20" fill="#ff3f7f" stroke="#b5124d" stroke-width="3"/>
-              <path d="M73 92 m0 -3 a3 3 0 1 1 -3 3 a7 7 0 1 1 7 7 a11 11 0 1 1 -11 -11 a14 14 0 0 1 14 -2" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-              <!-- the cupcake -->
-              <path d="M240 82 h28 l-4 20 h-20 z" fill="#ffc2d8" stroke="#b5124d" stroke-width="2"/>
-              <ellipse cx="254" cy="80" rx="17" ry="7" fill="#ff3f7f" stroke="#b5124d" stroke-width="2"/>
-              <ellipse cx="254" cy="73" rx="12" ry="6" fill="#ff3f7f" stroke="#b5124d" stroke-width="2"/>
-              <circle cx="254" cy="64" r="4.5" fill="#e8263f"/>
-              <text x="160" y="178" font-family="Impact, sans-serif" font-size="18" fill="#ff3f7f" stroke="#7a1240" stroke-width="1" text-anchor="middle">🧁 YUM!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🍭 Sugar Pipes</h3>
-            <p>
-              Turn the candy-cane pipes so the syrup flows from the lollipops to every hungry cupcake.
-              Don't mix the flavours, beat the clock, and stop the Sour King!
-            </p>
-            <div class="badges">
-              <span class="badge">Puzzle</span>
-              <span class="badge">30 levels</span>
-              <span class="badge">Boss puzzle</span>
-            </div>
-            <a class="btn btn-play" href="sugar-pipes-web/index.html">▶ Play Sugar Pipes</a>
-          </div>
-        </article>
-
-        <article class="game">
-          <div class="game-art">
-            <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
-              <rect width="320" height="190" fill="#3fa8f0"/>
-              <rect y="70" width="320" height="10" fill="#2a8fd0"/>
-              <circle cx="250" cy="34" r="16" fill="#fff6b0"/>
-              <!-- sand and the road going off into the distance -->
-              <rect y="80" width="320" height="110" fill="#f4dc95"/>
-              <path d="M150 80 L170 80 L300 190 L20 190 Z" fill="#ff5a5a"/>
-              <path d="M152 80 L168 80 L278 190 L42 190 Z" fill="#8d93a3"/>
-              <path d="M159 80 h2 l6 110 h-14 Z" fill="#fff" opacity="0.8"/>
-              <!-- palm trees -->
-              <g stroke="#6e4220" stroke-width="5" stroke-linecap="round" fill="none">
-                <path d="M40 150 q-6 -40 6 -70"/><path d="M285 150 q8 -40 -4 -70"/>
-              </g>
-              <g fill="#2fae4a">
-                <ellipse cx="34" cy="78" rx="18" ry="5" transform="rotate(-20 34 78)"/><ellipse cx="58" cy="80" rx="18" ry="5" transform="rotate(20 58 80)"/>
-                <ellipse cx="270" cy="78" rx="18" ry="5" transform="rotate(-20 270 78)"/><ellipse cx="294" cy="80" rx="18" ry="5" transform="rotate(20 294 80)"/>
-              </g>
-              <!-- an item box -->
-              <rect x="196" y="98" width="20" height="20" rx="4" fill="#c46aff" stroke="#fff" stroke-width="2"/>
-              <text x="206" y="114" font-family="Impact, sans-serif" font-size="15" fill="#fff" text-anchor="middle">?</text>
-              <!-- Blorp the slime driving a blue kart, seen from behind -->
-              <path d="M126 140 q0 -34 34 -34 q34 0 34 34 Z" fill="#5fd36a" stroke="#2a7a34" stroke-width="3"/>
-              <rect x="108" y="150" width="20" height="26" rx="5" fill="#1d1d24"/>
-              <rect x="192" y="150" width="20" height="26" rx="5" fill="#1d1d24"/>
-              <path d="M126 140 h68 l10 36 h-88 Z" fill="#3a7bff" stroke="#1a1a22" stroke-width="3"/>
-              <rect x="148" y="154" width="24" height="11" rx="2" fill="#fff"/>
-              <text x="160" y="163" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#1a1a22" text-anchor="middle">5B</text>
-              <!-- boost flames -->
-              <ellipse cx="140" cy="184" rx="5" ry="8" fill="#ff8a2a"/><ellipse cx="180" cy="184" rx="5" ry="8" fill="#ff8a2a"/>
-              <text x="20" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">VROOM!</text>
-            </svg>
-          </div>
-          <div class="game-body">
-            <h3>🏎️ Speedway 5 Billion</h3>
-            <p>
-              Monster kart racing! Drift for sparks, grab item boxes and race round Coconut Beach,
-              Jungle Jumble and Pirate Cove against the computer or a friend.
-            </p>
-            <div class="badges">
-              <span class="badge">Kart racing</span>
-              <span class="badge">3 tracks</span>
-              <span class="badge">2 players</span>
-            </div>
-            <a class="btn btn-play" href="speedway-5-billion-web/index.html">▶ Play Speedway 5 Billion</a>
-          </div>
-        </article>
-
-        <article class="game mystery">
-          <div class="game-art"><span class="qmark">?</span></div>
-          <div class="game-body">
-            <h3>🔒 Secret Game</h3>
-            <p>
-              Deep in the dragon's lair, something new is being forged...
-              Nobody knows what it is yet. Keep watching. It's coming.
-            </p>
-            <div class="badges">
-              <span class="badge">???</span>
-              <span class="badge">Top secret</span>
-            </div>
-            <span class="btn btn-locked">Coming soon...</span>
-          </div>
-        </article>
-
+      <div class="vault-nav">
+        <a class="chip" href="#favourites">⭐ Favourites</a>
+        <a class="chip" href="#puzzle">🧩 Puzzle</a>
+        <a class="chip" href="#adventure">🗺️ Adventure</a>
+        <a class="chip" href="#strategy">♟️ Strategy</a>
+        <a class="chip" href="#action">⚡ Action</a>
+        <a class="chip" href="#build">⛏️ Build &amp; Create</a>
+        <a class="chip" href="#soon">🔒 Coming Soon</a>
       </div>
+
+      <div class="group favourites" id="favourites">
+        <h3 class="group-title">⭐ Wynn's Favourites</h3>
+        <p class="group-sub">Start here! These are the ones I'm proudest of.</p>
+        <div class="games">
+
+          <article class="game featured">
+            <div class="game-art">
+              <span class="ribbon">⭐ Wynn's pick</span>
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#87c7fa"/>
+                <!-- blocky hills: grass on top, dirt below -->
+                <g stroke="#2a1d14" stroke-width="2">
+                  <rect x="0" y="100" width="40" height="40" fill="#5ca63c"/><rect x="40" y="100" width="40" height="40" fill="#5ca63c"/>
+                  <rect x="80" y="60" width="40" height="40" fill="#5ca63c"/><rect x="80" y="100" width="40" height="40" fill="#86603f"/>
+                  <rect x="120" y="100" width="40" height="40" fill="#5ca63c"/><rect x="160" y="100" width="40" height="40" fill="#5ca63c"/>
+                  <rect x="200" y="100" width="40" height="40" fill="#5ca63c"/><rect x="280" y="100" width="40" height="40" fill="#5ca63c"/>
+                  <rect x="0" y="140" width="320" height="50" fill="#808084"/>
+                  <!-- a dug hole leading down to a dragon crystal -->
+                  <rect x="240" y="100" width="40" height="40" fill="#5e6f8a"/>
+                  <rect x="240" y="140" width="40" height="40" fill="#463a5c"/>
+                  <!-- a tree -->
+                  <rect x="20" y="40" width="20" height="60" fill="#6c5032"/>
+                  <rect x="0" y="10" width="60" height="40" fill="#38842f"/>
+                </g>
+                <polygon points="260,146 272,160 260,174 248,160" fill="#f08cff" stroke="#fff" stroke-width="2"/>
+                <!-- the outline around the block you're pointing at -->
+                <rect x="160" y="60" width="40" height="40" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="6 4"/>
+                <text x="140" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#2a1d14" stroke-width="1">💎 3 / 5</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🐉 Dragon Blocks</h3>
+              <p>
+                A whole 3D world made of blocks. Dig, build anything you like, and follow the radar
+                to the 5 Dragon Crystals buried deep underground so the dragon egg can hatch.
+              </p>
+              <div class="badges">
+                <span class="badge">3D world</span>
+                <span class="badge">Dig &amp; build</span>
+                <span class="badge">Saves your world</span>
+              </div>
+              <a class="btn btn-play" href="dragon-blocks-web/index.html">▶ Play Dragon Blocks</a>
+            </div>
+          </article>
+
+          <article class="game featured">
+            <div class="game-art">
+              <span class="ribbon">⭐ Wynn's pick</span>
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#7cc8ff"/>
+                <ellipse cx="70" cy="160" rx="90" ry="70" fill="#9be08a"/>
+                <ellipse cx="250" cy="165" rx="80" ry="60" fill="#9be08a"/>
+                <!-- grassy ground with a gap -->
+                <rect x="0" y="150" width="190" height="40" fill="#b06c34"/>
+                <rect x="0" y="150" width="190" height="8" fill="#52c447"/>
+                <rect x="230" y="150" width="90" height="40" fill="#b06c34"/>
+                <rect x="230" y="150" width="90" height="8" fill="#52c447"/>
+                <!-- gem boxes -->
+                <g stroke="#b9791a" stroke-width="2">
+                  <rect x="90" y="70" width="22" height="22" fill="#f5b82e"/>
+                  <rect x="112" y="70" width="22" height="22" fill="#c8603a"/>
+                  <rect x="134" y="70" width="22" height="22" fill="#f5b82e"/>
+                </g>
+                <polygon points="101,74 107,81 101,88 95,81" fill="#9ff3ff"/>
+                <polygon points="145,74 151,81 145,88 139,81" fill="#9ff3ff"/>
+                <!-- coins -->
+                <ellipse cx="205" cy="105" rx="5" ry="8" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
+                <ellipse cx="225" cy="95" rx="5" ry="8" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
+                <!-- a beetle -->
+                <path d="M150 150 a12 14 0 0 1 24 0 z" fill="#6b3fa0"/>
+                <circle cx="156" cy="143" r="2.5" fill="#fff"/><circle cx="162" cy="143" r="2.5" fill="#fff"/>
+                <!-- the bell -->
+                <rect x="289" y="50" width="3" height="100" fill="#e6e9f0"/>
+                <path d="M280 62 q0 -14 10.5 -14 q10.5 0 10.5 14 z" fill="#ffd23f" stroke="#c98a0c" stroke-width="2"/>
+                <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🔔 20 LEVELS</text>
+                <!-- Pip jumping -->
+                <text x="40" y="128" font-size="38">🦊</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🦊 Pip's Quest</h3>
+              <p>
+                Run, jump and stomp through 20 levels in 5 worlds, from sunny meadows to a lava volcano.
+                Bonk gem boxes, throw sparks, and beat Grumbo the Rock Beetle King to ring the Sun Bells.
+              </p>
+              <div class="badges">
+                <span class="badge">20 levels</span>
+                <span class="badge">Boss fights</span>
+                <span class="badge">Phone buttons</span>
+              </div>
+              <a class="btn btn-play" href="pip-quest-web/index.html">▶ Play Pip's Quest</a>
+            </div>
+          </article>
+
+          <article class="game featured">
+            <div class="game-art">
+              <span class="ribbon">⭐ Wynn's pick</span>
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#3fa8f0"/>
+                <rect y="70" width="320" height="10" fill="#2a8fd0"/>
+                <circle cx="250" cy="34" r="16" fill="#fff6b0"/>
+                <!-- sand and the road going off into the distance -->
+                <rect y="80" width="320" height="110" fill="#f4dc95"/>
+                <path d="M150 80 L170 80 L300 190 L20 190 Z" fill="#ff5a5a"/>
+                <path d="M152 80 L168 80 L278 190 L42 190 Z" fill="#8d93a3"/>
+                <path d="M159 80 h2 l6 110 h-14 Z" fill="#fff" opacity="0.8"/>
+                <!-- palm trees -->
+                <g stroke="#6e4220" stroke-width="5" stroke-linecap="round" fill="none">
+                  <path d="M40 150 q-6 -40 6 -70"/><path d="M285 150 q8 -40 -4 -70"/>
+                </g>
+                <g fill="#2fae4a">
+                  <ellipse cx="34" cy="78" rx="18" ry="5" transform="rotate(-20 34 78)"/><ellipse cx="58" cy="80" rx="18" ry="5" transform="rotate(20 58 80)"/>
+                  <ellipse cx="270" cy="78" rx="18" ry="5" transform="rotate(-20 270 78)"/><ellipse cx="294" cy="80" rx="18" ry="5" transform="rotate(20 294 80)"/>
+                </g>
+                <!-- an item box -->
+                <rect x="196" y="98" width="20" height="20" rx="4" fill="#c46aff" stroke="#fff" stroke-width="2"/>
+                <text x="206" y="114" font-family="Impact, sans-serif" font-size="15" fill="#fff" text-anchor="middle">?</text>
+                <!-- Blorp the slime driving a blue kart, seen from behind -->
+                <path d="M126 140 q0 -34 34 -34 q34 0 34 34 Z" fill="#5fd36a" stroke="#2a7a34" stroke-width="3"/>
+                <rect x="108" y="150" width="20" height="26" rx="5" fill="#1d1d24"/>
+                <rect x="192" y="150" width="20" height="26" rx="5" fill="#1d1d24"/>
+                <path d="M126 140 h68 l10 36 h-88 Z" fill="#3a7bff" stroke="#1a1a22" stroke-width="3"/>
+                <rect x="148" y="154" width="24" height="11" rx="2" fill="#fff"/>
+                <text x="160" y="163" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#1a1a22" text-anchor="middle">5B</text>
+                <!-- boost flames -->
+                <ellipse cx="140" cy="184" rx="5" ry="8" fill="#ff8a2a"/><ellipse cx="180" cy="184" rx="5" ry="8" fill="#ff8a2a"/>
+                <text x="20" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">VROOM!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏎️ Speedway 5 Billion</h3>
+              <p>
+                Monster kart racing! Drift for sparks, grab item boxes and race round Coconut Beach,
+                Jungle Jumble and Pirate Cove against the computer or a friend.
+              </p>
+              <div class="badges">
+                <span class="badge">Kart racing</span>
+                <span class="badge">3 tracks</span>
+                <span class="badge">2 players</span>
+              </div>
+              <a class="btn btn-play" href="speedway-5-billion-web/index.html">▶ Play Speedway 5 Billion</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="puzzle">
+        <h3 class="group-title">🧩 Puzzle <span>4 games</span></h3>
+        <p class="group-sub">Flip, push, turn and mix your way to the answer.</p>
+        <div class="games">
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#120a2e"/>
+                <circle cx="30" cy="25" r="2" fill="#fff"/>
+                <circle cx="290" cy="160" r="2" fill="#fff"/>
+                <circle cx="250" cy="30" r="1.5" fill="#fff"/>
+                <circle cx="60" cy="150" r="1.5" fill="#fff"/>
+                <rect x="105" y="15" width="110" height="160" fill="none" stroke="#36b3ff" stroke-width="3"/>
+                <g stroke="#120a2e" stroke-width="2">
+                  <rect x="105" y="155" width="20" height="20" fill="#ff5d8f"/>
+                  <rect x="125" y="155" width="20" height="20" fill="#ff5d8f"/>
+                  <rect x="145" y="155" width="20" height="20" fill="#2ed47a"/>
+                  <rect x="165" y="155" width="20" height="20" fill="#ffd23f"/>
+                  <rect x="185" y="155" width="20" height="20" fill="#0a84ff"/>
+                  <rect x="105" y="135" width="20" height="20" fill="#ff5d8f"/>
+                  <rect x="165" y="135" width="20" height="20" fill="#ffd23f"/>
+                  <rect x="185" y="135" width="20" height="20" fill="#ffd23f"/>
+                  <rect x="145" y="55" width="20" height="20" fill="#36b3ff"/>
+                  <rect x="145" y="75" width="20" height="20" fill="#36b3ff"/>
+                  <rect x="125" y="75" width="20" height="20" fill="#36b3ff"/>
+                  <rect x="165" y="75" width="20" height="20" fill="#36b3ff"/>
+                </g>
+                <!-- gravity flip arrows -->
+                <g fill="#ffd23f">
+                  <polygon points="60,80 75,100 45,100"/>
+                  <polygon points="60,130 75,110 45,110"/>
+                  <polygon points="260,80 275,100 245,100"/>
+                  <polygon points="260,130 275,110 245,110"/>
+                </g>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🌌 Neon Flip</h3>
+              <p>
+                A block-stacking game in outer space with a crazy twist: gravity can FLIP to any of the
+                4 sides of the board! Can you survive the boss on Hard mode?
+              </p>
+              <div class="badges">
+                <span class="badge">Puzzle</span>
+                <span class="badge">Gravity flip</span>
+                <span class="badge">Easy · Medium · Hard</span>
+              </div>
+              <a class="btn btn-play" href="neon-flip/index.html">▶ Play Neon Flip</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#0d0f2a"/>
+                <!-- stars and a ringed planet -->
+                <g fill="#fff">
+                  <circle cx="24" cy="22" r="1.5"/><circle cx="90" cy="14" r="1"/><circle cx="150" cy="30" r="1.5"/>
+                  <circle cx="300" cy="120" r="1"/><circle cx="12" cy="150" r="1"/><circle cx="200" cy="12" r="1"/>
+                </g>
+                <circle cx="276" cy="40" r="20" fill="#ff8ad8"/>
+                <ellipse cx="276" cy="40" rx="34" ry="7" fill="none" stroke="#ffd1f1" stroke-width="3" transform="rotate(-15 276 40)"/>
+                <!-- the asteroid base floor -->
+                <rect x="40" y="70" width="230" height="100" rx="14" fill="#5d4f7c"/>
+                <rect x="56" y="84" width="198" height="72" rx="6" fill="#2f3960"/>
+                <g stroke="#252d4d" stroke-width="2">
+                  <path d="M89 84 v72 M122 84 v72 M155 84 v72 M188 84 v72 M221 84 v72 M56 120 h198"/>
+                </g>
+                <!-- landing pads -->
+                <circle cx="237" cy="102" r="11" fill="none" stroke="#4ff0ff" stroke-width="3"/>
+                <circle cx="204" cy="138" r="11" fill="none" stroke="#4ff0ff" stroke-width="3"/>
+                <!-- crates: one already loaded (green), one being pushed -->
+                <rect x="192" y="126" width="24" height="24" rx="4" fill="#5be38a" stroke="#2a9c55" stroke-width="3"/>
+                <rect x="126" y="90" width="26" height="26" rx="4" fill="#f39a2b" stroke="#b8641a" stroke-width="3"/>
+                <path d="M130 94 l18 18 M148 94 l-18 18" stroke="#b8641a" stroke-width="2.5"/>
+                <!-- Cosmo the astronaut -->
+                <rect x="80" y="94" width="10" height="16" rx="3" fill="#9aa6c8"/>
+                <circle cx="104" cy="103" r="14" fill="#f4f6ff"/>
+                <ellipse cx="110" cy="101" rx="8" ry="6" fill="#4fc3ff"/>
+                <line x1="100" y1="90" x2="98" y2="82" stroke="#9aa6c8" stroke-width="2"/><circle cx="98" cy="81" r="3" fill="#ff5d73"/>
+                <text x="14" y="58" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">📦 PUSH IT!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🚀 Cosmo Crates</h3>
+              <p>
+                Help Cosmo the astronaut load the cargo! Push every crate onto a glowing landing pad,
+                but don't get one stuck in a corner. The puzzles never run out.
+              </p>
+              <div class="badges">
+                <span class="badge">Puzzle</span>
+                <span class="badge">Endless levels</span>
+                <span class="badge">3 stars to win</span>
+              </div>
+              <a class="btn btn-play" href="cosmo-crates-web/index.html">▶ Play Cosmo Crates</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#ffd6e8"/>
+                <!-- sprinkles -->
+                <g stroke-width="4" stroke-linecap="round">
+                  <path d="M20 20 l8 4" stroke="#ffd23f"/><path d="M290 30 l6 -6" stroke="#5fe3b4"/>
+                  <path d="M40 170 l8 -3" stroke="#6fb8ff"/><path d="M280 165 l-6 -6" stroke="#b98cff"/>
+                  <path d="M160 18 l7 5" stroke="#ff6fa5"/>
+                </g>
+                <!-- the tray -->
+                <rect x="34" y="46" width="252" height="104" rx="18" fill="#b0622b"/>
+                <rect x="34" y="40" width="252" height="104" rx="18" fill="#e89a5a"/>
+                <g fill="#fff3dc">
+                  <rect x="46" y="52" width="54" height="80" rx="10"/><rect x="108" y="52" width="54" height="80" rx="10" fill="#ffe6bd"/>
+                  <rect x="170" y="52" width="54" height="80" rx="10"/><rect x="232" y="52" width="42" height="80" rx="10" fill="#ffe6bd"/>
+                </g>
+                <!-- the candy-cane pipe full of syrup -->
+                <path d="M73 92 H210 V70 H253" fill="none" stroke="#8a3a5c" stroke-width="26"/>
+                <path d="M73 92 H210 V70 H253" fill="none" stroke="#fff" stroke-width="20"/>
+                <path d="M73 92 H210 V70 H253" fill="none" stroke="#ff8ab3" stroke-width="20" stroke-dasharray="5 6"/>
+                <path d="M73 92 H210 V70 H253" fill="none" stroke="#ff3f7f" stroke-width="11"/>
+                <!-- the lollipop -->
+                <circle cx="73" cy="92" r="20" fill="#ff3f7f" stroke="#b5124d" stroke-width="3"/>
+                <path d="M73 92 m0 -3 a3 3 0 1 1 -3 3 a7 7 0 1 1 7 7 a11 11 0 1 1 -11 -11 a14 14 0 0 1 14 -2" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- the cupcake -->
+                <path d="M240 82 h28 l-4 20 h-20 z" fill="#ffc2d8" stroke="#b5124d" stroke-width="2"/>
+                <ellipse cx="254" cy="80" rx="17" ry="7" fill="#ff3f7f" stroke="#b5124d" stroke-width="2"/>
+                <ellipse cx="254" cy="73" rx="12" ry="6" fill="#ff3f7f" stroke="#b5124d" stroke-width="2"/>
+                <circle cx="254" cy="64" r="4.5" fill="#e8263f"/>
+                <text x="160" y="178" font-family="Impact, sans-serif" font-size="18" fill="#ff3f7f" stroke="#7a1240" stroke-width="1" text-anchor="middle">🧁 YUM!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🍭 Sugar Pipes</h3>
+              <p>
+                Turn the candy-cane pipes so the syrup flows from the lollipops to every hungry cupcake.
+                Don't mix the flavours, beat the clock, and stop the Sour King!
+              </p>
+              <div class="badges">
+                <span class="badge">Puzzle</span>
+                <span class="badge">30 levels</span>
+                <span class="badge">Boss puzzle</span>
+              </div>
+              <a class="btn btn-play" href="sugar-pipes-web/index.html">▶ Play Sugar Pipes</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#fff7e8"/>
+                <!-- soft paint splashes -->
+                <circle cx="24" cy="24" r="40" fill="#ff8000" opacity="0.16"/>
+                <circle cx="300" cy="170" r="46" fill="#009e40" opacity="0.14"/>
+                <!-- the colour to make, and the bowl -->
+                <circle cx="92" cy="80" r="46" fill="#a6578f" stroke="#3b2a55" stroke-width="5"/>
+                <text x="160" y="94" font-family="Impact, sans-serif" font-size="36" fill="#3b2a55" opacity="0.5" text-anchor="middle">=</text>
+                <circle cx="228" cy="80" r="46" fill="#a6578f" stroke="#3b2a55" stroke-width="5"/>
+                <ellipse cx="212" cy="58" rx="12" ry="6" fill="#fff" opacity="0.45" transform="rotate(-30 212 58)"/>
+                <!-- a drop falling in -->
+                <path d="M228 6 q-8 12 0 16 q8 -4 0 -16 Z" fill="#fbfbf7" stroke="#3b2a55" stroke-width="2"/>
+                <!-- paint pots -->
+                <g stroke="#3b2a55" stroke-width="3">
+                  <rect x="38" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="58" cy="158" r="12" fill="#ff0000"/>
+                  <rect x="88" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="108" cy="158" r="12" fill="#ffff00"/>
+                  <rect x="138" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="158" cy="158" r="12" fill="#195cbf"/>
+                  <rect x="188" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="208" cy="158" r="12" fill="#fff"/>
+                  <rect x="238" y="138" width="40" height="40" rx="8" fill="#fff"/><circle cx="258" cy="158" r="12" fill="#191919"/>
+                </g>
+                <text x="160" y="128" font-family="Impact, sans-serif" font-size="16" fill="#ff5d8f" text-anchor="middle">★ ★ ★</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🎨 Colour Match</h3>
+              <p>
+                Mix drops of red, yellow, blue, white and black paint until your bowl matches the colour
+                you see. Earn 3 stars on every level, then race the clock in Colour Rush.
+              </p>
+              <div class="badges">
+                <span class="badge">Paint mixing</span>
+                <span class="badge">20 levels</span>
+                <span class="badge">Colour Rush</span>
+              </div>
+              <a class="btn btn-play" href="colour-match-web/index.html">▶ Play Colour Match</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="adventure">
+        <h3 class="group-title">🗺️ Adventure <span>3 games</span></h3>
+        <p class="group-sub">Run, explore and hunt for hidden treasure.</p>
+        <div class="games">
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#7cc8f5"/>
+                <!-- far hills and the ground -->
+                <path d="M0 120 q60 -40 120 -10 t120 -6 t80 0 V190 H0 Z" fill="#9fe08a"/>
+                <path d="M0 150 q80 -20 160 0 t160 -4 V190 H0 Z" fill="#5fcf4a"/>
+                <path d="M0 158 q80 -20 160 0 t160 -4 V190 H0 Z" fill="#c98a4a"/>
+                <!-- a loop -->
+                <circle cx="232" cy="104" r="44" fill="none" stroke="#a96f36" stroke-width="12"/>
+                <circle cx="232" cy="104" r="38" fill="none" stroke="#5fcf4a" stroke-width="3"/>
+                <!-- glow seeds -->
+                <g fill="#ffd23f" stroke="#b8860b" stroke-width="1.5">
+                  <ellipse cx="232" cy="74" rx="4" ry="6"/><ellipse cx="256" cy="86" rx="4" ry="6"/><ellipse cx="208" cy="86" rx="4" ry="6"/>
+                  <ellipse cx="150" cy="96" rx="4" ry="6"/><ellipse cx="170" cy="88" rx="4" ry="6"/>
+                </g>
+                <!-- speed lines -->
+                <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8">
+                  <path d="M30 110 h40"/><path d="M20 124 h56"/><path d="M36 138 h36"/>
+                </g>
+                <!-- Zipper the armadillo, rolling -->
+                <circle cx="100" cy="124" r="26" fill="#b85a14"/>
+                <circle cx="100" cy="124" r="23" fill="#f08a2c"/>
+                <g stroke="#b85a14" stroke-width="3" fill="none">
+                  <path d="M88 104 q8 20 0 40"/><path d="M100 101 q8 23 0 46"/><path d="M112 104 q8 20 0 40"/>
+                </g>
+                <circle cx="116" cy="134" r="7" fill="#f2c38b"/>
+                <circle cx="88" cy="138" r="5" fill="#2fbf71"/>
+                <circle cx="92" cy="114" r="6" fill="#fff" opacity="0.4"/>
+                <text x="190" y="30" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">⚡ ZOOM!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏃 Zipper Dash</h3>
+              <p>
+                Zipper the armadillo is super fast! Run, roll and loop through Wavy Cave, Spooky Cave,
+                the Plains and the Jungle, and beat the boss of every zone.
+              </p>
+              <div class="badges">
+                <span class="badge">Speed platformer</span>
+                <span class="badge">12 levels</span>
+                <span class="badge">4 bosses</span>
+              </div>
+              <a class="btn btn-play" href="zipper-dash-web/index.html">▶ Play Zipper Dash</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#e9d7a8"/>
+                <!-- hedges -->
+                <g fill="#3f9a45">
+                  <rect x="0" y="0" width="320" height="18"/><rect x="0" y="172" width="320" height="18"/>
+                  <rect x="0" y="0" width="18" height="190"/><rect x="302" y="0" width="18" height="190"/>
+                  <rect x="50" y="48" width="70" height="20" rx="8"/><rect x="200" y="48" width="70" height="20" rx="8"/>
+                  <rect x="150" y="18" width="20" height="50" rx="8"/>
+                  <rect x="50" y="122" width="70" height="20" rx="8"/><rect x="200" y="122" width="70" height="20" rx="8"/>
+                  <rect x="120" y="86" width="80" height="20" rx="8"/>
+                </g>
+                <!-- berries -->
+                <g fill="#d6264f">
+                  <circle cx="34" cy="34" r="4"/><circle cx="64" cy="34" r="4"/><circle cx="94" cy="34" r="4"/><circle cx="124" cy="34" r="4"/>
+                  <circle cx="34" cy="64" r="4"/><circle cx="34" cy="94" r="4"/><circle cx="34" cy="124" r="4"/><circle cx="34" cy="154" r="4"/>
+                  <circle cx="64" cy="154" r="4"/><circle cx="94" cy="154" r="4"/><circle cx="124" cy="154" r="4"/><circle cx="154" cy="154" r="4"/>
+                  <circle cx="184" cy="154" r="4"/><circle cx="214" cy="154" r="4"/><circle cx="244" cy="154" r="4"/>
+                  <circle cx="196" cy="34" r="4"/><circle cx="226" cy="34" r="4"/><circle cx="256" cy="34" r="4"/>
+                </g>
+                <!-- a mushroom -->
+                <rect x="281" y="152" width="8" height="10" fill="#f6ead4"/>
+                <path d="M273 154 a12 12 0 0 1 24 0 z" fill="#c93a3a"/>
+                <circle cx="280" cy="149" r="2.5" fill="#fff"/><circle cx="289" cy="147" r="2" fill="#fff"/>
+                <!-- Hazel the hedgehog -->
+                <g transform="translate(240 96)">
+                  <polygon points="-22,0 -18,-10 -12,-6 -8,-16 -2,-8 4,-14 6,-4 0,12 -16,10" fill="#5b3a22"/>
+                  <ellipse cx="-6" cy="0" rx="13" ry="11" fill="#7a5233"/>
+                  <ellipse cx="8" cy="2" rx="9" ry="7" fill="#e9c99a"/>
+                  <polygon points="14,-2 22,2 14,6" fill="#e9c99a"/>
+                  <circle cx="22" cy="2" r="2.5" fill="#222"/><circle cx="10" cy="-1" r="1.6" fill="#222"/>
+                </g>
+                <!-- a fox -->
+                <g transform="translate(100 94)">
+                  <ellipse cx="-24" cy="0" rx="12" ry="6" fill="#e8672c"/><circle cx="-33" cy="0" r="4" fill="#fff"/>
+                  <ellipse cx="-4" cy="0" rx="13" ry="9" fill="#e8672c"/>
+                  <polygon points="4,-6 2,-18 12,-8" fill="#a8431a"/><polygon points="4,6 2,18 12,8" fill="#a8431a"/>
+                  <circle cx="10" cy="0" r="9" fill="#e8672c"/><polygon points="14,-6 26,0 14,6" fill="#e8672c"/>
+                  <circle cx="26" cy="0" r="2" fill="#222"/><circle cx="12" cy="-4" r="2" fill="#fff"/><circle cx="12" cy="4" r="2" fill="#fff"/>
+                </g>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🦔 Hedgehog Hustle</h3>
+              <p>
+                Help Hazel the hedgehog eat every berry in the garden maze before the foxes catch her.
+                Munch a mushroom to curl into a spiky ball and send the foxes running home!
+              </p>
+              <div class="badges">
+                <span class="badge">Maze chase</span>
+                <span class="badge">5 gardens</span>
+                <span class="badge">Works on phones</span>
+              </div>
+              <a class="btn btn-play" href="hedgehog-hustle-web/index.html">▶ Play Hedgehog Hustle</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="70" fill="#8fd6f2"/>
+                <circle cx="260" cy="30" r="16" fill="#ffd75e"/>
+                <rect y="70" width="320" height="120" fill="#1d78a0"/>
+                <rect y="140" width="320" height="50" fill="#0b2c48"/>
+                <!-- boat and angler -->
+                <rect x="50" y="34" width="12" height="18" fill="#ff7a4a" stroke="#12223b" stroke-width="2"/>
+                <circle cx="56" cy="28" r="7" fill="#ffd9b0" stroke="#12223b" stroke-width="2"/>
+                <polygon points="20,52 100,52 88,72 32,72" fill="#a0603a" stroke="#12223b" stroke-width="3"/>
+                <path d="M62 44 Q100 10 130 18" stroke="#6b4a2f" stroke-width="3" fill="none"/>
+                <!-- line down to a hooked fish -->
+                <path d="M130 18 Q150 80 190 118" stroke="#fff" stroke-width="1.5" fill="none"/>
+                <ellipse cx="214" cy="120" rx="24" ry="11" fill="#ff6f61" stroke="#12223b" stroke-width="3"/>
+                <polygon points="238,120 254,108 252,132" fill="#c8443a" stroke="#12223b" stroke-width="3"/>
+                <circle cx="200" cy="117" r="2.5" fill="#12223b"/>
+                <!-- small fish and bubbles -->
+                <ellipse cx="80" cy="110" rx="12" ry="6" fill="#ffcf5a"/>
+                <polygon points="92,110 100,104 100,116" fill="#ff8c42"/>
+                <ellipse cx="270" cy="165" rx="16" ry="7" fill="#3a3d66"/>
+                <circle cx="286" cy="152" r="3" fill="#fff3a0"/>
+                <g fill="none" stroke="#fff" stroke-width="1.5" opacity="0.7">
+                  <circle cx="150" cy="100" r="3"/><circle cx="156" cy="88" r="2"/><circle cx="60" cy="96" r="2"/>
+                </g>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🎣 Tiny Tides</h3>
+              <p>
+                Cast from your little boat and fight the fish on the line, but don't let it snap!
+                Dive deeper, buy better gear and hunt the Old Gulper that only comes out at night.
+              </p>
+              <div class="badges">
+                <span class="badge">Fishing</span>
+                <span class="badge">Collecting</span>
+                <span class="badge">12 fish to find</span>
+              </div>
+              <a class="btn btn-play" href="tiny-tides-web/index.html">▶ Play Tiny Tides</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="strategy">
+        <h3 class="group-title">♟️ Strategy <span>3 games</span></h3>
+        <p class="group-sub">Plan ahead, build up and survive.</p>
+        <div class="games">
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#7cc8ff"/>
+                <circle cx="270" cy="40" r="22" fill="#ffd23f"/>
+                <rect y="150" width="320" height="40" fill="#2ed47a"/>
+                <!-- castle -->
+                <rect x="30" y="70" width="90" height="80" fill="#9aa7bd" stroke="#12223b" stroke-width="3"/>
+                <rect x="20" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
+                <rect x="100" y="50" width="30" height="100" fill="#b4bfd1" stroke="#12223b" stroke-width="3"/>
+                <rect x="62" y="110" width="26" height="40" rx="13" fill="#12223b"/>
+                <line x1="115" y1="50" x2="115" y2="22" stroke="#12223b" stroke-width="3"/>
+                <polygon points="115,22 140,30 115,38" fill="#ff5d8f"/>
+                <!-- enemies -->
+                <rect x="230" y="128" width="40" height="22" rx="4" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
+                <rect x="244" y="118" width="18" height="12" fill="#5a6b3a" stroke="#12223b" stroke-width="3"/>
+                <line x1="244" y1="124" x2="222" y2="124" stroke="#12223b" stroke-width="4"/>
+                <circle cx="295" cy="132" r="7" fill="#ff8c42" stroke="#12223b" stroke-width="2"/>
+                <line x1="295" y1="139" x2="295" y2="150" stroke="#12223b" stroke-width="3"/>
+                <!-- arrow -->
+                <path d="M140 80 Q180 50 215 110" fill="none" stroke="#12223b" stroke-width="2" stroke-dasharray="5 5"/>
+                <polygon points="215,110 206,104 214,100" fill="#12223b"/>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏰 Castle Defense</h3>
+              <p>
+                Waves of soldiers, armored cars, heavy tanks and a GIANT boss are coming for your castle!
+                Hire archers, snipers and a giant Mech, then watch real physics send enemies flying.
+              </p>
+              <div class="badges">
+                <span class="badge">Strategy</span>
+                <span class="badge">Boss fights</span>
+                <span class="badge">Online leaderboard</span>
+              </div>
+              <a class="btn btn-play" href="castle-defense-web/index.html">▶ Play Castle Defense</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#1d3556"/>
+                <rect y="130" width="320" height="60" fill="#e6f0f8"/>
+                <ellipse cx="160" cy="140" rx="110" ry="30" fill="#ffab4a" opacity="0.35"/>
+                <!-- beacon -->
+                <polygon points="145,140 152,80 168,80 175,140" fill="#9aa7bd" stroke="#12223b" stroke-width="3"/>
+                <rect x="146" y="72" width="28" height="9" fill="#4c5563" stroke="#12223b" stroke-width="3"/>
+                <path d="M148 72 Q150 45 160 30 Q170 45 172 72 Z" fill="#ff8c42" stroke="#12223b" stroke-width="3"/>
+                <path d="M155 72 Q158 58 160 50 Q162 58 165 72 Z" fill="#ffd23f"/>
+                <!-- huts -->
+                <rect x="60" y="118" width="44" height="26" fill="#8a5a3c" stroke="#12223b" stroke-width="3"/>
+                <polygon points="54,120 82,98 110,120" fill="#f4f8fb" stroke="#12223b" stroke-width="3"/>
+                <rect x="70" y="124" width="8" height="7" fill="#ffd23f"/>
+                <rect x="216" y="118" width="44" height="26" fill="#8a5a3c" stroke="#12223b" stroke-width="3"/>
+                <polygon points="210,120 238,98 266,120" fill="#f4f8fb" stroke="#12223b" stroke-width="3"/>
+                <rect x="244" y="124" width="8" height="7" fill="#ffd23f"/>
+                <!-- wolf eyes in the dark -->
+                <circle cx="20" cy="110" r="2.5" fill="#ffd23f"/>
+                <circle cx="28" cy="110" r="2.5" fill="#ffd23f"/>
+                <circle cx="292" cy="96" r="2.5" fill="#ffd23f"/>
+                <circle cx="300" cy="96" r="2.5" fill="#ffd23f"/>
+                <!-- snow -->
+                <g fill="#fff">
+                  <circle cx="40" cy="30" r="2"/><circle cx="90" cy="60" r="2"/><circle cx="230" cy="40" r="2"/>
+                  <circle cx="280" cy="20" r="2"/><circle cx="200" cy="80" r="1.5"/><circle cx="120" cy="20" r="1.5"/>
+                  <circle cx="300" cy="60" r="1.5"/><circle cx="20" cy="70" r="1.5"/>
+                </g>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>❄️ Frostfall</h3>
+              <p>
+                The whole world has frozen! Keep the beacon burning, build shelters, dig coal and
+                fight off hungry wolves. Can your town survive 30 days of deadly cold?
+              </p>
+              <div class="badges">
+                <span class="badge">Survival</span>
+                <span class="badge">Town building</span>
+                <span class="badge">Easy · Medium · Hard</span>
+              </div>
+              <a class="btn btn-play" href="frostfall-web/index.html">▶ Play Frostfall</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#2273b8"/>
+                <!-- the island: shallow sea, sand, grass -->
+                <ellipse cx="160" cy="110" rx="150" ry="78" fill="#45ace0"/>
+                <ellipse cx="160" cy="108" rx="128" ry="62" fill="#f2dc9b"/>
+                <ellipse cx="156" cy="104" rx="108" ry="50" fill="#79c75a"/>
+                <!-- waves -->
+                <g stroke="#fff" stroke-width="2" fill="none" opacity="0.6">
+                  <path d="M20 30 q6 -5 12 0"/><path d="M270 22 q6 -5 12 0"/><path d="M40 170 q6 -5 12 0"/><path d="M280 165 q6 -5 12 0"/>
+                </g>
+                <!-- forest -->
+                <g fill="#2f7d32">
+                  <circle cx="80" cy="84" r="11"/><circle cx="98" cy="76" r="10"/><circle cx="90" cy="98" r="10"/>
+                </g>
+                <!-- rocks -->
+                <ellipse cx="226" cy="92" rx="12" ry="8" fill="#bdbab2"/><ellipse cx="240" cy="102" rx="9" ry="6" fill="#a3a09a"/>
+                <!-- hut -->
+                <rect x="120" y="96" width="22" height="16" fill="#b07a45"/>
+                <polygon points="115,98 131,82 147,98" fill="#e2b65a"/>
+                <!-- stone house -->
+                <rect x="152" y="104" width="26" height="18" fill="#d6d1c6"/>
+                <polygon points="148,105 165,90 182,105" fill="#c8553d"/>
+                <!-- farm -->
+                <rect x="186" y="112" width="30" height="20" fill="#a0703f"/>
+                <g stroke="#f4d860" stroke-width="2"><path d="M190 118 h22"/><path d="M190 124 h22"/><path d="M190 130 h22"/></g>
+                <!-- the Great Lighthouse -->
+                <polygon points="262,140 266,70 278,70 282,140" fill="#f4f1ea"/>
+                <polygon points="263,124 264,112 280,112 281,124" fill="#d64545"/>
+                <polygon points="265,96 266,84 278,84 279,96" fill="#d64545"/>
+                <rect x="265" y="60" width="14" height="10" fill="#ffe680" stroke="#3b3b4f" stroke-width="2"/>
+                <polygon points="263,60 272,50 281,60" fill="#d64545"/>
+                <polygon points="272,64 320,40 320,80" fill="#fff6a0" opacity="0.45"/>
+                <!-- a palm tree and a bottle -->
+                <path d="M58 132 q4 -12 2 -22" stroke="#9b6b3c" stroke-width="3" fill="none"/>
+                <g fill="#3e9a3a"><ellipse cx="54" cy="110" rx="8" ry="3" transform="rotate(-25 54 110)"/><ellipse cx="66" cy="110" rx="8" ry="3" transform="rotate(25 66 110)"/></g>
+                <rect x="22" y="150" width="14" height="7" rx="2" fill="#7fd7a8" transform="rotate(20 29 153)"/>
+                <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🏝️ BUILD IT!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏝️ Island Builder</h3>
+              <p>
+                Turn a tiny camp on a wild island into a busy town. Build homes, farms and docks,
+                raise new land from the sea, and build the Great Lighthouse.
+              </p>
+              <div class="badges">
+                <span class="badge">Town building</span>
+                <span class="badge">13 goals</span>
+                <span class="badge">Saves your island</span>
+              </div>
+              <a class="btn btn-play" href="island-builder-web/index.html">▶ Play Island Builder</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="action">
+        <h3 class="group-title">⚡ Action <span>4 games</span></h3>
+        <p class="group-sub">Quick hands and sharp aim win the day.</p>
+        <div class="games">
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <linearGradient id="ss-sky" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#0b0626"/><stop offset="1" stop-color="#2a1150"/>
+                  </linearGradient>
+                </defs>
+                <rect width="320" height="190" fill="url(#ss-sky)"/>
+                <!-- stars -->
+                <g fill="#fff">
+                  <circle cx="20" cy="20" r="1.2"/><circle cx="90" cy="40" r="1"/><circle cx="150" cy="14" r="1.4"/><circle cx="230" cy="30" r="1"/>
+                  <circle cx="300" cy="60" r="1.3"/><circle cx="40" cy="110" r="1"/><circle cx="280" cy="120" r="1.2"/><circle cx="200" cy="90" r="1"/>
+                </g>
+                <!-- the moon ground and the cookie jar -->
+                <rect y="170" width="320" height="20" fill="#8d88a8"/>
+                <rect x="140" y="134" width="40" height="38" rx="8" fill="#c8ebff" fill-opacity="0.2" stroke="#dcf5ff" stroke-width="2"/>
+                <rect x="143" y="128" width="34" height="8" rx="3" fill="#e2574c"/>
+                <g fill="#d9a05b" stroke="#9b6630"><circle cx="152" cy="163" r="5"/><circle cx="166" cy="163" r="5"/><circle cx="159" cy="152" r="5"/></g>
+                <!-- the snackers -->
+                <g stroke-width="2">
+                  <circle cx="70" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
+                  <circle cx="110" cy="50" r="12" fill="#b679ff" stroke="#6a34b8"/>
+                  <circle cx="150" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
+                  <circle cx="190" cy="50" r="12" fill="#b679ff" stroke="#6a34b8"/>
+                  <circle cx="230" cy="50" r="12" fill="#6fdc5a" stroke="#2f8a2a"/>
+                  <rect x="78" y="74" width="22" height="22" rx="5" fill="#4fb3ff" stroke="#1f6aa8"/>
+                  <rect x="198" y="74" width="22" height="22" rx="5" fill="#4fb3ff" stroke="#1f6aa8"/>
+                  <circle cx="250" cy="118" r="12" fill="#ffd84a" stroke="#b8901a"/>
+                </g>
+                <rect x="239" y="111" width="22" height="7" rx="3" fill="#26203a"/>
+                <g fill="#fff">
+                  <circle cx="66" cy="47" r="3"/><circle cx="74" cy="47" r="3"/><circle cx="106" cy="47" r="3"/><circle cx="114" cy="47" r="3"/>
+                  <circle cx="146" cy="47" r="3"/><circle cx="154" cy="47" r="3"/><circle cx="186" cy="47" r="3"/><circle cx="194" cy="47" r="3"/>
+                  <circle cx="226" cy="47" r="3"/><circle cx="234" cy="47" r="3"/><circle cx="246" cy="114" r="2.5"/><circle cx="254" cy="114" r="2.5"/>
+                </g>
+                <circle cx="250" cy="134" r="5" fill="#d9a05b" stroke="#9b6630"/>
+                <!-- shots and the rocket -->
+                <rect x="108" y="98" width="4" height="12" rx="2" fill="#ffe066"/>
+                <rect x="108" y="122" width="4" height="12" rx="2" fill="#ffe066"/>
+                <polygon points="104,166 110,178 116,166" fill="#ff8a2a"/>
+                <polygon points="102,154 94,166 102,164" fill="#e2574c"/><polygon points="118,154 126,166 118,164" fill="#e2574c"/>
+                <path d="M110 138 q10 12 8 28 h-16 q-2 -16 8 -28z" fill="#f4f1ea" stroke="#3b2350" stroke-width="2"/>
+                <circle cx="110" cy="154" r="4" fill="#5fd0ff" stroke="#3b2350" stroke-width="1.5"/>
+                <text x="200" y="26" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🍪 SAVE IT!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🚀 Star Snackers</h3>
+              <p>
+                Hungry space blobs want the cookies from your moon bakery! Fly your rocket, zap the
+                snackers, catch power-ups, and beat King Cruncher.
+              </p>
+              <div class="badges">
+                <span class="badge">Space shooter</span>
+                <span class="badge">15 waves</span>
+                <span class="badge">3 bosses</span>
+              </div>
+              <a class="btn btn-play" href="star-snackers-web/index.html">▶ Play Star Snackers</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#3a1450"/>
+                <!-- number blocks -->
+                <g font-family="Impact, sans-serif" font-size="20" fill="#fff" text-anchor="middle">
+                  <rect x="40" y="14" width="40" height="40" rx="7" fill="#ffa94d"/><text x="60" y="41">12</text>
+                  <rect x="86" y="14" width="40" height="40" rx="7" fill="#c77dff"/><text x="106" y="41">7</text>
+                  <rect x="178" y="14" width="40" height="40" rx="7" fill="#ffe14d"/><text x="198" y="41">25</text>
+                  <rect x="224" y="14" width="40" height="40" rx="7" fill="#ff6b9a"/><text x="244" y="41">3</text>
+                  <rect x="132" y="60" width="40" height="40" rx="7" fill="#6ee08a"/><text x="152" y="87">9</text>
+                  <rect x="224" y="60" width="40" height="40" rx="7" fill="#7fe3ff"/><text x="244" y="87">4</text>
+                </g>
+                <!-- a +1 ring -->
+                <circle cx="60" cy="80" r="11" fill="none" stroke="#9cff8a" stroke-width="3"/>
+                <text x="60" y="85" font-family="Impact, sans-serif" font-size="12" fill="#9cff8a" text-anchor="middle">+1</text>
+                <!-- the aim line and flying balls -->
+                <g fill="#fff">
+                  <circle cx="150" cy="150" r="2.5"/><circle cx="140" cy="140" r="2.5"/><circle cx="130" cy="130" r="2.5"/><circle cx="120" cy="120" r="2.5"/>
+                </g>
+                <g fill="#fff6b0"><circle cx="104" cy="104" r="6"/><circle cx="196" cy="110" r="6"/><circle cx="172" cy="66" r="6"/></g>
+                <!-- red line -->
+                <path d="M0 164 H320" stroke="#ff4d4d" stroke-width="3" stroke-dasharray="10 8"/>
+                <!-- Blip the robot -->
+                <rect x="148" y="160" width="30" height="10" rx="4" fill="#5a6688" transform="rotate(-135 160 172)"/>
+                <path d="M144 176 a16 16 0 0 1 32 0 z" fill="#e9eefc"/>
+                <rect x="150" y="163" width="20" height="9" rx="4" fill="#1d2240"/>
+                <circle cx="156" cy="167.5" r="2" fill="#7fe3ff"/><circle cx="164" cy="167.5" r="2" fill="#7fe3ff"/>
+                <circle cx="160" cy="154" r="3" fill="#ff5fb4"/>
+                <text x="200" y="182" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#6b1f6b" stroke-width="1">💥 BLAST!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>💥 Block Blaster</h3>
+              <p>
+                Aim Blip's blaster and bounce a stream of energy balls to knock the number blocks down
+                to zero before they reach the red line. Beat 4 giant boss blocks!
+              </p>
+              <div class="badges">
+                <span class="badge">Aim &amp; bounce</span>
+                <span class="badge">20 levels</span>
+                <span class="badge">4 bosses</span>
+              </div>
+              <a class="btn btn-play" href="block-blaster-web/index.html">▶ Play Block Blaster</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#2a2238"/>
+                <!-- round window with the moon -->
+                <circle cx="160" cy="80" r="62" fill="#2d4272" stroke="#3a2618" stroke-width="8"/>
+                <circle cx="182" cy="62" r="18" fill="#fff3c4"/>
+                <rect y="150" width="320" height="40" fill="#6b4428"/>
+                <!-- a log cut in half, flying apart -->
+                <g transform="rotate(-20 70 95)">
+                  <path d="M70 61 A34 34 0 0 0 70 129 Z" fill="#e2b07a" stroke="#2a1d14" stroke-width="3"/>
+                </g>
+                <g transform="rotate(20 90 95)">
+                  <path d="M90 61 A34 34 0 0 1 90 129 Z" fill="#e2b07a" stroke="#2a1d14" stroke-width="3"/>
+                </g>
+                <!-- bamboo sliced through -->
+                <rect x="240" y="40" width="16" height="44" fill="#6fbf4f" stroke="#2a1d14" stroke-width="3" transform="rotate(25 248 62)"/>
+                <rect x="252" y="96" width="16" height="44" fill="#6fbf4f" stroke="#2a1d14" stroke-width="3" transform="rotate(25 260 118)"/>
+                <!-- a dragon egg, don't cut it! -->
+                <ellipse cx="165" cy="160" rx="14" ry="18" fill="#f1e4ff" stroke="#2a1d14" stroke-width="3"/>
+                <circle cx="160" cy="154" r="3.5" fill="#a46be0"/><circle cx="170" cy="164" r="4" fill="#a46be0"/>
+                <!-- the blade swoosh -->
+                <path d="M20 150 Q140 70 300 30" stroke="#a0dcff" stroke-width="9" fill="none" stroke-linecap="round" opacity="0.5"/>
+                <path d="M20 150 Q140 70 300 30" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <text x="200" y="182" font-family="Impact, sans-serif" font-size="18" fill="#ffe066" stroke="#2a1d14" stroke-width="1">PERFECT!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🔪 Slice Master</h3>
+              <p>
+                The dojo throws logs, lanterns and iron blocks in the air. Swipe to slice them right
+                down the middle and earn all 8 belts, but never cut a dragon egg!
+              </p>
+              <div class="badges">
+                <span class="badge">Swipe to slice</span>
+                <span class="badge">8 belts</span>
+                <span class="badge">Works on tablets</span>
+              </div>
+              <a class="btn btn-play" href="slice-master-web/index.html">▶ Play Slice Master</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#ffcf9a"/>
+                <circle cx="230" cy="50" r="20" fill="#fff5c8"/>
+                <circle cx="90" cy="190" r="90" fill="#c98b8f"/>
+                <circle cx="260" cy="200" r="80" fill="#a56f80"/>
+                <!-- two cliffs -->
+                <path d="M0 120 L70 120 Q95 120 110 175 L210 175 Q225 120 250 120 L320 120 L320 190 L0 190 Z" fill="#7a5a44"/>
+                <path d="M0 120 L70 120 Q95 120 110 175 L210 175 Q225 120 250 120 L320 120" stroke="#6fbf5a" stroke-width="5" fill="none"/>
+                <!-- left archer drawing a bow -->
+                <g stroke-linecap="round" stroke="#4fc3f7" stroke-width="5">
+                  <line x1="40" y1="92" x2="40" y2="106"/><line x1="40" y1="106" x2="34" y2="118"/><line x1="40" y1="106" x2="46" y2="118"/>
+                  <line x1="40" y1="92" x2="56" y2="86"/><line x1="40" y1="92" x2="44" y2="88"/>
+                </g>
+                <circle cx="40" cy="83" r="7" fill="#ffd9b0" stroke="#2a1f2f" stroke-width="2"/>
+                <rect x="33" y="78" width="14" height="3" fill="#e53935"/>
+                <path d="M54 72 Q66 86 58 100" stroke="#8d5a2b" stroke-width="3" fill="none"/>
+                <!-- arrow in the air -->
+                <path d="M70 80 Q160 10 236 92" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/>
+                <line x1="222" y1="78" x2="240" y2="96" stroke="#5d4037" stroke-width="2.5"/>
+                <!-- floppy rival falling over -->
+                <g stroke-linecap="round" stroke="#9ccc65" stroke-width="5">
+                  <line x1="270" y1="108" x2="285" y2="114"/><line x1="285" y1="114" x2="292" y2="104"/><line x1="285" y1="114" x2="300" y2="118"/>
+                  <line x1="270" y1="108" x2="262" y2="96"/><line x1="270" y1="108" x2="276" y2="96"/>
+                </g>
+                <circle cx="262" cy="110" r="7" fill="#ffd9b0" stroke="#2a1f2f" stroke-width="2"/>
+                <text x="250" y="70" font-family="Impact, sans-serif" font-size="18" fill="#ffcf5a" stroke="#2a1f2f" stroke-width="1">BONK!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏹 Wobblebow</h3>
+              <p>
+                Floppy ragdoll archers take turns shooting across a windy valley. Aim for the head,
+                watch the wind and beat 8 rivals, or challenge a friend on the same computer!
+              </p>
+              <div class="badges">
+                <span class="badge">Archery</span>
+                <span class="badge">Ragdoll physics</span>
+                <span class="badge">2 players</span>
+              </div>
+              <a class="btn btn-play" href="wobblebow-web/index.html">▶ Play Wobblebow</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="build">
+        <h3 class="group-title">⛏️ Build &amp; Create <span>3 games</span></h3>
+        <p class="group-sub">Dig, craft and make something that's all yours.</p>
+        <div class="games">
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#8fd0f0"/>
+                <!-- paper sun and hills -->
+                <circle cx="260" cy="40" r="22" fill="#ffd447" stroke="#fffaf0" stroke-width="4"/>
+                <path d="M0 110 Q80 70 160 100 T320 90 V190 H0 Z" fill="#9ccf8a" stroke="#fffaf0" stroke-width="4"/>
+                <!-- the ground: grass, dirt and stone -->
+                <rect x="0" y="130" width="320" height="10" fill="#6fbf4f"/>
+                <rect x="0" y="140" width="320" height="22" fill="#8a5a36"/>
+                <rect x="0" y="162" width="320" height="28" fill="#9a968f"/>
+                <!-- a dug-out tunnel with a torch and gold -->
+                <rect x="190" y="140" width="66" height="50" fill="#5e4a3a"/>
+                <rect x="206" y="160" width="4" height="12" fill="#8b5a2b"/>
+                <ellipse cx="208" cy="157" rx="4" ry="6" fill="#ff8a2b"/>
+                <rect x="262" y="166" width="20" height="20" fill="#8c8880"/>
+                <circle cx="268" cy="172" r="3" fill="#ffcc33"/><circle cx="276" cy="180" r="3" fill="#ffcc33"/>
+                <!-- a tree -->
+                <rect x="56" y="80" width="12" height="50" fill="#8b5a2b"/>
+                <rect x="34" y="52" width="56" height="36" fill="#3f8a3a" stroke="#fffaf0" stroke-width="3"/>
+                <!-- the paper kid -->
+                <g stroke="#fffaf0" stroke-width="2">
+                  <rect x="132" y="117" width="5" height="13" fill="#3d5a80"/>
+                  <rect x="139" y="117" width="5" height="13" fill="#3d5a80"/>
+                  <rect x="131" y="102" width="14" height="16" fill="#e4572e"/>
+                  <rect x="131" y="89" width="14" height="13" fill="#f2c9a0"/>
+                </g>
+                <rect x="131" y="89" width="14" height="4" fill="#3b2a1e"/>
+                <!-- an ink blot -->
+                <ellipse cx="100" cy="121" rx="12" ry="10" fill="#1c1a2b" stroke="#fffaf0" stroke-width="3"/>
+                <circle cx="96" cy="119" r="3" fill="#fff"/><circle cx="104" cy="119" r="3" fill="#fff"/>
+                <!-- the golden quill -->
+                <path d="M150 60 Q152 30 182 22 Q176 48 150 60 Z" fill="#ffcc33" stroke="#fffaf0" stroke-width="3"/>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>✂️ Paperland</h3>
+              <p>
+                A whole world cut out of paper! Dig for coal, iron and gold, build anything you like,
+                and beat the Ink Blots at night to craft the legendary Golden Quill.
+              </p>
+              <div class="badges">
+                <span class="badge">Dig &amp; build</span>
+                <span class="badge">Crafting</span>
+                <span class="badge">Saves your world</span>
+              </div>
+              <a class="btn btn-play" href="paperland-web/index.html">▶ Play Paperland</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#5fb8ff"/>
+                <!-- grass, then layers of dirt, clay and stone going down -->
+                <rect x="0" y="50" width="320" height="10" fill="#4cbb3f"/>
+                <rect x="0" y="60" width="320" height="40" fill="#9a6236"/>
+                <rect x="0" y="100" width="320" height="40" fill="#b5583a"/>
+                <rect x="0" y="140" width="320" height="50" fill="#7d7f88"/>
+                <!-- the dug shaft with a ladder -->
+                <rect x="140" y="50" width="30" height="110" fill="#26272d"/>
+                <g fill="#e0aa66">
+                  <rect x="144" y="50" width="4" height="80"/><rect x="162" y="50" width="4" height="80"/>
+                  <rect x="144" y="62" width="22" height="4"/><rect x="144" y="82" width="22" height="4"/>
+                  <rect x="144" y="102" width="22" height="4"/><rect x="144" y="122" width="22" height="4"/>
+                </g>
+                <!-- ores -->
+                <g stroke="#1c1a1a" stroke-width="1">
+                  <polygon points="60,72 68,80 60,88 52,80" fill="#262626"/>
+                  <polygon points="230,78 238,86 230,94 222,86" fill="#e07a3a"/>
+                  <polygon points="90,116 98,124 90,132 82,124" fill="#d6dee8"/>
+                  <polygon points="250,118 258,126 250,134 242,126" fill="#ffc61a"/>
+                  <polygon points="210,160 218,168 210,176 202,168" fill="#2fd67a"/>
+                  <polygon points="60,160 70,170 60,180 50,170" fill="#ff2f55"/>
+                </g>
+                <!-- the miner, digging at the bottom of the shaft -->
+                <rect x="146" y="150" width="18" height="10" fill="#3a6fc4"/>
+                <rect x="146" y="140" width="18" height="10" fill="#d9452b"/>
+                <circle cx="155" cy="134" r="6" fill="#f2c49b"/>
+                <path d="M147 132 a8 8 0 0 1 16 0 z" fill="#ffcc1f"/>
+                <circle cx="160" cy="129" r="2" fill="#fffbe0"/>
+                <path d="M164 146 L182 136" stroke="#8b5a2b" stroke-width="3"/>
+                <path d="M176 128 Q186 134 184 146" stroke="#c0c4cc" stroke-width="4" fill="none"/>
+                <!-- the camp cabin -->
+                <rect x="20" y="22" width="50" height="28" fill="#8b5a2b"/>
+                <polygon points="14,22 45,6 76,22" fill="#c0392b"/>
+                <rect x="50" y="32" width="10" height="18" fill="#3d230f"/>
+                <text x="200" y="36" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">💎 150 m</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>⛏️ Pickaxe Miner</h3>
+              <p>
+                Dig deep into the mountain for coal, gold, rubies and diamonds. Sell your ore at camp,
+                upgrade your pickaxe, lamp and bag, and reach the Heart of the Mountain 150 m down.
+              </p>
+              <div class="badges">
+                <span class="badge">Dig &amp; upgrade</span>
+                <span class="badge">6 layers</span>
+                <span class="badge">Saves your mine</span>
+              </div>
+              <a class="btn btn-play" href="pickaxe-miner-web/index.html">▶ Play Pickaxe Miner</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#f0d6b4"/>
+                <rect y="150" width="320" height="40" fill="#b47c4b"/>
+                <!-- shelf with pots -->
+                <rect x="14" y="70" width="80" height="6" fill="#a36a3c"/>
+                <path d="M24 70 q-4 -14 4 -22 h10 q8 8 4 22 z" fill="#3fa0a0"/>
+                <path d="M56 70 l-4 -16 h20 l-4 16 z" fill="#e2b23c"/>
+                <ellipse cx="82" cy="66" rx="10" ry="4" fill="#d63e38"/><rect x="74" y="62" width="16" height="8" fill="#d63e38"/>
+                <!-- the wheel -->
+                <ellipse cx="160" cy="158" rx="92" ry="18" fill="#3c4c59"/>
+                <ellipse cx="160" cy="148" rx="64" ry="12" fill="#b6c3cc"/>
+                <!-- the pot being thrown -->
+                <path d="M128 148 q-14 -26 4 -48 q8 -10 2 -26 h52 q-6 16 2 26 q18 22 4 48 z" fill="#a8603e"/>
+                <ellipse cx="160" cy="74" rx="26" ry="6" fill="#c97a52"/><ellipse cx="160" cy="74" rx="20" ry="4" fill="#5a2c18"/>
+                <g stroke="#7a3f24" stroke-width="2" opacity="0.5"><path d="M134 118 h52"/><path d="M130 132 h60"/></g>
+                <!-- hands -->
+                <rect x="94" y="104" width="30" height="16" rx="7" fill="#f3c29c"/>
+                <rect x="196" y="104" width="30" height="16" rx="7" fill="#f3c29c"/>
+                <!-- the kiln glowing -->
+                <path d="M240 150 v-52 q0 -22 30 -22 q30 0 30 22 v52 z" fill="#a84f30"/>
+                <rect x="254" y="100" width="32" height="26" fill="#ffb347"/>
+                <path d="M260 146 q4 -12 8 0 q4 -12 8 0 q4 -12 8 0" fill="#ff7b3a"/>
+                <text x="14" y="34" font-family="Impact, sans-serif" font-size="20" fill="#ffe066" stroke="#6b3b00" stroke-width="1">🏺 SPIN IT!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🏺 Pottery Master</h3>
+              <p>
+                Spin the potter's wheel, shape the clay with your hands, paint it with glaze and fire
+                it in the kiln. Make 15 pots for your customers. The last one is the Queen's Royal Vase!
+              </p>
+              <div class="badges">
+                <span class="badge">Make &amp; create</span>
+                <span class="badge">15 orders</span>
+                <span class="badge">Saves your pots</span>
+              </div>
+              <a class="btn btn-play" href="pottery-master-web/index.html">▶ Play Pottery Master</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="group" id="soon">
+        <h3 class="group-title">🔒 Coming Soon</h3>
+        <p class="group-sub">Something new is hatching in the dragon's lair.</p>
+        <div class="games">
+
+          <article class="game mystery">
+            <div class="game-art"><span class="qmark">?</span></div>
+            <div class="game-body">
+              <h3>🔒 Secret Game</h3>
+              <p>
+                Deep in the dragon's lair, something new is being forged...
+                Nobody knows what it is yet. Keep watching. It's coming.
+              </p>
+              <div class="badges">
+                <span class="badge">???</span>
+                <span class="badge">Top secret</span>
+              </div>
+              <span class="btn btn-locked">Coming soon...</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
     </div>
   </section>
 
