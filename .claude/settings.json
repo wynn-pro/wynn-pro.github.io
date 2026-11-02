@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init *)",
+      "Bash(npm i *)",
+      "Read(//Users/klainfo/Library/Caches/ms-playwright/chromium-1223/**)"
+    ]
+  }
+}
