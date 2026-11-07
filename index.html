@@ -54,6 +54,24 @@
     .logo svg { width: 40px; height: 40px; }
     nav ul { display: flex; gap: 20px; list-style: none; }
     .nav-right { display: flex; align-items: center; gap: 20px; }
+    .online {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 0.95rem;
+      background: var(--white); color: var(--ink);
+      border: 3px solid var(--ink); border-radius: 999px;
+      padding: 4px 14px; white-space: nowrap;
+    }
+    .online .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #9aa7b8; flex: none;
+    }
+    .online.live .dot { background: var(--green); animation: pulse 1.6s infinite; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(46, 212, 122, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(46, 212, 122, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(46, 212, 122, 0); }
+    }
+    @media (max-width: 560px) { .online { font-size: 0.8rem; padding: 3px 10px; } }
     .lang-btn {
       font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 0.95rem;
       background: var(--yellow); color: var(--ink);
@@ -283,6 +301,22 @@
     }
     .group-sub { opacity: 0.8; margin-bottom: 24px; }
 
+    /* Like button */
+    .like-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 3;
+      display: flex; align-items: center; gap: 4px;
+      border: none; border-radius: 999px; padding: 6px 12px;
+      background: rgba(255,255,255,0.92); color: var(--ink);
+      font: 700 1rem 'Fredoka', sans-serif; cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.2); transition: transform 0.15s;
+    }
+    .like-btn:hover { transform: scale(1.1); }
+    .like-btn:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .like-btn .heart { font-size: 1.2rem; filter: grayscale(1); opacity: 0.6; }
+    .like-btn.liked { color: var(--pink); }
+    .like-btn.liked .heart { filter: none; opacity: 1; animation: pop 0.35s; }
+    @keyframes pop { 50% { transform: scale(1.6); } }
+
     /* Wynn's favourites */
     .favourites {
       background: linear-gradient(135deg, #fff6cc, #ffe27a);
@@ -429,6 +463,9 @@
         <li><a class="link" href="#games">Games</a></li>
         <li><a class="link" href="#mission">Mission</a></li>
       </ul>
+      <div class="online" id="online" role="status" aria-live="polite" title="Players on the site right now">
+        <span class="dot"></span><span id="onlineText">Just you so far</span>
+      </div>
       <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language">🌐 ไทย</button>
     </div>
   </nav>
@@ -1666,6 +1703,90 @@
     document.querySelectorAll('p.updated time').forEach((t) => {
       if (Date.now() - new Date(t.dateTime) < WEEK) t.parentElement.classList.add('fresh');
     });
+  </script>
+
+  <script>
+    // "Playing now" counter.
+    // Needs a free Firebase Realtime Database (rules: allow read/write on /presence).
+    // Paste its URL below, e.g. 'https://my-project-default-rtdb.firebaseio.com'.
+    // Left empty, the badge honestly shows just this visitor.
+    (function () {
+      const DB_URL = '';
+      const BEAT = 30000, FRESH = 75000;
+      const box = document.getElementById('online');
+      const text = document.getElementById('onlineText');
+      let n = 1;
+      const label = () => {
+        const th = document.documentElement.lang === 'th';
+        if (n <= 1) text.textContent = th ? 'ตอนนี้มีแค่คุณ' : 'Just you so far';
+        else text.textContent = th ? 'กำลังเล่นอยู่ ' + n + ' คน' : n + ' playing now';
+        box.classList.toggle('live', n > 1);
+      };
+      new MutationObserver(label).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+      label();
+      if (!DB_URL) return;
+
+      const id = Math.random().toString(36).slice(2, 10);
+      const me = DB_URL + '/presence/' + id + '.json';
+      const beat = async () => {
+        if (document.hidden) return;
+        try {
+          await fetch(me, { method: 'PUT', body: JSON.stringify({ t: Date.now() }) });
+          const all = await (await fetch(DB_URL + '/presence.json')).json() || {};
+          const now = Date.now();
+          let c = 0;
+          Object.entries(all).forEach(([k, v]) => {
+            if (v && now - v.t < FRESH) c++;
+            else if (k !== id && (!v || now - v.t > 10 * 60000)) {
+              fetch(DB_URL + '/presence/' + k + '.json', { method: 'DELETE' }).catch(() => {});
+            }
+          });
+          n = Math.max(1, c);
+          label();
+        } catch (e) { /* offline: keep last number */ }
+      };
+      beat();
+      setInterval(beat, BEAT);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) beat(); });
+      addEventListener('pagehide', () => {
+        fetch(me, { method: 'DELETE', keepalive: true }).catch(() => {});
+      });
+    })();
+  </script>
+
+  <script>
+    // Like buttons: one per playable game, remembered in this browser
+    (function () {
+      let liked = {};
+      try { liked = JSON.parse(localStorage.getItem('likes') || '{}'); } catch (e) {}
+      const cards = [...document.querySelectorAll('article.game')].filter((c) => c.querySelector('a.btn-play'));
+      const render = (btn, on) => {
+        btn.classList.toggle('liked', on);
+        btn.setAttribute('aria-pressed', on);
+        btn.querySelector('.heart').textContent = on ? '❤️' : '🤍';
+        btn.querySelector('.count').textContent = on ? 'Liked' : 'Like';
+      };
+      cards.forEach((card) => {
+        const id = card.querySelector('a.btn-play').getAttribute('href');
+        const name = (card.querySelector('h3') || {}).textContent || 'game';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'like-btn';
+        btn.setAttribute('aria-label', 'Like ' + name.trim());
+        btn.innerHTML = '<span class="heart"></span><span class="count"></span>';
+        render(btn, !!liked[id]);
+        btn.addEventListener('click', () => {
+          const on = !liked[id];
+          if (on) liked[id] = 1; else delete liked[id];
+          try { localStorage.setItem('likes', JSON.stringify(liked)); } catch (e) {}
+          document.querySelectorAll('article.game').forEach((c) => {
+            const a = c.querySelector('a.btn-play');
+            if (a && a.getAttribute('href') === id) render(c.querySelector('.like-btn'), on);
+          });
+        });
+        card.querySelector('.game-art').appendChild(btn);
+      });
+    })();
   </script>
 
   <script>
