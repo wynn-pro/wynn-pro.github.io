@@ -1,0 +1,218 @@
+/* Jungle Jam: the board fills the window, and everything else floats on top of it */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0f2a1a;
+  color: #fff;
+  font-family: Nunito, system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; inset: 0; pointer-events: none; }
+body.in-menu .hud { display: none; }
+
+.hud-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pill {
+  background: rgba(10, 30, 18, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.pill b { font-family: "Lilita One", sans-serif; font-weight: 400; letter-spacing: 0.5px; }
+
+.toast {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 6px 16px;
+  border-radius: 14px;
+  background: rgba(10, 30, 18, 0.8);
+  text-align: center;
+  font-family: "Lilita One", sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  color: #ffe36b;
+  text-shadow: 0 2px 0 #6b3b00;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.toast.show { opacity: 1; }
+
+.toolbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+button.tool {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 14px;
+  background: #8a5a2b;
+  color: #fff;
+  font: 400 1.15rem "Lilita One", sans-serif;
+  letter-spacing: 0.5px;
+  box-shadow: 0 5px 0 #4f3014;
+  transition: transform 0.08s;
+}
+button.tool:hover { transform: translateY(-2px); }
+button.tool:active { transform: translateY(3px); box-shadow: 0 2px 0 #4f3014; }
+button.tool:disabled { opacity: 0.45; cursor: default; transform: none; }
+button.tool.hint { background: #f2b51d; color: #4a2a00; box-shadow: 0 5px 0 #a8770a; }
+button.tool.ghost { background: #2c6b45; box-shadow: 0 5px 0 #15391f; }
+@media (max-width: 440px) {
+  .toolbar { gap: 6px; padding: 0 8px; }
+  button.tool { padding: 9px 11px; font-size: 1rem; }
+}
+
+/* ---------- menus ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 22, 12, 0.55);
+  overflow-y: auto;
+}
+
+.card {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 26px 26px 22px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #2f7a46, #1b4a2b);
+  border: 4px solid #ffd23f;
+  box-shadow: 0 10px 0 #0d2616, 0 20px 50px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+.card.wide { width: min(760px, 100%); }
+
+.hero-art { display: block; width: 260px; max-width: 100%; height: auto; margin: 0 auto 4px; }
+.trophy { font-size: 2.6rem; line-height: 1; margin-bottom: 4px; }
+
+h1, h2 {
+  margin: 0 0 10px;
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 0 4px 0 #0d2616;
+}
+h1 { font-size: clamp(2.2rem, 8vw, 3.4rem); }
+h1 span { color: #ffd23f; }
+h2 { font-size: 2rem; }
+
+.lead { font-size: 1.1rem; line-height: 1.45; margin: 0 0 14px; }
+.lead b { color: #ffe36b; }
+.small { font-size: 0.9rem; opacity: 0.85; line-height: 1.4; margin: 12px 0 0; }
+
+.keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 0.92rem;
+  text-align: left;
+}
+@media (max-width: 480px) { .keys { grid-template-columns: 1fr; } }
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  margin-right: 2px;
+  border-radius: 6px;
+  background: #fff;
+  color: #1b4a2b;
+  font: 800 0.85rem Nunito, sans-serif;
+  text-align: center;
+  box-shadow: 0 2px 0 #8ab89a;
+}
+
+.buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+button.big {
+  cursor: pointer;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 14px;
+  background: #ff8a2a;
+  color: #fff;
+  font: 400 1.3rem "Lilita One", sans-serif;
+  letter-spacing: 0.5px;
+  box-shadow: 0 5px 0 #b3520c;
+  transition: transform 0.08s;
+}
+button.big:hover { transform: translateY(-2px); }
+button.big:active { transform: translateY(3px); box-shadow: 0 2px 0 #b3520c; }
+button.big.ghost { background: #2c6b45; box-shadow: 0 5px 0 #15391f; }
+
+.back { display: inline-block; margin-top: 14px; color: #c8f5a0; font-weight: 700; }
+
+/* ---------- level map ---------- */
+.map { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+.zone-name { text-align: left; font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+.zone-levels {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+@media (max-width: 520px) { .zone-levels { grid-template-columns: repeat(4, 1fr); } }
+.lvl {
+  cursor: pointer;
+  padding: 8px 0 6px;
+  border: none;
+  border-radius: 12px;
+  background: #ffcf3f;
+  color: #4a2a00;
+  font: 400 1.2rem "Lilita One", sans-serif;
+  box-shadow: 0 4px 0 #b8860b;
+  line-height: 1.1;
+}
+.lvl small { display: block; font: 700 0.7rem Nunito, sans-serif; min-height: 1em; }
+.lvl.done { background: #5fd36a; box-shadow: 0 4px 0 #2a8a34; color: #fff; }
+.lvl.perfect { background: #39c7e0; box-shadow: 0 4px 0 #1b7f91; color: #fff; }
+.lvl:disabled { cursor: default; background: #24563a; box-shadow: 0 4px 0 #13321f; color: #6f9b80; }
+.lvl:not(:disabled):hover { transform: translateY(-2px); }

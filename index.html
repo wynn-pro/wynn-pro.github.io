@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wynn Studios</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --blue: #0a84ff;
@@ -53,6 +53,16 @@
     }
     .logo svg { width: 40px; height: 40px; }
     nav ul { display: flex; gap: 20px; list-style: none; }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .lang-btn {
+      font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 0.95rem;
+      background: var(--yellow); color: var(--ink);
+      border: 3px solid var(--ink); border-radius: 999px;
+      padding: 6px 14px; cursor: pointer; transition: transform 0.15s;
+    }
+    .lang-btn:hover { transform: scale(1.08); }
+    :lang(th) body, :lang(th) h1, :lang(th) h2, :lang(th) h3, :lang(th) .btn, :lang(th) .logo,
+    :lang(th) .lang-btn, :lang(th) .chip, :lang(th) .group-title { font-family: 'Noto Sans Thai', 'Fredoka', sans-serif; }
     nav a.link {
       color: var(--ink);
       text-decoration: none;
@@ -214,6 +224,20 @@
     .game:hover { transform: translateY(-6px) rotate(-1deg); }
     .game-art { height: 190px; position: relative; overflow: hidden; }
     .game-art svg { width: 100%; height: 100%; display: block; }
+    /* A real screenshot sits on top of the drawing (the drawing shows if it fails to load) */
+    .game-art .shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .game-art:has(.shot)::after {
+      content: "📸 Real gameplay";
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(18, 34, 59, 0.75);
+      color: var(--white);
+    }
     .game-body { padding: 22px; display: flex; flex-direction: column; flex: 1; }
     .game-body h3 { font-size: 1.7rem; margin-bottom: 6px; }
     .game-body p { line-height: 1.6; margin-bottom: 14px; flex: 1; }
@@ -227,6 +251,10 @@
       border: 2px solid var(--ink);
     }
     .btn-play { background: var(--blue); color: var(--white); box-shadow: 0 6px 0 var(--blue-dark); text-align: center; }
+    /* "Updated" date, stamped by tools/update_dates.py */
+    .game-body p.updated { flex: 0; font-size: 0.85rem; font-weight: 700; opacity: 0.65; margin: -6px 0 14px; }
+    .game-body p.updated.fresh { opacity: 1; color: #128a4a; }
+    .game-body p.updated.fresh::after { content: " · fresh!"; }
 
     /* Jump links to each game type */
     .vault-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 44px; }
@@ -395,11 +423,14 @@
       <svg><use href="#dragon"/></svg>
       Wynn Studios
     </a>
-    <ul>
-      <li><a class="link" href="#about">About</a></li>
-      <li><a class="link" href="#games">Games</a></li>
-      <li><a class="link" href="#mission">Mission</a></li>
-    </ul>
+    <div class="nav-right">
+      <ul>
+        <li><a class="link" href="#about">About</a></li>
+        <li><a class="link" href="#games">Games</a></li>
+        <li><a class="link" href="#mission">Mission</a></li>
+      </ul>
+      <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language">🌐 ไทย</button>
+    </div>
   </nav>
 
   <header class="hero" id="top">
@@ -486,6 +517,7 @@
 
           <article class="game featured">
             <div class="game-art">
+              <img class="shot" src="images/screens/dragon-blocks-web.jpg" alt="Screenshot of Dragon Blocks being played" loading="lazy" onerror="this.remove()">
               <span class="ribbon">⭐ Wynn's pick</span>
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#87c7fa"/>
@@ -520,12 +552,14 @@
                 <span class="badge">Dig &amp; build</span>
                 <span class="badge">Saves your world</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="dragon-blocks-web/index.html">▶ Play Dragon Blocks</a>
             </div>
           </article>
 
           <article class="game featured">
             <div class="game-art">
+              <img class="shot" src="images/screens/pip-quest-web.jpg" alt="Screenshot of Pip's Quest being played" loading="lazy" onerror="this.remove()">
               <span class="ribbon">⭐ Wynn's pick</span>
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#7cc8ff"/>
@@ -569,12 +603,14 @@
                 <span class="badge">Boss fights</span>
                 <span class="badge">Phone buttons</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="pip-quest-web/index.html">▶ Play Pip's Quest</a>
             </div>
           </article>
 
           <article class="game featured">
             <div class="game-art">
+              <img class="shot" src="images/screens/speedway-5-billion-web.jpg" alt="Screenshot of Speedway 5 Billion being played" loading="lazy" onerror="this.remove()">
               <span class="ribbon">⭐ Wynn's pick</span>
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#3fa8f0"/>
@@ -619,6 +655,7 @@
                 <span class="badge">3 tracks</span>
                 <span class="badge">2 players</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
               <a class="btn btn-play" href="speedway-5-billion-web/index.html">▶ Play Speedway 5 Billion</a>
             </div>
           </article>
@@ -633,6 +670,7 @@
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/neon-flip.jpg" alt="Screenshot of Neon Flip being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#120a2e"/>
                 <circle cx="30" cy="25" r="2" fill="#fff"/>
@@ -674,12 +712,14 @@
                 <span class="badge">Gravity flip</span>
                 <span class="badge">Easy · Medium · Hard</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-26">26 Oct 2026</time></p>
               <a class="btn btn-play" href="neon-flip/index.html">▶ Play Neon Flip</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/cosmo-crates-web.jpg" alt="Screenshot of Cosmo Crates being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#0d0f2a"/>
                 <!-- stars and a ringed planet -->
@@ -721,12 +761,14 @@
                 <span class="badge">Endless levels</span>
                 <span class="badge">3 stars to win</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
               <a class="btn btn-play" href="cosmo-crates-web/index.html">▶ Play Cosmo Crates</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/sugar-pipes-web.jpg" alt="Screenshot of Sugar Pipes being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#ffd6e8"/>
                 <!-- sprinkles -->
@@ -769,12 +811,14 @@
                 <span class="badge">30 levels</span>
                 <span class="badge">Boss puzzle</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
               <a class="btn btn-play" href="sugar-pipes-web/index.html">▶ Play Sugar Pipes</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/colour-match-web.jpg" alt="Screenshot of Colour Match being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#fff7e8"/>
                 <!-- soft paint splashes -->
@@ -809,6 +853,7 @@
                 <span class="badge">20 levels</span>
                 <span class="badge">Colour Rush</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-02">2 Nov 2026</time></p>
               <a class="btn btn-play" href="colour-match-web/index.html">▶ Play Colour Match</a>
             </div>
           </article>
@@ -823,6 +868,7 @@
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/zipper-dash-web.jpg" alt="Screenshot of Zipper Dash being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#7cc8f5"/>
                 <!-- far hills and the ground -->
@@ -864,12 +910,14 @@
                 <span class="badge">12 levels</span>
                 <span class="badge">4 bosses</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
               <a class="btn btn-play" href="zipper-dash-web/index.html">▶ Play Zipper Dash</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/hedgehog-hustle-web.jpg" alt="Screenshot of Hedgehog Hustle being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#e9d7a8"/>
                 <!-- hedges -->
@@ -922,12 +970,14 @@
                 <span class="badge">5 gardens</span>
                 <span class="badge">Works on phones</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-02">2 Nov 2026</time></p>
               <a class="btn btn-play" href="hedgehog-hustle-web/index.html">▶ Play Hedgehog Hustle</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/tiny-tides-web.jpg" alt="Screenshot of Tiny Tides being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="70" fill="#8fd6f2"/>
                 <circle cx="260" cy="30" r="16" fill="#ffd75e"/>
@@ -964,6 +1014,7 @@
                 <span class="badge">Collecting</span>
                 <span class="badge">12 fish to find</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-29">29 Oct 2026</time></p>
               <a class="btn btn-play" href="tiny-tides-web/index.html">▶ Play Tiny Tides</a>
             </div>
           </article>
@@ -972,12 +1023,72 @@
       </div>
 
       <div class="group" id="strategy">
-        <h3 class="group-title">♟️ Strategy <span>3 games</span></h3>
+        <h3 class="group-title">♟️ Strategy <span>4 games</span></h3>
         <p class="group-sub">Plan ahead, build up and survive.</p>
         <div class="games">
 
           <article class="game">
             <div class="game-art">
+              <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="320" height="190" fill="#9fd6fb"/>
+                <!-- snowy mountains -->
+                <polygon points="-20,160 60,60 140,160" fill="#cfe5f6"/>
+                <polygon points="100,160 190,50 280,160" fill="#a3c4e4"/>
+                <polygon points="44,80 60,60 76,80 66,76 60,84 52,78" fill="#fff"/>
+                <polygon points="172,72 190,50 208,72 196,68 190,76 182,70" fill="#fff"/>
+                <rect y="160" width="320" height="30" fill="#f4fbff"/>
+                <!-- the wizard on his ice pillar -->
+                <rect x="14" y="112" width="30" height="48" fill="#bfe7ff" stroke="#5aa6d8" stroke-width="2"/>
+                <polygon points="20,112 38,112 33,88 25,88" fill="#4b3bc7"/>
+                <circle cx="29" cy="84" r="5" fill="#ffd9b8"/>
+                <polygon points="21,81 37,81 27,62" fill="#3a2ca8"/>
+                <line x1="36" y1="110" x2="40" y2="72" stroke="#8a5a35" stroke-width="2.5"/>
+                <circle cx="40" cy="69" r="5" fill="#7fe8ff"/>
+                <!-- the castle -->
+                <g stroke-width="2">
+                  <rect x="70" y="142" width="18" height="18" fill="#93a7c0" stroke="#4d6080"/>
+                  <rect x="88" y="142" width="18" height="18" fill="#c08448" stroke="#6b4423"/>
+                  <rect x="106" y="142" width="18" height="18" fill="#93a7c0" stroke="#4d6080"/>
+                  <rect x="124" y="142" width="18" height="18" fill="#93a7c0" stroke="#4d6080"/>
+                  <rect x="72" y="130" width="68" height="12" fill="#93a7c0" stroke="#4d6080"/>
+                  <rect x="76" y="100" width="20" height="30" fill="#a9c4dd" stroke="#4d6a8a"/>
+                  <rect x="116" y="100" width="20" height="30" fill="#a9c4dd" stroke="#4d6a8a"/>
+                  <polygon points="106,130 112,112 100,112" fill="#7fe8ff" stroke="#fff"/>
+                </g>
+                <line x1="106" y1="112" x2="106" y2="86" stroke="#d9dde6" stroke-width="2"/>
+                <polygon points="107,86 122,91 107,96" fill="#7b5cff"/>
+                <!-- a freeze blast meets a fireball -->
+                <circle cx="180" cy="60" r="7" fill="#dff6ff" stroke="#7fe8ff" stroke-width="3"/>
+                <circle cx="214" cy="52" r="10" fill="#ff8a3d" stroke="#ffd23f" stroke-width="3"/>
+                <path d="M214 52 Q250 40 268 130" fill="none" stroke="#12223b" stroke-width="2" stroke-dasharray="5 5"/>
+                <!-- a goblin catapult and a snow troll -->
+                <rect x="250" y="146" width="34" height="7" fill="#7a4a24"/>
+                <circle cx="256" cy="156" r="5" fill="#5b3b25"/><circle cx="278" cy="156" r="5" fill="#5b3b25"/>
+                <line x1="266" y1="146" x2="250" y2="128" stroke="#9a6232" stroke-width="4"/>
+                <ellipse cx="300" cy="134" rx="16" ry="24" fill="#e6f2ff" stroke="#8fb0d0" stroke-width="2"/>
+                <circle cx="295" cy="124" r="2" fill="#12223b"/><circle cx="303" cy="124" r="2" fill="#12223b"/>
+                <text x="160" y="183" font-family="Impact, sans-serif" font-size="16" fill="#1a5c9e" text-anchor="middle">❄️ HOLD THE CASTLE!</text>
+              </svg>
+            </div>
+            <div class="game-body">
+              <h3>🧙 Frostspire</h3>
+              <p>
+                Be the ice wizard of the mountain! Build a castle from wood, stone, magic crystals and towers,
+                then freeze fireballs and mend your walls as goblins, trolls and imps attack. The blocks really tumble!
+              </p>
+              <div class="badges">
+                <span class="badge">Build &amp; battle</span>
+                <span class="badge">17 levels + boss</span>
+                <span class="badge">Endless mode</span>
+              </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
+              <a class="btn btn-play" href="frostspire-web/index.html">▶ Play Frostspire</a>
+            </div>
+          </article>
+
+          <article class="game">
+            <div class="game-art">
+              <img class="shot" src="images/screens/castle-defense-web.jpg" alt="Screenshot of Castle Defense being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#7cc8ff"/>
                 <circle cx="270" cy="40" r="22" fill="#ffd23f"/>
@@ -1011,12 +1122,14 @@
                 <span class="badge">Boss fights</span>
                 <span class="badge">Online leaderboard</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-27">27 Oct 2026</time></p>
               <a class="btn btn-play" href="castle-defense-web/index.html">▶ Play Castle Defense</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/frostfall-web.jpg" alt="Screenshot of Frostfall being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#1d3556"/>
                 <rect y="130" width="320" height="60" fill="#e6f0f8"/>
@@ -1057,12 +1170,14 @@
                 <span class="badge">Town building</span>
                 <span class="badge">Easy · Medium · Hard</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-29">29 Oct 2026</time></p>
               <a class="btn btn-play" href="frostfall-web/index.html">▶ Play Frostfall</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/island-builder-web.jpg" alt="Screenshot of Island Builder being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#2273b8"/>
                 <!-- the island: shallow sea, sand, grass -->
@@ -1113,6 +1228,7 @@
                 <span class="badge">13 goals</span>
                 <span class="badge">Saves your island</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="island-builder-web/index.html">▶ Play Island Builder</a>
             </div>
           </article>
@@ -1127,6 +1243,7 @@
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/star-snackers-web.jpg" alt="Screenshot of Star Snackers being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <defs>
                   <linearGradient id="ss-sky" x1="0" y1="0" x2="0" y2="1">
@@ -1183,12 +1300,14 @@
                 <span class="badge">15 waves</span>
                 <span class="badge">3 bosses</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-02">2 Nov 2026</time></p>
               <a class="btn btn-play" href="star-snackers-web/index.html">▶ Play Star Snackers</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/block-blaster-web.jpg" alt="Screenshot of Block Blaster being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#3a1450"/>
                 <!-- number blocks -->
@@ -1230,12 +1349,14 @@
                 <span class="badge">20 levels</span>
                 <span class="badge">4 bosses</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-03">3 Nov 2026</time></p>
               <a class="btn btn-play" href="block-blaster-web/index.html">▶ Play Block Blaster</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/slice-master-web.jpg" alt="Screenshot of Slice Master being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#2a2238"/>
                 <!-- round window with the moon -->
@@ -1272,12 +1393,14 @@
                 <span class="badge">8 belts</span>
                 <span class="badge">Works on tablets</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="slice-master-web/index.html">▶ Play Slice Master</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/wobblebow-web.jpg" alt="Screenshot of Wobblebow being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#ffcf9a"/>
                 <circle cx="230" cy="50" r="20" fill="#fff5c8"/>
@@ -1317,6 +1440,7 @@
                 <span class="badge">Ragdoll physics</span>
                 <span class="badge">2 players</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="wobblebow-web/index.html">▶ Play Wobblebow</a>
             </div>
           </article>
@@ -1331,6 +1455,7 @@
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/paperland-web.jpg" alt="Screenshot of Paperland being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#8fd0f0"/>
                 <!-- paper sun and hills -->
@@ -1375,12 +1500,14 @@
                 <span class="badge">Crafting</span>
                 <span class="badge">Saves your world</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="paperland-web/index.html">▶ Play Paperland</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/pickaxe-miner-web.jpg" alt="Screenshot of Pickaxe Miner being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#5fb8ff"/>
                 <!-- grass, then layers of dirt, clay and stone going down -->
@@ -1430,12 +1557,14 @@
                 <span class="badge">6 layers</span>
                 <span class="badge">Saves your mine</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-10-30">30 Oct 2026</time></p>
               <a class="btn btn-play" href="pickaxe-miner-web/index.html">▶ Play Pickaxe Miner</a>
             </div>
           </article>
 
           <article class="game">
             <div class="game-art">
+              <img class="shot" src="images/screens/pottery-master-web.jpg" alt="Screenshot of Pottery Master being played" loading="lazy" onerror="this.remove()">
               <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
                 <rect width="320" height="190" fill="#f0d6b4"/>
                 <rect y="150" width="320" height="40" fill="#b47c4b"/>
@@ -1472,6 +1601,7 @@
                 <span class="badge">15 orders</span>
                 <span class="badge">Saves your pots</span>
               </div>
+              <p class="updated">🛠 Updated <time datetime="2026-11-02">2 Nov 2026</time></p>
               <a class="btn btn-play" href="pottery-master-web/index.html">▶ Play Pottery Master</a>
             </div>
           </article>
@@ -1529,6 +1659,76 @@
     </div>
     <p>Made with code and dragon fire by Wynn · Est. 2026</p>
   </footer>
+
+  <script>
+    // Games updated in the last week get a green "fresh!" date
+    const WEEK = 7 * 24 * 60 * 60 * 1000;
+    document.querySelectorAll('p.updated time').forEach((t) => {
+      if (Date.now() - new Date(t.dateTime) < WEEK) t.parentElement.classList.add('fresh');
+    });
+  </script>
+
+  <script>
+    // Language switch (English <-> Thai). Original English HTML is kept in data-en.
+    const TH = {
+      'About': 'เกี่ยวกับ', 'Games': 'เกม', 'Mission': 'ภารกิจ',
+      '🐉 A young game master is rising...': '🐉 จอมสร้างเกมตัวน้อยกำลังรุ่งโรจน์...',
+      'Legends say a <span>9-year-old</span> builds whole worlds.': 'ตำนานเล่าว่า เด็ก <span>9 ขวบ</span> สร้างโลกได้ทั้งใบ',
+      'Nobody knows how far this power will reach. Armed only with Python and JavaScript, Wynn creates games that defend castles, flip gravity itself and survive the great freeze. This is where the legend begins.':
+        'ไม่มีใครรู้ว่าพลังนี้จะไปไกลแค่ไหน ด้วย Python และ JavaScript เพียงสองอย่าง วินน์สร้างเกมที่ปกป้องปราสาท พลิกแรงโน้มถ่วง และเอาชีวิตรอดจากความหนาวเหน็บครั้งใหญ่ นี่คือจุดเริ่มต้นของตำนาน',
+      '🎮 Play My Games': '🎮 เล่นเกมของฉัน', 'Who is Wynn?': 'วินน์คือใคร?',
+      "The Hero's Story": 'เรื่องราวของฮีโร่', 'Every legend has a beginning.': 'ทุกตำนานมีจุดเริ่มต้น',
+      'I am Wynn.': 'ฉันคือวินน์',
+      'Some heroes fight with swords. I fight with code. I started my quest learning Python, making clickers, a flappy bird and even my own Minecraft world. Then I leveled up to JavaScript and built games that anyone can play in a web browser.':
+        'ฮีโร่บางคนสู้ด้วยดาบ ฉันสู้ด้วยโค้ด ฉันเริ่มภารกิจด้วยการเรียน Python ทำเกมคลิกเกอร์ เกมนกบิน และแม้แต่โลก Minecraft ของตัวเอง จากนั้นฉันก็เลเวลอัปไปเรียน JavaScript และสร้างเกมที่ทุกคนเล่นได้บนเว็บเบราว์เซอร์',
+      'My dragon sidekick guards every game I make. Together, we\'re on a mission to become the <b>most famous game creators in the world</b>.':
+        'มังกรคู่หูของฉันคอยปกป้องทุกเกมที่ฉันสร้าง เรากำลังเดินทางเพื่อเป็น<b>นักสร้างเกมที่โด่งดังที่สุดในโลก</b>',
+      '🐍 Python': '🐍 Python', '⚡ JavaScript': '⚡ JavaScript', '🎨 HTML &amp; CSS': '🎨 HTML และ CSS', '🐉 Dragon sidekick': '🐉 มังกรคู่หู',
+      'years old': 'ขวบ', 'games made': 'เกมที่สร้าง', 'coding languages': 'ภาษาโค้ด', 'ideas': 'ไอเดีย',
+      'The Game Vault': 'คลังเกม', 'Click a game to play it right now in your browser!': 'คลิกที่เกมเพื่อเล่นได้ทันทีในเบราว์เซอร์!',
+      '⭐ Favourites': '⭐ เกมโปรด', '🧩 Puzzle': '🧩 ปริศนา', '🗺️ Adventure': '🗺️ ผจญภัย', '♟️ Strategy': '♟️ วางแผน',
+      '⚡ Action': '⚡ แอ็กชัน', '⛏️ Build &amp; Create': '⛏️ สร้างสรรค์', '🔒 Coming Soon': '🔒 เร็วๆ นี้',
+      "⭐ Wynn's Favourites": '⭐ เกมโปรดของวินน์', "Start here! These are the ones I'm proudest of.": 'เริ่มที่นี่เลย! เกมเหล่านี้ฉันภูมิใจที่สุด',
+      'Flip, push, turn and mix your way to the answer.': 'พลิก ผลัก หมุน และผสมเพื่อหาคำตอบ',
+      'Run, explore and hunt for hidden treasure.': 'วิ่ง สำรวจ และตามหาสมบัติที่ซ่อนอยู่',
+      'Plan ahead, build up and survive.': 'วางแผน สร้าง และเอาชีวิตรอด',
+      'Quick hands and sharp aim win the day.': 'มือไวและเล็งแม่นคือผู้ชนะ',
+      "Dig, craft and make something that's all yours.": 'ขุด ประดิษฐ์ และสร้างสิ่งที่เป็นของคุณเอง',
+      "Something new is hatching in the dragon's lair.": 'มีของใหม่กำลังฟักตัวในถ้ำมังกร',
+      'Coming soon...': 'เร็วๆ นี้...',
+      'Made with code and dragon fire by Wynn · Est. 2026': 'สร้างด้วยโค้ดและไฟมังกรโดยวินน์ · ก่อตั้ง 2026'
+    };
+    const norm = (h) => h.replace(/\s+/g, ' ').trim();
+    function toThai(en) {
+      const k = norm(en);
+      if (TH[k]) return TH[k];
+      let m;
+      if ((m = k.match(/^▶ Play (.+)$/))) return '▶ เล่น ' + m[1];
+      if ((m = k.match(/^(.*?) ?<span>(\d+) games<\/span>$/)) && TH[m[1]]) return TH[m[1]] + ' <span>' + m[2] + ' เกม</span>';
+      if ((m = k.match(/^<b>(.*?)<\/b>(.*)$/)) && TH[m[2]]) return '<b>' + m[1] + '</b>' + TH[m[2]];
+      if (k.startsWith('🛠 Updated ')) return en.replace('🛠 Updated ', '🛠 อัปเดต ');
+      return null;
+    }
+    const targets = document.querySelectorAll(
+      'nav a.link, .tag, .hero h1, .hero p, .hero .btn, .section-title, .section-sub, .about-text h3, .about-text p, ' +
+      '.about-text .chip, .stat, .vault-nav .chip, .group-title, .group-sub, .btn-play, .btn-locked, p.updated, footer p');
+    function setLang(lang) {
+      targets.forEach((el) => {
+        if (!el.dataset.en) el.dataset.en = el.innerHTML;
+        const th = lang === 'th' ? toThai(el.dataset.en) : null;
+        el.innerHTML = th || el.dataset.en;
+      });
+      document.documentElement.lang = lang;
+      document.getElementById('langBtn').textContent = lang === 'th' ? '🌐 English' : '🌐 ไทย';
+      try { localStorage.setItem('lang', lang); } catch (e) {}
+    }
+    document.getElementById('langBtn').addEventListener('click', () => {
+      setLang(document.documentElement.lang === 'th' ? 'en' : 'th');
+    });
+    let saved = 'en';
+    try { saved = localStorage.getItem('lang') || 'en'; } catch (e) {}
+    if (saved === 'th') setLang('th');
+  </script>
 
 </body>
 </html>
