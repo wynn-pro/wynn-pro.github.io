@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="navy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sea Strike</title>
+<style>
+:root{--bg:#06182c;--bg2:#0b2a4a;--panel:#0f3258;--ink:#e8f3ff;--muted:#8fb0d0;--water:#12507f;--line:#2a6a9f;--ship:#8da2b5;--hit:#ff5a36;--miss:#cfe9ff;--sunk:#7a1210;--accent:#ffcf3f;--good:#38d27a;--bad:#ff4d5e;--btn:#1b6fb5;--btnink:#fff}
+[data-theme=neon]{--bg:#0a0414;--bg2:#14082a;--panel:#1c0d3a;--ink:#f3e9ff;--muted:#a58bd0;--water:#1a0f3d;--line:#6a2cff;--ship:#00e5ff;--hit:#ff2d95;--miss:#a38bff;--sunk:#7a0040;--accent:#f6ff3a;--btn:#7a2cff}
+[data-theme=light]{--bg:#eaf3fb;--bg2:#ffffff;--panel:#ffffff;--ink:#10263d;--muted:#5b7894;--water:#a9d4f2;--line:#6fa8d1;--ship:#52657a;--miss:#ffffff;--hit:#e8431f;--sunk:#8c1d18;--accent:#d98c00;--btn:#1f7ac4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:linear-gradient(var(--bg),var(--bg2));color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Noto Sans JP","Noto Sans SC","Noto Sans KR",sans-serif;min-height:100vh;user-select:none;-webkit-user-select:none}
+.app{max-width:620px;margin:0 auto;padding:10px 14px calc(24px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:8px;padding:4px 0 8px}
+.top h1{font-size:1.25rem;margin:0;flex:1;text-align:center}
+.top a{color:var(--muted);text-decoration:none;font-size:.9rem;min-width:64px}
+.tools{display:flex;gap:6px;align-items:center}
+.tools button,.tools select{height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:1rem;padding:0 8px}
+.screen{display:none}.screen.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.btn{display:block;width:100%;min-height:50px;border:0;border-radius:12px;background:var(--btn);color:var(--btnink);font-size:1.05rem;font-weight:700;padding:10px 14px;cursor:pointer;touch-action:manipulation;margin:8px 0}
+.btn.alt{background:transparent;border:2px solid var(--line);color:var(--ink)}
+.btn.fire{background:var(--hit);font-size:1.25rem;letter-spacing:.06em}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.stats{display:flex;gap:8px}.stats div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:.8rem;color:var(--muted)}
+.stats b{display:block;font-size:1.4rem;color:var(--ink)}
+.lbl{font-size:.8rem;color:var(--muted);margin:10px 0 4px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:52px;min-height:42px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:.95rem;cursor:pointer;touch-action:manipulation}
+.seg button.on{background:var(--btn);color:var(--btnink);border-color:var(--btn);font-weight:700}
+.desc{font-size:.8rem;color:var(--muted);margin:4px 0 0}
+.warn{color:var(--bad);font-size:.85rem;margin:6px 0 0}
+.fleetrow{display:flex;align-items:center;gap:8px;padding:3px 0}
+.fleetrow .nm{flex:1}.fleetrow .len{color:var(--muted);font-size:.8rem}
+.fleetrow button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:1.2rem;cursor:pointer}
+.fleetrow .ct{width:22px;text-align:center;font-weight:700}
+/* boards */
+.board{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px;background:var(--line);padding:2px;border-radius:10px;width:100%;max-width:560px;margin:0 auto}
+.board.lab{grid-template-columns:16px repeat(var(--n),1fr);background:transparent;padding:0}
+.board.lab .lab{font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.board.lab .cell{border-radius:3px}
+.cell{aspect-ratio:1;background:var(--water);position:relative;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:.8rem;font-weight:700;touch-action:manipulation}
+.cell::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0}
+.cell.miss::after{content:'';width:28%;height:28%;border-radius:50%;background:var(--miss)}
+.cell.hit::after{content:'✕';color:var(--hit);font-size:1.15em;font-weight:900;text-shadow:0 0 6px var(--hit)}
+.cell.hull{background:var(--ship)}
+.cell.hull.hit{background:var(--ship)}.cell.hull.hit::after{color:#fff;text-shadow:0 0 4px #000}
+.cell.hull.rev,.cell.sunkc{background:var(--sunk)}
+.cell.sunkc::after,.cell.rev.hit::after{content:'✕';color:#fff;font-weight:900}
+.cell.hh.a{border-radius:14px 3px 3px 14px}.cell.hh.z{border-radius:3px 14px 14px 3px}
+.cell.hv.a{border-radius:14px 14px 3px 3px}.cell.hv.z{border-radius:3px 3px 14px 14px}
+.cell.solo{border-radius:50%}
+.cell.rad{color:var(--accent);background:color-mix(in srgb,var(--water) 70%,var(--accent))}
+.cell.aoe{outline:2px dashed var(--accent);outline-offset:-2px}
+.cell.sel{outline:3px solid var(--accent);outline-offset:-3px;animation:pulse .8s infinite alternate}
+.cell.sel::after{content:'⌖';color:var(--accent);font-size:1.3em;width:auto;height:auto;background:none;border-radius:0}
+.cell.pvok{outline:3px solid var(--good);outline-offset:-3px;background:color-mix(in srgb,var(--water) 60%,var(--good))}
+.cell.pvbad{outline:3px solid var(--bad);outline-offset:-3px}
+@keyframes pulse{to{filter:brightness(1.5)}}
+.cell.splash::before{border:2px solid var(--miss);animation:ring .7s ease-out}
+@keyframes ring{0%{transform:scale(.2);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+.cell.boom{animation:boom .6s ease-out;z-index:2}
+@keyframes boom{0%{filter:brightness(4)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
+.cell.boom2{z-index:3}
+.cell.boom2::before{background:radial-gradient(circle,#fff,#ffb703 35%,#ff4d00 60%,transparent 72%);animation:blast .95s ease-out}
+@keyframes blast{0%{transform:scale(.2);opacity:1}100%{transform:scale(2.6);opacity:0}}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.placing .cell.hull{touch-action:none;cursor:grab}
+/* tray */
+.tray{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;min-height:44px}
+.chip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 8px;touch-action:none;cursor:grab;font-size:.8rem}
+.chip.sel{border-color:var(--accent)}.chip.done{opacity:.35}
+.chip i{display:flex;gap:2px}.chip i b{width:14px;height:14px;background:var(--ship);border-radius:3px}
+.ghost{position:fixed;z-index:50;pointer-events:none;display:flex;opacity:.75;transform:translate(-50%,-50%)}
+.ghost b{display:block;background:var(--ship);border:1px solid #000;border-radius:4px}
+/* battle */
+.status{display:flex;align-items:center;gap:8px;font-weight:700;min-height:36px}
+.status span{flex:1}
+.tbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 8px}.tbar i{display:block;height:100%;width:100%;background:var(--accent);transition:width .2s linear}
+.weap{display:flex;gap:6px;margin:10px 0 4px}
+.weap button{flex:1;position:relative;min-height:54px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font-size:.78rem;cursor:pointer;touch-action:manipulation}
+.weap button.on{border-color:var(--accent);background:color-mix(in srgb,var(--panel) 70%,var(--accent))}
+.weap button:disabled{opacity:.35}
+.weap em{position:absolute;top:2px;right:6px;font-style:normal;color:var(--accent);font-weight:700}
+.tinfo{text-align:center;color:var(--muted);font-size:.85rem;min-height:20px}
+.low{display:flex;gap:12px;margin-top:10px;align-items:flex-start}
+.mini{width:42%;max-width:190px}.mini .board{max-width:none}
+.side{flex:1;font-size:.8rem}
+.fl{display:flex;align-items:center;gap:6px;margin:3px 0}.fl i{display:flex;gap:2px}.fl i b{width:9px;height:9px;background:var(--ship);border-radius:2px}
+.fl.sunk{opacity:.4;text-decoration:line-through}.fl.sunk i b{background:var(--sunk)}
+.log{margin-top:8px;color:var(--muted);min-height:2.6em}.log div:first-child{color:var(--ink)}
+.coach{position:sticky;top:0;z-index:20;background:var(--accent);color:#1a1200;border-radius:12px;padding:10px;margin:6px 0;display:flex;gap:8px;align-items:center;font-weight:600;font-size:.92rem}
+.coach span{flex:1}.coach button{border:0;border-radius:8px;padding:8px 10px;font-weight:700;background:#1a1200;color:#fff;cursor:pointer}
+.coach button.s{background:transparent;color:#1a1200;text-decoration:underline}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px}
+.overlay[hidden],.coach[hidden],[hidden]{display:none!important}
+.modal{background:var(--panel);border:2px solid var(--accent);border-radius:16px;padding:20px;max-width:360px;width:100%;text-align:center}
+.modal h2{font-size:2rem;margin:0}.modal p{color:var(--muted)}
+.banner{position:fixed;left:0;right:0;top:34%;text-align:center;font-size:1.7rem;font-weight:900;color:#fff;text-shadow:0 2px 12px #000,0 0 20px var(--hit);pointer-events:none;opacity:0;z-index:40;padding:0 20px}
+.banner.show{animation:bn 1.8s ease-out}
+@keyframes bn{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.05)}80%{opacity:1}100%{opacity:0}}
+.code{font-size:2.4rem;letter-spacing:.3em;text-align:center;font-weight:900;color:var(--accent);margin:8px 0}
+input[type=text]{width:100%;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.1rem;padding:0 12px;user-select:text;-webkit-user-select:text}
+#chatBtn{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));width:52px;height:52px;border-radius:50%;border:0;background:var(--btn);color:#fff;font-size:1.4rem;z-index:30;display:none}
+#chatBtn i{position:absolute;top:-2px;right:-2px;background:var(--bad);color:#fff;font-size:.7rem;font-style:normal;border-radius:10px;padding:1px 6px}
+#chatPanel{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--panel);border-top:2px solid var(--accent);padding:10px 14px calc(10px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto;display:none}
+#chatLog{height:110px;overflow:auto;font-size:.85rem;margin-bottom:6px;user-select:text;-webkit-user-select:text}
+.emos{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.emos button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:16px;padding:6px 10px;font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a id="home" href="../index.html" data-i="back"></a>
+    <h1>🚢 Sea Strike</h1>
+    <div class="tools"><button id="bSnd" title="Sound">🔊</button><button id="bTheme" title="Theme">🎨</button><select id="selLang" aria-label="Language"></select></div>
+  </header>
+
+  <div id="coach" class="coach" hidden><span id="coachTxt"></span><button id="coachNext"></button><button id="coachSkip" class="s"></button></div>
+
+  <!-- MENU -->
+  <section id="sMenu" class="screen on">
+    <p style="text-align:center;color:var(--muted);margin:4px 0 10px" data-i="tag"></p>
+    <div class="stats"><div><b id="stW">0</b><span data-i="wins"></span></div><div><b id="stL">0</b><span data-i="losses"></span></div><div><b id="stA">–</b><span data-i="acc"></span></div></div>
+    <button class="btn" id="bAI" data-i="vsAI"></button>
+    <button class="btn" id="bOnline" data-i="online"></button>
+    <button class="btn alt" id="bTut" data-i="tutorial"></button>
+    <div class="card">
+      <h2 data-i="settings"></h2>
+      <div class="lbl" data-i="size"></div><div class="seg" id="gSize"></div>
+      <div class="lbl" data-i="rule"></div><div class="seg" id="gRule"></div><p class="desc" id="gRuleD"></p>
+      <div class="lbl" data-i="diff"></div><div class="seg" id="gDiff"></div>
+      <div class="lbl" data-i="timer"></div><div class="seg" id="gTimer"></div>
+      <div class="lbl" data-i="power"></div><div class="seg" id="gPower"></div>
+      <div class="lbl" data-i="fleet"></div><div class="seg" id="gPreset"></div>
+      <div id="gFleet" style="margin-top:6px"></div>
+      <p class="warn" id="gWarn"></p>
+    </div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="sLobby" class="screen">
+    <div class="card" id="lobHome">
+      <h2 data-i="online"></h2>
+      <button class="btn" id="bCreate" data-i="createRoom"></button>
+      <div class="lbl" data-i="joinRoom"></div>
+      <div class="row"><input type="text" id="joinCode" maxlength="5" autocapitalize="characters" autocomplete="off" data-ph="enterCode"><button class="btn" id="bJoin" style="flex:0 0 110px;margin:0" data-i="join"></button></div>
+    </div>
+    <div class="card" id="lobWait" hidden>
+      <h2 data-i="roomCode"></h2><div class="code" id="roomCode">-----</div>
+      <button class="btn alt" id="bCopy" data-i="copyLink"></button>
+    </div>
+    <p id="lobMsg" style="text-align:center;color:var(--muted)"></p>
+    <button class="btn alt" id="bLobBack" data-i="menu"></button>
+  </section>
+
+  <!-- PLACEMENT -->
+  <section id="sPlace" class="screen">
+    <h2 style="margin:6px 0" data-i="placeTitle"></h2>
+    <p class="desc" data-i="placeHint"></p>
+    <div id="pBoard" class="board lab placing"></div>
+    <div class="tray" id="tray"></div>
+    <div class="row"><button class="btn alt" id="bRot" data-i="rotate"></button><button class="btn alt" id="bRand" data-i="random"></button><button class="btn alt" id="bClr" data-i="clear"></button></div>
+    <button class="btn" id="bReady" data-i="ready"></button>
+    <p id="waitOpp" class="desc" style="text-align:center"></p>
+    <button class="btn alt" id="bLeave1" data-i="leave"></button>
+  </section>
+
+  <!-- BATTLE -->
+  <section id="sBattle" class="screen">
+    <div class="status"><span id="turnTxt"></span><b id="tleft"></b></div>
+    <div class="tbar" id="tbarW" hidden><i id="tbar"></i></div>
+    <div id="eBoard" class="board lab"></div>
+    <div class="weap" id="weap"></div>
+    <div class="tinfo" id="tinfo"></div>
+    <button class="btn fire" id="bFire" data-i="fire"></button>
+    <div class="low">
+      <div class="mini"><div id="mBoard" class="board"></div><div class="desc" style="text-align:center" data-i="yourFleet"></div></div>
+      <div class="side"><b data-i="enemyFleet"></b><div id="eFleet"></div><div class="log" id="log"></div></div>
+    </div>
+    <button class="btn alt" id="bLeave2" data-i="leave"></button>
+  </section>
+</div>
+
+<button id="chatBtn">💬<i id="chatBadge" hidden>0</i></button>
+<div id="chatPanel"><div id="chatLog"></div><div class="emos" id="emos"></div>
+  <div class="row"><input type="text" id="chatIn" maxlength="80" autocomplete="off" data-ph="typeMsg"><button class="btn" id="chatSend" style="flex:0 0 90px;margin:0" data-i="send"></button><button class="btn alt" id="chatClose" style="flex:0 0 54px;margin:0">✕</button></div></div>
+<div class="overlay" id="overlay" hidden><div class="modal"><h2 id="ovTitle"></h2><p id="ovText"></p><p id="ovStats"></p>
+  <button class="btn" id="ovAgain"></button><button class="btn alt" id="ovMenu" data-i="menu"></button></div></div>
+<div class="banner" id="banner"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rand=n=>Math.floor(Math.random()*n);
+
+/* ================= i18n  (order: en, th, zh, ja, es, ko) ================= */
+const LANGS=['en','th','zh','ja','es','ko'],LNAME=['English','ไทย','中文','日本語','Español','한국어'];
+const D={};const K=(k,...v)=>{D[k]=v};
+K('back','← Home','← หน้าหลัก','← 首页','← ホーム','← Inicio','← 홈');
+K('tag','Sink the enemy fleet before they sink yours!','จมกองเรือศัตรูก่อนที่พวกเขาจะจมกองเรือของคุณ!','在敌人击沉你之前，击沉敌方舰队！','敵の艦隊を先に沈めよう！','¡Hunde la flota enemiga antes de que hunda la tuya!','적 함대가 당신을 침몰시키기 전에 먼저 격침하세요!');
+K('wins','Wins','ชนะ','胜','勝ち','Victorias','승');K('losses','Losses','แพ้','负','負け','Derrotas','패');K('acc','Accuracy','ความแม่นยำ','命中率','命中率','Precisión','명중률');
+K('vsAI','Play vs Computer','เล่นกับคอมพิวเตอร์','对战电脑','コンピュータと対戦','Jugar vs ordenador','컴퓨터와 대결');
+K('online','Play Online (2 phones)','เล่นออนไลน์ (2 เครื่อง)','在线对战（两台手机）','オンライン対戦（2台）','Jugar en línea (2 móviles)','온라인 대결 (폰 2대)');
+K('tutorial','How to play (tutorial)','วิธีเล่น (สอนเล่น)','玩法教程','遊び方（チュートリアル）','Cómo jugar (tutorial)','게임 방법 (튜토리얼)');
+K('settings','Game settings','ตั้งค่าเกม','游戏设置','ゲーム設定','Ajustes','게임 설정');
+K('size','Board size','ขนาดกระดาน','棋盘大小','盤面サイズ','Tamaño del tablero','보드 크기');
+K('fleet','Fleet','กองเรือ','舰队','艦隊','Flota','함대');
+K('rule','Rule','กติกา','规则','ルール','Regla','규칙');
+K('ruleClassic','Classic','คลาสสิก','经典','クラシック','Clásico','클래식');K('ruleAgain','Hit = again','โดน = ยิงอีก','命中再射','命中で連射','Acierto = otra vez','명중 = 한 번 더');K('ruleSalvo','Salvo','ระดมยิง','齐射','一斉射撃','Salvo','일제 사격');
+K('ruleClassicD','Turns alternate, one shot each.','ผลัดกันยิงทีละนัด','轮流各射一发。','交互に1発ずつ撃ちます。','Turnos alternos, un disparo cada uno.','번갈아 한 발씩 쏩니다.');
+K('ruleAgainD','A hit gives you another shot.','ยิงโดนได้ยิงต่ออีกนัด','命中后可再射一发。','命中するともう1発撃てます。','Un acierto te da otro disparo.','명중하면 한 번 더 쏩니다.');
+K('ruleSalvoD','Shots per turn = ships you have left.','จำนวนนัดต่อตา = จำนวนเรือที่เหลือ','每回合射击数 = 剩余舰船数。','1ターンの弾数 = 残りの船の数。','Disparos por turno = barcos que te quedan.','턴당 발수 = 남은 배의 수.');
+K('diff','Computer level','ระดับคอมพิวเตอร์','电脑难度','コンピュータの強さ','Nivel del ordenador','컴퓨터 난이도');
+K('easy','Easy','ง่าย','简单','かんたん','Fácil','쉬움');K('medium','Medium','กลาง','中等','ふつう','Medio','보통');K('hard','Hard','ยาก','困难','むずかしい','Difícil','어려움');
+K('timer','Turn timer','จับเวลาต่อตา','回合计时','ターンタイマー','Temporizador','턴 타이머');K('off','Off','ปิด','关','オフ','No','끔');K('on','On','เปิด','开','オン','Sí','켬');
+K('power','Power-ups','ไอเทมพิเศษ','特殊武器','パワーアップ','Mejoras','특수 무기');
+K('pSmall','Small','เล็ก','小','小','Pequeña','소형');K('pClassic','Classic','คลาสสิก','经典','クラシック','Clásica','클래식');K('pBig','Big','ใหญ่','大','大','Grande','대형');
+K('tooBig','This fleet does not fit on the board. Remove ships or use a bigger board.','กองเรือนี้ใหญ่เกินกระดาน ลดเรือหรือใช้กระดานที่ใหญ่ขึ้น','舰队太大，棋盘放不下。请减少舰船或换大棋盘。','艦隊が盤面に収まりません。船を減らすか盤面を大きくしてください。','La flota no cabe en el tablero. Quita barcos o usa uno más grande.','함대가 보드에 맞지 않습니다. 배를 줄이거나 더 큰 보드를 쓰세요.');
+K('noShips','Pick at least one ship.','เลือกเรืออย่างน้อย 1 ลำ','至少选择一艘舰船。','船を1隻以上選んでください。','Elige al menos un barco.','배를 한 척 이상 고르세요.');
+K('ship_carrier','Carrier','เรือบรรทุกเครื่องบิน','航空母舰','空母','Portaaviones','항공모함');K('ship_battleship','Battleship','เรือรบ','战列舰','戦艦','Acorazado','전함');K('ship_cruiser','Cruiser','เรือลาดตระเวน','巡洋舰','巡洋艦','Crucero','순양함');
+K('ship_submarine','Submarine','เรือดำน้ำ','潜艇','潜水艦','Submarino','잠수함');K('ship_destroyer','Destroyer','เรือพิฆาต','驱逐舰','駆逐艦','Destructor','구축함');K('ship_patrol','Patrol boat','เรือตรวจการณ์','巡逻艇','哨戒艇','Patrullero','순찰정');
+K('placeTitle','Place your fleet','จัดวางกองเรือ','布置你的舰队','艦隊を配置しよう','Coloca tu flota','함대 배치');
+K('placeHint','Drag ships onto the grid. Tap a ship to rotate it. Ships may not touch, not even at corners.','ลากเรือไปวางบนตาราง แตะเรือเพื่อหมุน เรือห้ามชิดกัน แม้แต่มุม','把船拖到格子上，点按船可旋转。船与船不能相邻，对角也不行。','船をドラッグして配置。タップで回転。船同士は角も含めて接触できません。','Arrastra los barcos a la cuadrícula. Toca un barco para girarlo. No pueden tocarse, ni en las esquinas.','배를 격자로 드래그하세요. 탭하면 회전합니다. 배끼리는 모서리도 닿으면 안 됩니다.');
+K('rotate','🔄 Rotate','🔄 หมุน','🔄 旋转','🔄 回転','🔄 Girar','🔄 회전');K('random','🎲 Random','🎲 สุ่ม','🎲 随机','🎲 ランダム','🎲 Aleatorio','🎲 무작위');K('clear','Clear','ล้าง','清空','クリア','Borrar','비우기');
+K('ready','Ready!','พร้อม!','准备！','準備完了！','¡Listo!','준비 완료!');K('waitOpp','Waiting for your opponent…','รอคู่แข่ง…','等待对手…','相手を待っています…','Esperando al rival…','상대를 기다리는 중…');
+K('leave','Leave game','ออกจากเกม','离开游戏','ゲームをやめる','Salir','나가기');K('askLeave','Leave this game?','ออกจากเกมนี้?','离开这局游戏？','このゲームをやめますか？','¿Salir de esta partida?','이 게임을 나갈까요?');
+K('yourTurn','Your turn — aim and fire!','ตาคุณ — เล็งแล้วยิง!','你的回合——瞄准开火！','あなたの番 — ねらって撃て！','Tu turno: ¡apunta y dispara!','당신 차례 — 조준 후 발사!');
+K('enemyTurn','Enemy is aiming…','ศัตรูกำลังเล็ง…','敌人正在瞄准…','敵がねらっています…','El enemigo apunta…','적이 조준 중…');
+K('fire','FIRE','ยิง','开火','発射','FUEGO','발사');
+K('wShot','Shot','ยิง','普通','通常','Tiro','일반');K('wRadar','Radar','เรดาร์','雷达','レーダー','Radar','레이더');K('wBomb','Bomb 3×3','ระเบิด 3×3','炸弹3×3','爆弾3×3','Bomba 3×3','폭탄 3×3');K('wAir','Airstrike','โจมตีทางอากาศ','空袭','空爆','Ataque aéreo','공습');
+K('target','Target','เป้าหมาย','目标','ターゲット','Objetivo','목표');K('pickTarget','Tap a square to aim','แตะช่องเพื่อเล็ง','点按格子瞄准','マスをタップしてねらう','Toca una casilla','칸을 탭해 조준');
+K('salvoInfo','Pick up to {n} squares','เลือกได้ถึง {n} ช่อง','最多选择 {n} 格','最大{n}マス選べます','Elige hasta {n} casillas','최대 {n}칸 선택');
+K('enemyFleet','Enemy fleet','กองเรือศัตรู','敌方舰队','敵の艦隊','Flota enemiga','적 함대');K('yourFleet','Your fleet','กองเรือของคุณ','你的舰队','あなたの艦隊','Tu flota','내 함대');
+K('youMiss','You missed at {c}.','คุณยิงพลาดที่ {c}','你在 {c} 打偏了。','{c} は外れ。','Fallaste en {c}.','{c} 빗나감.');
+K('youHit','Direct hit at {c}!','ยิงโดนที่ {c}!','命中 {c}！','{c} に命中！','¡Impacto en {c}!','{c} 명중!');
+K('youSank','You sank their {s}!','คุณจม{s}ของศัตรู!','你击沉了敌方的{s}！','敵の{s}を撃沈！','¡Hundiste su {s}!','적의 {s} 격침!');
+K('oppMiss','Enemy missed at {c}.','ศัตรูยิงพลาดที่ {c}','敌人在 {c} 打偏了。','敵は {c} を外した。','El enemigo falló en {c}.','적이 {c}에서 빗나감.');
+K('oppHit','Enemy hit your ship at {c}!','ศัตรูยิงโดนเรือคุณที่ {c}!','敌人命中了你在 {c} 的船！','敵が {c} で命中！','¡El enemigo te dio en {c}!','적이 {c}에서 명중!');
+K('oppSank','Enemy sank your {s}!','ศัตรูจม{s}ของคุณ!','敌人击沉了你的{s}！','敵があなたの{s}を撃沈！','¡El enemigo hundió tu {s}!','적이 내 {s}을(를) 격침!');
+K('youVolley','Your volley: {h} hit, {m} miss.','การยิงของคุณ: โดน {h} พลาด {m}','你的攻击：命中{h}，未中{m}。','あなたの攻撃：命中{h}、ハズレ{m}。','Tu ataque: {h} aciertos, {m} fallos.','내 공격: 명중 {h}, 빗나감 {m}.');
+K('oppVolley','Enemy volley: {h} hit, {m} miss.','ศัตรูยิง: โดน {h} พลาด {m}','敌方攻击：命中{h}，未中{m}。','敵の攻撃：命中{h}、ハズレ{m}。','Ataque enemigo: {h} aciertos, {m} fallos.','적 공격: 명중 {h}, 빗나감 {m}.');
+K('radarRes','Radar at {c}: {n} ship squares nearby.','เรดาร์ที่ {c}: มีช่องเรือใกล้ ๆ {n} ช่อง','{c} 处雷达：附近有 {n} 格船体。','{c} のレーダー：近くに船が{n}マス。','Radar en {c}: {n} casillas de barco cerca.','{c} 레이더: 근처에 배 {n}칸.');
+K('oppRadar','Enemy used radar.','ศัตรูใช้เรดาร์','敌人使用了雷达。','敵がレーダーを使った。','El enemigo usó el radar.','적이 레이더를 사용했습니다.');
+K('timeUp','Time is up! Auto-fired.','หมดเวลา! ยิงอัตโนมัติ','时间到！自动开火。','時間切れ！自動発射。','¡Tiempo! Disparo automático.','시간 초과! 자동 발사.');
+K('win','Victory!','ชนะแล้ว!','胜利！','勝利！','¡Victoria!','승리!');K('lose','Defeat','พ่ายแพ้','失败','敗北','Derrota','패배');
+K('winD','You sank the whole enemy fleet.','คุณจมกองเรือศัตรูทั้งหมดแล้ว','你击沉了整支敌方舰队。','敵の艦隊を全滅させた！','Hundiste toda la flota enemiga.','적 함대를 모두 격침했습니다.');
+K('loseD','Your fleet was sunk.','กองเรือของคุณถูกจมแล้ว','你的舰队被击沉了。','あなたの艦隊は全滅した。','Tu flota fue hundida.','내 함대가 침몰했습니다.');
+K('winLeft','Your opponent left. You win!','คู่แข่งออกจากเกม คุณชนะ!','对手离开了，你赢了！','相手が退出。あなたの勝ち！','El rival se fue. ¡Ganas!','상대가 나갔습니다. 당신의 승리!');
+K('shotsStat','Shots {s} · Hits {h} · Accuracy {a}%','ยิง {s} · โดน {h} · แม่น {a}%','射击 {s} · 命中 {h} · 命中率 {a}%','発射 {s}・命中 {h}・命中率 {a}%','Disparos {s} · Aciertos {h} · Precisión {a}%','발사 {s} · 명중 {h} · 명중률 {a}%');
+K('again','Play again','เล่นอีกครั้ง','再玩一次','もう一度','Jugar otra vez','다시 하기');K('menu','Menu','เมนู','菜单','メニュー','Menú','메뉴');
+K('rematch','Rematch','เล่นอีกครั้ง (ออนไลน์)','再来一局','再戦','Revancha','재대결');K('rematchWait','Waiting for opponent…','รอคู่แข่งตอบรับ…','等待对手…','相手を待っています…','Esperando al rival…','상대 대기 중…');
+K('createRoom','Create room','สร้างห้อง','创建房间','ルームを作る','Crear sala','방 만들기');K('joinRoom','Join a friend’s room','เข้าห้องของเพื่อน','加入朋友的房间','友達のルームに参加','Unirse a una sala','친구 방 참가');
+K('roomCode','Room code','รหัสห้อง','房间代码','ルームコード','Código de sala','방 코드');K('enterCode','Enter code','ใส่รหัส','输入代码','コードを入力','Escribe el código','코드 입력');K('join','Join','เข้าร่วม','加入','参加','Unirse','참가');
+K('copyLink','Copy invite link','คัดลอกลิงก์เชิญ','复制邀请链接','招待リンクをコピー','Copiar enlace','초대 링크 복사');K('copied','Link copied!','คัดลอกแล้ว!','已复制！','コピーしました！','¡Enlace copiado!','복사됨!');
+K('waitGuest','Share the code or link. Waiting for your friend…','ส่งรหัสหรือลิงก์ให้เพื่อน กำลังรอเพื่อน…','把代码或链接发给朋友，等待加入…','コードかリンクを友達に送ってください。待機中…','Comparte el código o enlace. Esperando a tu amigo…','코드나 링크를 친구에게 보내세요. 기다리는 중…');
+K('connecting','Connecting…','กำลังเชื่อมต่อ…','连接中…','接続中…','Conectando…','연결 중…');K('notFound','Room not found. Check the code.','ไม่พบห้อง ตรวจสอบรหัสอีกครั้ง','找不到房间，请检查代码。','ルームが見つかりません。コードを確認してください。','Sala no encontrada. Revisa el código.','방을 찾을 수 없습니다. 코드를 확인하세요.');
+K('connErr','Connection problem. Please try again.','เชื่อมต่อมีปัญหา ลองใหม่อีกครั้ง','连接出错，请重试。','接続に問題があります。もう一度お試しください。','Problema de conexión. Inténtalo de nuevo.','연결 문제가 있습니다. 다시 시도하세요.');
+K('loadErr','Online play could not load. Check your internet.','โหลดโหมดออนไลน์ไม่ได้ ตรวจสอบอินเทอร์เน็ต','无法加载在线模式，请检查网络。','オンラインを読み込めません。ネットを確認してください。','No se pudo cargar el modo en línea. Revisa tu internet.','온라인 모드를 불러올 수 없습니다. 인터넷을 확인하세요.');
+K('oppGone','Opponent disconnected. You win in {n}s…','คู่แข่งหลุดการเชื่อมต่อ คุณจะชนะใน {n} วินาที…','对手已断线，{n} 秒后你获胜…','相手が切断されました。{n}秒後にあなたの勝ち…','El rival se desconectó. Ganas en {n}s…','상대 연결 끊김. {n}초 후 승리…');
+K('send','Send','ส่ง','发送','送信','Enviar','보내기');K('typeMsg','Type a message','พิมพ์ข้อความ','输入消息','メッセージ','Escribe un mensaje','메시지 입력');
+K('e_gg','Good game!','เกมสนุกมาก!','打得好！','ナイスゲーム！','¡Buena partida!','굿 게임!');K('e_nice','Nice shot!','ยิงเก่งมาก!','好球！','ナイスショット！','¡Buen tiro!','나이스 샷!');
+K('e_oops','Oops!','อุ๊ปส์!','哎呀！','おっと！','¡Ups!','앗!');K('e_luck','Good luck!','ขอให้โชคดี!','祝你好运！','幸運を！','¡Suerte!','행운을 빌어요!');
+K('you','You','คุณ','你','あなた','Tú','나');K('opp','Opponent','คู่แข่ง','对手','相手','Rival','상대');
+K('next','Next','ถัดไป','下一步','次へ','Siguiente','다음');K('skip','Skip','ข้าม','跳过','スキップ','Saltar','건너뛰기');
+K('tut1','Welcome, captain! Drag a ship from the tray onto your grid (or press Random).','ยินดีต้อนรับกัปตัน! ลากเรือจากถาดไปวางบนตาราง (หรือกดสุ่ม)','欢迎，船长！把船从下方拖到格子上（或点“随机”）。','ようこそ艦長！下の船をグリッドへドラッグ（またはランダム）。','¡Bienvenido, capitán! Arrastra un barco a tu cuadrícula (o pulsa Aleatorio).','환영합니다, 함장님! 배를 격자로 드래그하세요 (또는 무작위).');
+K('tut2','Tap a ship on the grid to rotate it. Ships can never touch each other.','แตะเรือบนตารางเพื่อหมุน เรือห้ามชิดกัน','点按格子上的船来旋转。船之间不能相邻。','グリッド上の船をタップして回転。船同士は接触できません。','Toca un barco para girarlo. Los barcos nunca pueden tocarse.','격자의 배를 탭하면 회전합니다. 배끼리는 닿을 수 없습니다.');
+K('tut3','Happy with your fleet? Press Ready! to start the battle.','พอใจกับกองเรือแล้ว? กด “พร้อม!” เพื่อเริ่มรบ','满意了吗？点“准备！”开始战斗。','配置OK？「準備完了！」で戦闘開始。','¿Contento con tu flota? Pulsa ¡Listo! para empezar.','배치가 마음에 들면 “준비 완료!”를 눌러 시작하세요.');
+K('tut4','Tap a square on the big enemy board to aim at it.','แตะช่องบนกระดานศัตรูใหญ่เพื่อเล็ง','点按上方大棋盘的一格来瞄准。','大きな敵の盤面のマスをタップしてねらいます。','Toca una casilla del tablero enemigo para apuntar.','큰 적 보드의 칸을 탭해 조준하세요.');
+K('tut5','Now press FIRE!','ตอนนี้กด “ยิง”!','现在按“开火”！','「発射」を押して！','¡Ahora pulsa FUEGO!','이제 “발사”를 누르세요!');
+K('tut6','A red ✕ is a hit, a white dot is a miss. After a hit, search the squares next to it!','✕ สีแดงคือโดน จุดขาวคือพลาด ถ้าโดนให้ลองยิงช่องข้าง ๆ!','红色 ✕ 是命中，白点是未中。命中后，试试旁边的格子！','赤い✕は命中、白い点はハズレ。命中したら隣のマスをさがそう！','✕ rojo = acierto, punto blanco = fallo. Tras un acierto, prueba las casillas vecinas.','빨간 ✕는 명중, 흰 점은 빗나감. 명중하면 옆 칸을 노리세요!');
+K('tut7','Power-ups work once. Pick Radar, tap a square and fire to learn how many ship squares are nearby.','ไอเทมพิเศษใช้ได้ครั้งเดียว เลือกเรดาร์ แตะช่อง แล้วยิง เพื่อดูว่ามีช่องเรืออยู่ใกล้กี่ช่อง','特殊武器只能用一次。选“雷达”，点一格并开火，可得知附近有几格船体。','パワーアップは1回だけ。レーダーを選び、マスをタップして発射すると近くの船のマス数が分かります。','Las mejoras se usan una vez. Elige Radar, toca una casilla y dispara para saber cuántas casillas de barco hay cerca.','특수 무기는 한 번만 쓸 수 있어요. 레이더를 고르고 칸을 탭해 발사하면 근처 배 칸 수를 알려줍니다.');
+K('tut8','Sink every enemy ship to win. Good luck, captain!','จมเรือศัตรูให้หมดเพื่อชนะ โชคดีกัปตัน!','击沉所有敌舰即可获胜。祝你好运，船长！','敵の船をすべて沈めれば勝ち。幸運を、艦長！','Hunde todos los barcos enemigos para ganar. ¡Suerte, capitán!','적의 배를 모두 격침하면 승리! 행운을 빕니다, 함장님!');
+K('th_navy','Navy','กรมท่า','海军蓝','ネイビー','Marino','네이비');K('th_neon','Neon','นีออน','霓虹','ネオン','Neón','네온');K('th_light','Light','สว่าง','明亮','ライト','Claro','라이트');
+
+let LI=Math.max(0,LANGS.indexOf(LS.get('ss_lang',(navigator.language||'en').slice(0,2))));
+const t=(k,v)=>{let s=(D[k]&&(D[k][LI]||D[k][0]))||k;if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s};
+
+/* ================= sound ================= */
+const Snd={c:null,mute:LS.get('ss_mute','0')==='1',
+  init(){if(!this.c){try{this.c=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(this.c&&this.c.state==='suspended')this.c.resume()},
+  tone(f,d,type,v,f2,delay){if(this.mute||!this.c)return;const c=this.c,o=c.createOscillator(),g=c.createGain(),t0=c.currentTime+(delay||0);o.type=type||'sine';o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+d);g.gain.setValueAtTime(v||.2,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+d+.03)},
+  noise(d,v,fc,delay){if(this.mute||!this.c)return;const c=this.c,n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=fc;const g=c.createGain(),t0=c.currentTime+(delay||0);g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);s.connect(f);f.connect(g);g.connect(c.destination);s.start(t0)},
+  play(n){if(this.mute)return;this.init();switch(n){
+    case'click':this.tone(520,.06,'square',.08);break;
+    case'miss':this.noise(.3,.35,1500);this.tone(300,.2,'sine',.1,120);break;
+    case'hit':this.noise(.4,.7,500);this.tone(140,.35,'sawtooth',.25,45);break;
+    case'sink':[0,.18,.36].forEach(d=>{this.noise(.4,.7,600,d);this.tone(160,.4,'sawtooth',.2,40,d)});this.tone(420,1,'triangle',.15,60,.1);break;
+    case'radar':this.tone(880,.6,'sine',.25,880);this.tone(1320,.5,'sine',.1,1320,.15);break;
+    case'win':[523,659,784,1047].forEach((f,i)=>this.tone(f,.3,'triangle',.22,0,i*.14));break;
+    case'lose':[392,330,262,196].forEach((f,i)=>this.tone(f,.4,'sawtooth',.15,0,i*.2));break}}};
+window.addEventListener('pointerdown',()=>Snd.init(),{once:true});
+
+/* ================= board model ================= */
+const SHIPS=[['carrier',5],['battleship',4],['cruiser',3],['submarine',3],['destroyer',2],['patrol',1]];
+const LEN=Object.fromEntries(SHIPS);
+const PRESETS={small:{cruiser:1,destroyer:1,patrol:1},classic:{carrier:1,battleship:1,cruiser:1,submarine:1,destroyer:1},big:{carrier:2,battleship:1,cruiser:2,submarine:1,destroyer:2}};
+const fleetArr=c=>{const a=[];SHIPS.forEach(([k,l])=>{for(let i=0;i<(c[k]||0);i++)a.push({k,len:l})});return a};
+class Board{
+  constructor(n,fleet){this.n=n;this.grid=new Array(n*n).fill(-1);this.shot=new Array(n*n).fill(0);this.ships=fleet.map(f=>({k:f.k,len:f.len,cells:null,h:true,hits:0,sunk:false}))}
+  cellsFor(r,c,len,h){const a=[];for(let j=0;j<len;j++){const rr=h?r:r+j,cc=h?c+j:c;if(rr<0||cc<0||rr>=this.n||cc>=this.n)return null;a.push(rr*this.n+cc)}return a}
+  ok(cells){const n=this.n;for(const i of cells){if(this.grid[i]!==-1)return false;const r=Math.floor(i/n),c=i%n;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr<0||cc<0||rr>=n||cc>=n)continue;if(this.grid[rr*n+cc]!==-1)return false}}return true}
+  put(id,cells){const s=this.ships[id];s.cells=cells;cells.forEach(i=>this.grid[i]=id)}
+  lift(id){const s=this.ships[id];if(s.cells)s.cells.forEach(i=>this.grid[i]=-1);s.cells=null}
+  receive(i){if(i<0||i>=this.grid.length||this.shot[i])return null;const id=this.grid[i];if(id<0){this.shot[i]=1;return{i,res:'miss'}}this.shot[i]=2;const s=this.ships[id];s.hits++;if(s.hits===s.len){s.sunk=true;return{i,res:'sunk',k:s.k,cells:s.cells.slice()}}return{i,res:'hit'}}
+  alive(){return this.ships.filter(s=>!s.sunk).length}
+}
+function randomPlace(b){const order=b.ships.map((s,i)=>i).sort((x,y)=>b.ships[y].len-b.ships[x].len);
+  for(let a=0;a<60;a++){order.forEach(id=>{if(b.ships[id].cells)b.lift(id)});let good=true;
+    for(const id of order){const s=b.ships[id];let done=false;for(let q=0;q<200&&!done;q++){const h=Math.random()<.5,cells=b.cellsFor(rand(b.n),rand(b.n),s.len,h);if(cells&&b.ok(cells)){s.h=h;b.put(id,cells);done=true}}if(!done){good=false;break}}
+    if(good)return true}return false}
+const fitCache={};
+function fleetFits(size,counts){const key=size+JSON.stringify(counts);if(key in fitCache)return fitCache[key];const f=fleetArr(counts);const ok=f.length>0&&randomPlace(new Board(size,f));return fitCache[key]=ok}
+function resolve(b,msg,rule){
+  if(msg.kind==='radar'){const n=b.n,i=msg.cells[0],r=Math.floor(i/n),c=i%n;let cnt=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr<0||cc<0||rr>=n||cc>=n)continue;const j=rr*n+cc;if(b.grid[j]>=0&&!b.shot[j])cnt++}return{kind:'radar',i,n:cnt}}
+  const results=[];for(const i of msg.cells){const r=b.receive(i);if(r)results.push(r)}
+  const over=b.ships.every(s=>s.sunk),anyHit=results.some(r=>r.res!=='miss');
+  return{kind:msg.kind,results,over,keep:rule==='again'&&anyHit&&!over,fleet:over?b.ships.map(s=>({k:s.k,cells:s.cells})):undefined}}
+const hullParts=cells=>{const s=cells.slice().sort((a,b)=>a-b),o=s.length>1&&s[1]-s[0]===1?'hh':'hv';return s.map((i,j)=>[i,s.length===1?['solo']:[o,j===0?'a':j===s.length-1?'z':'m']])};
+const coord=(i,n)=>String.fromCharCode(65+i%n)+(Math.floor(i/n)+1);
+const area=(kind,i,n)=>{const r=Math.floor(i/n),c=i%n,a=[];if(kind==='bomb'){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<n&&cc<n)a.push(rr*n+cc)}}else if(kind==='air'){for(let cc=0;cc<n;cc++)a.push(r*n+cc)}else a.push(i);return a};
+
+/* ================= config & stats ================= */
+let cfg=Object.assign({size:10,fleet:{...PRESETS.classic},rule:'classic',diff:'medium',timer:0,power:true},JSON.parse(LS.get('ss_cfg','{}')));
+const saveCfg=()=>LS.set('ss_cfg',JSON.stringify(cfg));
+let stats=Object.assign({w:0,l:0,s:0,h:0},JSON.parse(LS.get('ss_stats','{}')));
+const showStats=()=>{$('#stW').textContent=stats.w;$('#stL').textContent=stats.l;$('#stA').textContent=stats.s?Math.round(stats.h/stats.s*100)+'%':'–'};
+
+/* ================= screens / ui helpers ================= */
+let screen='sMenu';
+function show(id){screen=id;$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0);renderCoach();$('#chatBtn').style.display=(G&&G.mode==='online'&&(id==='sPlace'||id==='sBattle'))?'block':'none';if(id!=='sBattle'&&id!=='sPlace')$('#chatPanel').style.display='none'}
+function banner(txt){const b=$('#banner');b.textContent=txt;b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+function makeGrid(el,n,labels){el.innerHTML='';el.style.setProperty('--n',n);el.classList.toggle('lab',!!labels);const cells=[];
+  const mk=(c,tx)=>{const d=document.createElement('div');d.className=c;if(tx!==undefined)d.textContent=tx;el.appendChild(d);return d};
+  if(labels){mk('lab');for(let c=0;c<n;c++)mk('lab',String.fromCharCode(65+c))}
+  for(let r=0;r<n;r++){if(labels)mk('lab',r+1);for(let c=0;c<n;c++){const d=mk('cell');d.dataset.i=r*n+c;cells.push(d)}}return cells}
+const STATE=['miss','hit','sunkc','hull','hh','hv','a','z','m','solo','rev','sel','aoe','rad','pvok','pvbad'];
+function setState(el,list){STATE.forEach(c=>el.classList.toggle(c,list.includes(c)))}
+function fx(el,cls,ms,delay){setTimeout(()=>{el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),ms||900)},delay||0)}
+function say(txt){G.log.unshift(txt);G.log.length=Math.min(G.log.length,3);$('#log').innerHTML=G.log.map(x=>'<div>'+x.replace(/</g,'&lt;')+'</div>').join('')}
+
+/* ================= menu ================= */
+function seg(id,opts,get,set){const el=$(id);el.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.type='button';b.textContent=o.l!==undefined?o.l:t(o.k);if(get()===o.v)b.className='on';b.onclick=()=>{Snd.play('click');set(o.v);saveCfg();renderMenu()};el.appendChild(b)})}
+function renderMenu(){
+  seg('#gSize',[8,10,12].map(v=>({v,l:v+'×'+v})),()=>cfg.size,v=>{cfg.size=v;cfg.fleet={...PRESETS[v===8?'small':v===10?'classic':'big']}});
+  seg('#gRule',[{v:'classic',k:'ruleClassic'},{v:'again',k:'ruleAgain'},{v:'salvo',k:'ruleSalvo'}],()=>cfg.rule,v=>cfg.rule=v);
+  $('#gRuleD').textContent=t({classic:'ruleClassicD',again:'ruleAgainD',salvo:'ruleSalvoD'}[cfg.rule]);
+  seg('#gDiff',[{v:'easy',k:'easy'},{v:'medium',k:'medium'},{v:'hard',k:'hard'}],()=>cfg.diff,v=>cfg.diff=v);
+  seg('#gTimer',[0,15,30,60].map(v=>({v,l:v?v+'s':t('off')})),()=>cfg.timer,v=>cfg.timer=v);
+  seg('#gPower',[{v:false,k:'off'},{v:true,k:'on'}],()=>cfg.power,v=>cfg.power=v);
+  const cur=Object.keys(PRESETS).find(p=>JSON.stringify(PRESETS[p])===JSON.stringify(Object.fromEntries(Object.entries(cfg.fleet).filter(e=>e[1]))));
+  seg('#gPreset',[{v:'small',k:'pSmall'},{v:'classic',k:'pClassic'},{v:'big',k:'pBig'}],()=>cur,v=>cfg.fleet={...PRESETS[v]});
+  const f=$('#gFleet');f.innerHTML='';SHIPS.forEach(([k,l])=>{const r=document.createElement('div');r.className='fleetrow';
+    r.innerHTML='<span class="nm"></span><span class="len">'+'■'.repeat(l)+'</span><button type="button">−</button><span class="ct"></span><button type="button">+</button>';
+    r.querySelector('.nm').textContent=t('ship_'+k);r.querySelector('.ct').textContent=cfg.fleet[k]||0;
+    const [m,p]=r.querySelectorAll('button');
+    m.onclick=()=>{cfg.fleet[k]=Math.max(0,(cfg.fleet[k]||0)-1);saveCfg();renderMenu()};
+    p.onclick=()=>{if(fleetArr(cfg.fleet).length<10){cfg.fleet[k]=Math.min(3,(cfg.fleet[k]||0)+1);saveCfg();renderMenu()}};f.appendChild(r)});
+  const n=fleetArr(cfg.fleet).length,fits=n>0&&fleetFits(cfg.size,cfg.fleet);
+  $('#gWarn').textContent=!n?t('noShips'):fits?'':t('tooBig');$('#bAI').disabled=$('#bOnline').disabled=!fits;showStats()}
+
+/* ================= game state ================= */
+let G=null,tut=null,PL=null;
+function newGame(mode,c){G={mode,cfg:c,my:new Board(c.size,fleetArr(c.fleet)),known:new Array(c.size*c.size).fill(0),rev:{},radar:{},
+  enemyLeft:fleetArr(c.fleet).map(f=>({k:f.k,len:f.len,sunk:false})),powers:c.power?{radar:1,bomb:1,air:1}:{},turn:null,over:false,busy:false,weapon:'shot',sel:[],
+  shots:0,hits:0,ai:null,myReady:false,oppReady:false,log:[],deadline:0,myRematch:false,oppRematch:false,counted:false}}
+
+/* ================= placement ================= */
+let DR=null;
+function startPlacement(c,mode){stopTimers();newGame(mode,c);PL={sel:-1};$('#overlay').hidden=true;
+  makeGrid($('#pBoard'),c.size,true);$('#bReady').disabled=true;$('#waitOpp').textContent='';show('sPlace');renderPlace()}
+function renderPlace(){const b=G.my,cells=$('#pBoard').querySelectorAll('.cell');const parts={};
+  b.ships.forEach(s=>{if(s.cells)hullParts(s.cells).forEach(([i,p])=>parts[i]=p)});
+  cells.forEach((el,i)=>{setState(el,parts[i]?['hull',...parts[i]]:[])});
+  const tr=$('#tray');tr.innerHTML='';
+  b.ships.forEach((s,id)=>{const ch=document.createElement('div');ch.className='chip'+(PL.sel===id?' sel':'')+(s.cells?' done':'');
+    ch.innerHTML='<i>'+'<b></b>'.repeat(s.len)+'</i><span></span>';ch.querySelector('span').textContent=t('ship_'+s.k)+(s.cells?' ✓':(s.h?' ↔':' ↕'));
+    if(!s.h&&!s.cells)ch.querySelector('i').style.flexDirection='column';
+    if(!s.cells)ch.addEventListener('pointerdown',e=>startDrag(e,id,'tray',Math.floor((s.len-1)/2)));tr.appendChild(ch)});
+  $('#bReady').disabled=!b.ships.every(s=>s.cells)||G.myReady}
+function startDrag(e,id,from,k){if(DR||G.myReady)return;e.preventDefault();const s=G.my.ships[id];
+  DR={id,k,from,x0:e.clientX,y0:e.clientY,moved:false,touch:e.pointerType!=='mouse',prev:s.cells&&{cells:s.cells.slice(),h:s.h},tgt:null};
+  if(s.cells)G.my.lift(id);PL.sel=id;
+  const first=document.querySelector('#pBoard .cell'),cs=first?first.getBoundingClientRect().width:28;
+  const g=document.createElement('div');g.className='ghost';g.id='ghost';g.style.flexDirection=s.h?'row':'column';
+  for(let j=0;j<s.len;j++){const b=document.createElement('b');b.style.width=b.style.height=cs+'px';g.appendChild(b)}document.body.appendChild(g);
+  window.addEventListener('pointermove',dragMove);window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
+  dragMove(e);renderPlace()}
+function ghostFlip(){const s=G.my.ships[DR.id],g=$('#ghost');g.style.flexDirection=s.h?'row':'column'}
+function preview(){const b=G.my,s=b.ships[DR.id];$$('#pBoard .cell').forEach(c=>c.classList.remove('pvok','pvbad'));DR.tgt=null;
+  if(DR.rc){const [r,c]=DR.rc,hr=s.h?r:r-DR.k,hc=s.h?c-DR.k:c,cells=b.cellsFor(hr,hc,s.len,s.h),ok=!!cells&&b.ok(cells);
+    const disp=[];for(let j=0;j<s.len;j++){const rr=s.h?hr:hr+j,cc=s.h?hc+j:hc;if(rr>=0&&cc>=0&&rr<b.n&&cc<b.n)disp.push(rr*b.n+cc)}
+    const els=$('#pBoard').querySelectorAll('.cell');disp.forEach(i=>els[i].classList.add(ok?'pvok':'pvbad'));if(ok)DR.tgt={hr,hc}}}
+function dragMove(e){if(!DR)return;if(Math.hypot(e.clientX-DR.x0,e.clientY-DR.y0)>8)DR.moved=true;
+  const g=$('#ghost');g.style.left=e.clientX+'px';g.style.top=(e.clientY-(DR.touch?44:0))+'px';
+  const el=document.elementFromPoint(e.clientX,e.clientY-(DR.touch?44:0)),cell=el&&el.closest&&el.closest('#pBoard .cell');
+  DR.rc=cell?[Math.floor(+cell.dataset.i/G.my.n),+cell.dataset.i%G.my.n]:null;if(DR.moved)preview()}
+function dragEnd(){if(!DR)return;window.removeEventListener('pointermove',dragMove);window.removeEventListener('pointerup',dragEnd);window.removeEventListener('pointercancel',dragEnd);
+  const d=DR;DR=null;$('#ghost')&&$('#ghost').remove();$$('#pBoard .cell').forEach(c=>c.classList.remove('pvok','pvbad'));
+  const b=G.my,s=b.ships[d.id];
+  if(!d.moved){ if(d.prev){b.put(d.id,d.prev.cells);rotateShip(d.id)}else{s.h=!s.h;tutEvent('rotated')} Snd.play('click')}
+  else if(d.tgt){b.put(d.id,b.cellsFor(d.tgt.hr,d.tgt.hc,s.len,s.h));Snd.play('click');tutEvent('placed')}
+  else if(d.prev){s.h=d.prev.h;b.put(d.id,d.prev.cells)}
+  renderPlace()}
+function rotateShip(id){const b=G.my,s=b.ships[id];if(!s.cells){s.h=!s.h;return true}
+  const head=s.cells[0],r=Math.floor(head/b.n),c=head%b.n,old=s.cells.slice(),oh=s.h;b.lift(id);s.h=!oh;
+  const tries=[[r,c]];for(let d=1;d<s.len;d++)tries.push(s.h?[r,c-d]:[r-d,c]);
+  for(const [rr,cc] of tries){const cells=b.cellsFor(rr,cc,s.len,s.h);if(cells&&b.ok(cells)){b.put(id,cells);tutEvent('rotated');return true}}
+  s.h=oh;b.put(id,old);const pb=$('#pBoard');pb.classList.remove('shake');void pb.offsetWidth;pb.classList.add('shake');return false}
+$('#bRot').onclick=()=>{if(!G||PL.sel<0)return;Snd.play('click');if(DR){const s=G.my.ships[DR.id];s.h=!s.h;ghostFlip();preview()}else{rotateShip(PL.sel);renderPlace()}};
+window.addEventListener('keydown',e=>{if((e.key==='r'||e.key==='R')&&screen==='sPlace'&&document.activeElement.tagName!=='INPUT')$('#bRot').click()});
+$('#bRand').onclick=()=>{if(G.myReady)return;Snd.play('click');randomPlace(G.my);renderPlace();tutEvent('placed')};
+$('#bClr').onclick=()=>{if(G.myReady)return;Snd.play('click');G.my.ships.forEach((s,i)=>G.my.lift(i));renderPlace()};
+$('#pBoard').addEventListener('pointerdown',e=>{const cell=e.target.closest('.cell');if(!cell||G.myReady)return;const i=+cell.dataset.i,id=G.my.grid[i];if(id<0)return;startDrag(e,id,'board',G.my.ships[id].cells.indexOf(i))});
+$('#bReady').onclick=()=>{Snd.play('click');G.myReady=true;$('#bReady').disabled=true;
+  if(G.mode==='online'){$('#waitOpp').textContent=t('waitOpp');Net.send({t:'ready'});maybeStartOnline()}
+  else{const ai={board:new Board(G.cfg.size,fleetArr(G.cfg.fleet)),known:new Array(G.cfg.size**2).fill(0),left:fleetArr(G.cfg.fleet).map(f=>f.len),turns:0,used:{}};randomPlace(ai.board);G.ai=ai;startBattle(true)}};
+function maybeStartOnline(){if(!G||G.mode!=='online'||!G.myReady||!G.oppReady||Net.role!=='host'||G.turn)return;const meFirst=Math.random()<.5;Net.send({t:'start',first:meFirst?'host':'guest'});startBattle(meFirst)}
+
+/* ================= battle ================= */
+function stopTimers(){clearInterval(Net.hb);clearInterval(Net.wd);clearInterval(Net.cd);Net.cd=null}
+function startBattle(meFirst){const n=G.cfg.size;G.cells=makeGrid($('#eBoard'),n,true);G.mcells=makeGrid($('#mBoard'),n,false);
+  $('#eBoard').onclick=e=>{const c=e.target.closest('.cell');if(c)aim(+c.dataset.i)};
+  G.log=[];$('#log').innerHTML='';show('sBattle');tutEvent('battle');setTurn(meFirst?'me':'opp')}
+function shotsAllowed(){return G.cfg.rule==='salvo'?Math.max(1,G.my.alive()):1}
+function setTurn(who){G.turn=who;G.sel=[];G.weapon='shot';G.busy=false;
+  if(who==='me'&&G.cfg.timer){G.deadline=Date.now()+G.cfg.timer*1000;$('#tbarW').hidden=false}else{G.deadline=0;$('#tbarW').hidden=true;$('#tleft').textContent=''}
+  renderBattle();if(who==='opp'&&G.mode!=='online'){const g=G;setTimeout(()=>{if(G===g)aiTurn()},800)}}
+setInterval(()=>{if(!G||G.over||screen!=='sBattle'||!G.deadline)return;const left=G.deadline-Date.now();
+  $('#tbar').style.width=Math.max(0,left/(G.cfg.timer*1000)*100)+'%';$('#tleft').textContent=Math.max(0,Math.ceil(left/1000))+'s';
+  if(left<=0&&G.turn==='me'&&!G.busy){G.deadline=0;autoFire()}},200);
+function autoFire(){const unk=[];G.known.forEach((v,i)=>{if(!v)unk.push(i)});const k=Math.min(shotsAllowed(),unk.length),pick=[];
+  while(pick.length<k){pick.push(unk.splice(rand(unk.length),1)[0])}G.weapon='shot';G.sel=pick;banner(t('timeUp'));myFire()}
+function aim(i){if(!G||G.turn!=='me'||G.busy||G.over||G.known[i])return;Snd.play('click');
+  if(G.weapon==='shot'&&shotsAllowed()>1){const x=G.sel.indexOf(i);if(x>=0)G.sel.splice(x,1);else if(G.sel.length<shotsAllowed())G.sel.push(i)}else G.sel=[i];
+  tutEvent('aimed');renderBattle()}
+function renderBattle(){if(!G||!G.cells)return;const n=G.cfg.size,mine=G.turn==='me'&&!G.busy&&!G.over;
+  const pv=new Set();if(G.sel.length&&(G.weapon==='bomb'||G.weapon==='air'))area(G.weapon,G.sel[0],n).forEach(i=>pv.add(i));
+  G.cells.forEach((el,i)=>{const k=G.known[i],l=[];if(k===1)l.push('miss');if(k===2)l.push('hit');if(k===3)l.push('sunkc');if(G.rev[i])l.push(...G.rev[i]);
+    if(G.radar[i]!==undefined&&!k)l.push('rad');if(G.sel.includes(i))l.push('sel');else if(pv.has(i)&&!k)l.push('aoe');setState(el,l);el.textContent=(G.radar[i]!==undefined&&!k)?G.radar[i]:''});
+  const parts={};G.my.ships.forEach(s=>{if(s.cells)hullParts(s.cells).forEach(([i,p])=>parts[i]=p)});
+  G.mcells.forEach((el,i)=>{const l=[];if(parts[i])l.push('hull',...parts[i]);const sh=G.my.shot[i];if(sh===1)l.push('miss');if(sh===2){l.push('hit');if(parts[i]&&G.my.ships[G.my.grid[i]].sunk)l.push('rev')}setState(el,l)});
+  if(!Net.cd)$('#turnTxt').textContent=G.over?'':G.turn==='me'?t('yourTurn'):t('enemyTurn');
+  $('#eFleet').innerHTML=G.enemyLeft.map(s=>'<div class="fl'+(s.sunk?' sunk':'')+'"><i>'+'<b></b>'.repeat(s.len)+'</i></div>').join('');
+  const w=$('#weap');w.innerHTML='';w.hidden=!G.cfg.power;
+  [['shot','🎯','wShot'],['radar','📡','wRadar'],['bomb','💣','wBomb'],['air','✈️','wAir']].forEach(([k,ic,nm])=>{const b=document.createElement('button');b.type='button';
+    const cnt=k==='shot'?null:(G.powers[k]||0);b.innerHTML=ic+'<br>'+t(nm)+(cnt!==null?'<em>'+cnt+'</em>':'');
+    b.disabled=!mine||(cnt!==null&&cnt<=0);if(G.weapon===k)b.className='on';
+    b.onclick=()=>{Snd.play('click');G.weapon=k;G.sel=G.sel.slice(0,1);renderBattle()};w.appendChild(b)});
+  const sa=shotsAllowed();let info=t('pickTarget');if(G.weapon==='shot'&&sa>1)info=t('salvoInfo',{n:sa})+' ('+G.sel.length+'/'+sa+')';
+  if(G.sel.length&&!(G.weapon==='shot'&&sa>1))info=t('target')+': '+coord(G.sel[0],n);
+  $('#tinfo').textContent=mine?info:'';
+  const bf=$('#bFire');bf.disabled=!mine||!G.sel.length;bf.textContent=t('fire')+(G.sel.length>1?' ('+G.sel.length+')':'')}
+$('#bFire').onclick=()=>myFire();
+function myFire(){if(!G||G.turn!=='me'||G.busy||!G.sel.length)return;const kind=G.weapon,n=G.cfg.size;let cells;
+  if(kind==='shot')cells=G.sel.slice();else if(kind==='radar')cells=[G.sel[0]];else cells=area(kind,G.sel[0],n).filter(i=>!G.known[i]);
+  if(!cells.length)return;if(kind!=='shot')G.powers[kind]--;G.busy=true;G.sel=[];G.deadline=0;$('#tbarW').hidden=true;renderBattle();tutEvent('fired');
+  const msg={t:'shot',kind,cells};
+  if(G.mode==='online')Net.send(msg);else{const g=G;setTimeout(()=>{if(G===g)handleMyResult(resolve(G.ai.board,msg,G.cfg.rule))},450)}}
+function handleMyResult(res){if(!G||G.over)return;const n=G.cfg.size;
+  if(res.kind==='radar'){G.busy=false;G.radar[res.i]=res.n;Snd.play('radar');say(t('radarRes',{c:coord(res.i,n),n:res.n}));tutEvent('radar');
+    if(G.cfg.timer){G.deadline=Date.now()+G.cfg.timer*1000;$('#tbarW').hidden=false}renderBattle();return}
+  let h=0,m=0,sunkName=null;
+  res.results.forEach((r,idx)=>{G.shots++;const el=G.cells[r.i];
+    if(r.res==='miss'){m++;G.known[r.i]=1;fx(el,'splash',800,idx*90)}
+    else{h++;G.hits++;G.known[r.i]=2;fx(el,'boom',700,idx*90);
+      if(r.res==='sunk'){sunkName=t('ship_'+r.k);const sl=G.enemyLeft.find(s=>s.k===r.k&&!s.sunk);if(sl)sl.sunk=true;
+        r.cells.forEach(c=>G.known[c]=3);hullParts(r.cells).forEach(([c,p])=>G.rev[c]=['hull','rev',...p]);r.cells.forEach((c,j)=>fx(G.cells[c],'boom2',1000,j*120))}}});
+  Snd.play(sunkName?'sink':h?'hit':'miss');
+  if(sunkName){banner(t('youSank',{s:sunkName}));say(t('youSank',{s:sunkName}))}
+  else if(res.results.length===1)say(t(h?'youHit':'youMiss',{c:coord(res.results[0].i,n)}));else say(t('youVolley',{h,m}));
+  renderBattle();
+  if(res.over){if(res.fleet)res.fleet.forEach(f=>f.cells&&hullParts(f.cells).forEach(([c,p])=>{if(!G.rev[c])G.rev[c]=['hull',...p]}));renderBattle();finish(true);return}
+  {const g=G;setTimeout(()=>{if(G===g&&!G.over)setTurn(res.keep?'me':'opp')},sunkName?1100:600)}}
+function handleOppShot(res){if(!G||G.over)return;const n=G.cfg.size;
+  if(res.kind==='radar'){Snd.play('radar');say(t('oppRadar'));renderBattle();return}
+  let h=0,m=0,sunkName=null;
+  res.results.forEach((r,idx)=>{const el=G.mcells[r.i];if(r.res==='miss'){m++;fx(el,'splash',800,idx*90)}else{h++;fx(el,'boom',700,idx*90);if(r.res==='sunk'){sunkName=t('ship_'+r.k);r.cells.forEach((c,j)=>fx(G.mcells[c],'boom2',1000,j*120))}}});
+  Snd.play(sunkName?'sink':h?'hit':'miss');renderBattle();
+  if(sunkName){banner(t('oppSank',{s:sunkName}));say(t('oppSank',{s:sunkName}))}
+  else if(res.results.length===1)say(t(h?'oppHit':'oppMiss',{c:coord(res.results[0].i,n)}));else say(t('oppVolley',{h,m}));
+  if(res.over){finish(false);return}
+  {const g=G;setTimeout(()=>{if(G===g&&!G.over)setTurn(res.keep?'opp':'me')},sunkName?1100:600)}}
+
+/* ================= AI ================= */
+function aiBlocked(ai,n){const bl=new Array(n*n).fill(false);ai.known.forEach((v,i)=>{if(v!==3)return;const r=Math.floor(i/n),c=i%n;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<n&&cc<n&&!ai.known[rr*n+cc])bl[rr*n+cc]=true}});return bl}
+function probMap(ai,n,bl,taken){const sc=new Array(n*n).fill(0),hits=[];ai.known.forEach((v,i)=>{if(v===2)hits.push(i)});
+  const run=onlyHit=>{for(const L of ai.left)for(const h of(L===1?[true]:[true,false]))for(let r=0;r<n;r++)for(let c=0;c<n;c++){const cells=[];let ok=true,hc=0;
+    for(let j=0;j<L;j++){const rr=h?r:r+j,cc=h?c+j:c;if(rr>=n||cc>=n){ok=false;break}const i=rr*n+cc,k=ai.known[i];if(k===1||k===3||bl[i]||taken.has(i)){ok=false;break}if(k===2)hc++;cells.push(i)}
+    if(!ok||(onlyHit&&!hc))continue;const w=hc?30*hc*hc:1;cells.forEach(i=>{if(!ai.known[i])sc[i]+=w})}};
+  run(hits.length>0);if(hits.length&&!sc.some(x=>x>0))run(false);return sc}
+function aiPickOne(ai,n,taken){const diff=G.cfg.diff,unk=[];ai.known.forEach((v,i)=>{if(!v&&!taken.has(i))unk.push(i)});if(!unk.length)return -1;
+  if(diff==='easy')return unk[rand(unk.length)];
+  const bl=aiBlocked(ai,n),free=unk.filter(i=>!bl[i]),pool=free.length?free:unk;
+  if(diff==='hard'){const sc=probMap(ai,n,bl,taken);let best=-1,cand=[];pool.forEach(i=>{if(sc[i]>best){best=sc[i];cand=[i]}else if(sc[i]===best)cand.push(i)});return cand[rand(cand.length)]}
+  const hits=[];ai.known.forEach((v,i)=>{if(v===2)hits.push(i)});
+  if(hits.length){const nb=new Set(),line=[];const dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+    hits.forEach(i=>{const r=Math.floor(i/n),c=i%n;dirs.forEach(([dr,dc])=>{const rr=r+dr,cc=c+dc;if(rr<0||cc<0||rr>=n||cc>=n)return;const j=rr*n+cc;if(!pool.includes(j))return;nb.add(j);
+      const pr=r-dr,pc=c-dc;if(pr>=0&&pc>=0&&pr<n&&pc<n&&ai.known[pr*n+pc]===2)line.push(j)})});
+    if(line.length)return line[rand(line.length)];if(nb.size){const a=[...nb];return a[rand(a.length)]}}
+  const par=pool.filter(i=>(Math.floor(i/n)+i%n)%2===0);const p=par.length?par:pool;return p[rand(p.length)]}
+function aiTurn(){if(!G||G.over||G.turn!=='opp'||G.mode==='online')return;const ai=G.ai,n=G.cfg.size;ai.turns++;let msg;
+  if(G.cfg.power&&G.cfg.diff!=='easy'){const hard=G.cfg.diff==='hard';
+    if(!ai.used.bomb&&ai.turns>=(hard?4:7)){const c=aiPickOne(ai,n,new Set());if(c>=0){ai.used.bomb=1;msg={kind:'bomb',cells:area('bomb',c,n).filter(i=>!ai.known[i])}}}
+    else if(!ai.used.air&&ai.turns>=(hard?8:12)){let best=-1,row=0;for(let r=0;r<n;r++){let u=0;for(let c=0;c<n;c++)if(!ai.known[r*n+c])u++;if(u>best){best=u;row=r}}ai.used.air=1;msg={kind:'air',cells:area('air',row*n,n).filter(i=>!ai.known[i])}}}
+  if(!msg||!msg.cells.length){const cnt=Math.min(G.cfg.rule==='salvo'?ai.board.alive():1,ai.known.filter(v=>!v).length),taken=new Set();for(let q=0;q<cnt;q++){const c=aiPickOne(ai,n,taken);if(c>=0)taken.add(c)}msg={kind:'shot',cells:[...taken]}}
+  const res=resolve(G.my,msg,G.cfg.rule);
+  res.results.forEach(r=>{ai.known[r.i]=r.res==='miss'?1:2;if(r.res==='sunk'){r.cells.forEach(c=>ai.known[c]=3);const x=ai.left.indexOf(LEN[r.k]);if(x>=0)ai.left.splice(x,1)}});
+  handleOppShot(res)}
+
+/* ================= end of game ================= */
+function finish(win,leftMsg){if(!G||G.over)return;G.over=true;G.deadline=0;stopTimers();renderBattle();
+  if(!G.counted&&!tut){G.counted=true;if(win)stats.w++;else stats.l++;stats.s+=G.shots;stats.h+=G.hits;LS.set('ss_stats',JSON.stringify(stats))}
+  Snd.play(win?'win':'lose');
+  const g0=G;setTimeout(()=>{if(G!==g0)return;$('#ovTitle').textContent=t(win?'win':'lose');$('#ovText').textContent=leftMsg?t('winLeft'):t(win?'winD':'loseD');
+    $('#ovStats').textContent=t('shotsStat',{s:G.shots,h:G.hits,a:G.shots?Math.round(G.hits/G.shots*100):0});
+    $('#ovAgain').textContent=t(G.mode==='online'?'rematch':'again');$('#ovAgain').disabled=!!leftMsg&&G.mode==='online';$('#overlay').hidden=false;showStats()},1400)}
+$('#ovAgain').onclick=()=>{Snd.play('click');if(G.mode==='online'){G.myRematch=true;$('#ovAgain').disabled=true;$('#ovAgain').textContent=t('rematchWait');Net.send({t:'rematch'});maybeRematch()}
+  else{const c=G.cfg;$('#overlay').hidden=true;startPlacement(c,'ai')}};
+$('#ovMenu').onclick=()=>toMenu();
+function maybeRematch(){if(G&&G.myRematch&&G.oppRematch&&Net.role==='host'){Net.send({t:'cfg',cfg:G.cfg});startPlacement(G.cfg,'online');startWatch()}}
+function toMenu(){stopTimers();Net.close();G=null;tut=null;$('#overlay').hidden=true;$('#chatPanel').style.display='none';show('sMenu');renderMenu()}
+function leave(){if(!confirm(t('askLeave')))return;toMenu()}
+$('#bLeave1').onclick=$('#bLeave2').onclick=leave;
+
+/* ================= tutorial ================= */
+const TUT_AT={placed:1,rotated:2,battle:3,aimed:4,fired:5,radar:7};
+function tutEvent(ev){if(!tut)return;const s=TUT_AT[ev];if(s!==undefined&&s>tut.step){tut.step=s;renderCoach()}}
+function renderCoach(){const c=$('#coach');const on=!!tut&&(screen==='sPlace'||screen==='sBattle');c.hidden=!on;if(!on)return;
+  $('#coachTxt').textContent=t('tut'+(tut.step+1));$('#coachNext').textContent=t(tut.step>=7?'ready':'next');$('#coachSkip').textContent=t('skip')}
+$('#coachNext').onclick=()=>{if(tut.step>=7)tut=null;else tut.step++;renderCoach()};
+$('#coachSkip').onclick=()=>{tut=null;renderCoach()};
+$('#bTut').onclick=()=>{Snd.play('click');tut={step:0};startPlacement({size:8,fleet:{cruiser:1,destroyer:1},rule:'classic',diff:'easy',timer:0,power:true},'ai')};
+$('#bAI').onclick=()=>{Snd.play('click');tut=null;startPlacement({...cfg,fleet:{...cfg.fleet}},'ai')};
+
+/* ================= online ================= */
+const Net={peer:null,conn:null,role:null,last:0,hb:null,wd:null,cd:null,
+  send(o){try{if(this.conn&&this.conn.open)this.conn.send(o)}catch(e){}},
+  close(){try{if(this.conn&&this.conn.open)this.conn.send({t:'bye'})}catch(e){}try{this.conn&&this.conn.close()}catch(e){}try{this.peer&&this.peer.destroy()}catch(e){}this.conn=this.peer=this.role=null;clearInterval(this.hb);clearInterval(this.wd);clearInterval(this.cd);this.cd=null}};
+function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+function openPeer(id){return new Promise((res,rej)=>{const p=id?new Peer(id):new Peer();p.on('open',()=>res(p));p.on('error',rej);setTimeout(()=>rej({type:'timeout'}),12000)})}
+const lobMsg=k=>$('#lobMsg').textContent=k?t(k):'';
+function openLobby(){Net.close();$('#lobHome').hidden=false;$('#lobWait').hidden=true;lobMsg();show('sLobby')}
+$('#bOnline').onclick=()=>{Snd.play('click');openLobby()};
+$('#bLobBack').onclick=()=>{Net.close();show('sMenu')};
+const genCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=a[rand(a.length)];return s};
+async function hostRoom(){lobMsg('connecting');try{await loadPeer()}catch(e){lobMsg('loadErr');return}
+  let code,peer;for(let q=0;q<5;q++){code=genCode();try{peer=await openPeer('seastrike-'+code);break}catch(e){if(!(e&&e.type==='unavailable-id')){lobMsg('connErr');return}}}
+  if(!peer){lobMsg('connErr');return}
+  Net.peer=peer;Net.role='host';$('#roomCode').textContent=code;$('#lobHome').hidden=true;$('#lobWait').hidden=false;lobMsg('waitGuest');
+  const c0={...cfg,fleet:{...cfg.fleet}};
+  peer.on('connection',c=>{if(Net.conn){c.close();return}Net.conn=c;const go=()=>{wire(c);Net.send({t:'cfg',cfg:c0});startPlacement(c0,'online');startWatch()};if(c.open)go();else c.on('open',go)});
+  peer.on('error',()=>{if(!Net.conn)lobMsg('connErr')})}
+async function joinRoom(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==5){lobMsg('notFound');return}lobMsg('connecting');
+  try{await loadPeer()}catch(e){lobMsg('loadErr');return}
+  let peer;try{peer=await openPeer()}catch(e){lobMsg('connErr');return}
+  Net.peer=peer;Net.role='guest';let opened=false;
+  peer.on('error',e=>{if(!opened)lobMsg(e&&e.type==='peer-unavailable'?'notFound':'connErr')});
+  const c=peer.connect('seastrike-'+code,{reliable:true});Net.conn=c;
+  c.on('open',()=>{opened=true;wire(c);startWatch();lobMsg('waitOpp')});
+  setTimeout(()=>{if(!opened&&Net.peer===peer){lobMsg('notFound');Net.close()}},12000)}
+$('#bCreate').onclick=()=>{Snd.play('click');if(!fleetFits(cfg.size,cfg.fleet)){lobMsg('tooBig');return}hostRoom()};
+$('#bJoin').onclick=()=>{Snd.play('click');joinRoom($('#joinCode').value)};
+$('#bCopy').onclick=async()=>{const url=location.origin+location.pathname+'?room='+$('#roomCode').textContent;try{await navigator.clipboard.writeText(url);lobMsg('copied')}catch(e){$('#lobMsg').textContent=url}};
+function wire(c){c.on('data',onData);c.on('close',()=>{if(Net.conn===c)oppGone(true)});c.on('error',()=>{})}
+function startWatch(){Net.last=Date.now();clearInterval(Net.hb);clearInterval(Net.wd);
+  Net.hb=setInterval(()=>Net.send({t:'ping'}),4000);Net.wd=setInterval(()=>{if(G&&G.mode==='online'&&!G.over&&Date.now()-Net.last>14000)oppGone(false)},2000)}
+function ensureGrids(){if(!G.cells){G.cells=makeGrid($('#eBoard'),G.cfg.size,true);G.mcells=makeGrid($('#mBoard'),G.cfg.size,false)}}
+function oppGone(hard){if(!G||G.mode!=='online'||G.over||Net.cd)return;let n=30;
+  const upd=()=>{const s=t('oppGone',{n});$('#turnTxt').textContent=s;if(screen==='sPlace')$('#waitOpp').textContent=s};upd();
+  Net.cd=setInterval(()=>{if(!hard&&Date.now()-Net.last<8000){clearInterval(Net.cd);Net.cd=null;if(G&&G.cells)renderBattle();return}n--;upd();
+    if(n<=0){clearInterval(Net.cd);Net.cd=null;if(G&&!G.over){ensureGrids();if(screen!=='sBattle')show('sBattle');finish(true,true)}}},1000)}
+const okIdx=(v,n)=>Number.isInteger(v)&&v>=0&&v<n*n;
+function onData(m){if(!m||typeof m!=='object')return;Net.last=Date.now();
+  switch(m.t){
+    case'cfg':{if(Net.role!=='guest'||!m.cfg)break;const c=m.cfg,f={};let tot=0;
+      SHIPS.forEach(([k])=>{const v=Number(c.fleet&&c.fleet[k])||0;f[k]=Math.max(0,Math.min(3,Math.floor(v)));tot+=f[k]});
+      const size=[8,10,12].includes(c.size)?c.size:10;if(!tot||tot>10)break;
+      startPlacement({size,fleet:f,rule:['classic','again','salvo'].includes(c.rule)?c.rule:'classic',diff:'medium',timer:[0,15,30,60].includes(c.timer)?c.timer:0,power:!!c.power},'online');startWatch();break}
+    case'ready':if(G&&G.mode==='online'){G.oppReady=true;maybeStartOnline()}break;
+    case'start':if(G&&G.mode==='online'&&Net.role==='guest'&&!G.turn)startBattle(m.first==='guest');break;
+    case'shot':{if(!G||G.mode!=='online'||G.over||G.turn!=='opp'||!G.cells)break;const n=G.cfg.size;
+      if(!Array.isArray(m.cells)||!m.cells.length||m.cells.length>14||!m.cells.every(i=>okIdx(i,n))||!['shot','radar','bomb','air'].includes(m.kind))break;
+      const res=resolve(G.my,{kind:m.kind,cells:[...new Set(m.cells)]},G.cfg.rule);Net.send({t:'res',res});handleOppShot(res);break}
+    case'res':{if(!G||G.mode!=='online'||!G.busy||!m.res)break;const r=m.res,n=G.cfg.size;
+      if(r.kind==='radar'){if(!okIdx(r.i,n)||!Number.isInteger(r.n))break;handleMyResult({kind:'radar',i:r.i,n:Math.max(0,Math.min(9,r.n))});break}
+      if(!Array.isArray(r.results))break;const results=[];
+      for(const x of r.results){if(!x||!okIdx(x.i,n)||!['miss','hit','sunk'].includes(x.res))continue;
+        if(x.res==='sunk'){if(!Array.isArray(x.cells)||!x.cells.every(i=>okIdx(i,n))||!LEN[x.k])continue;results.push({i:x.i,res:'sunk',k:x.k,cells:x.cells})}else results.push({i:x.i,res:x.res})}
+      let fleet;if(r.over&&Array.isArray(r.fleet))fleet=r.fleet.filter(f=>f&&Array.isArray(f.cells)&&f.cells.every(i=>okIdx(i,n)));
+      handleMyResult({kind:r.kind,results,over:!!r.over,keep:!!r.keep,fleet});break}
+    case'chat':{let txt='';if(typeof m.e==='string'&&D['e_'+m.e])txt=t('e_'+m.e);else if(typeof m.text==='string')txt=m.text.slice(0,80);if(txt)addChat('opp',txt);break}
+    case'rematch':if(G){G.oppRematch=true;maybeRematch()}break;
+    case'bye':if(G&&G.mode==='online'&&!G.over){ensureGrids();show('sBattle');finish(true,true)}break}}
+/* chat */
+let unread=0;
+['gg','nice','oops','luck'].forEach(e=>{const b=document.createElement('button');b.type='button';b.dataset.e=e;b.onclick=()=>{Net.send({t:'chat',e});addChat('me',t('e_'+e))};$('#emos').appendChild(b)});
+function refreshEmos(){$$('#emos button').forEach(b=>b.textContent=t('e_'+b.dataset.e))}
+function addChat(who,txt){const d=document.createElement('div');d.textContent=t(who==='me'?'you':'opp')+': '+txt;$('#chatLog').appendChild(d);$('#chatLog').scrollTop=1e5;
+  if(who==='opp'&&$('#chatPanel').style.display!=='block'){unread++;$('#chatBadge').textContent=unread;$('#chatBadge').hidden=false;Snd.play('click')}}
+$('#chatBtn').onclick=()=>{$('#chatPanel').style.display='block';unread=0;$('#chatBadge').hidden=true};
+$('#chatClose').onclick=()=>$('#chatPanel').style.display='none';
+const sendChat=()=>{const v=$('#chatIn').value.trim().slice(0,80);if(!v)return;Net.send({t:'chat',text:v});addChat('me',v);$('#chatIn').value=''};
+$('#chatSend').onclick=sendChat;$('#chatIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
+window.addEventListener('pagehide',()=>Net.close());
+
+/* ================= toolbar / init ================= */
+function applyLang(){document.documentElement.lang=LANGS[LI];$$('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));$$('[data-ph]').forEach(e=>e.placeholder=t(e.dataset.ph));
+  refreshEmos();renderMenu();renderCoach();if(G&&G.cells&&screen==='sBattle')renderBattle();if(G&&screen==='sPlace')renderPlace()}
+$('#selLang').innerHTML=LNAME.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join('');$('#selLang').value=LI;
+$('#selLang').onchange=e=>{LI=+e.target.value;LS.set('ss_lang',LANGS[LI]);applyLang()};
+const THEMES=['navy','neon','light'];
+function setTheme(n){document.documentElement.dataset.theme=n;LS.set('ss_theme',n);$('#bTheme').title=t('th_'+n)}
+$('#bTheme').onclick=()=>{const cur=document.documentElement.dataset.theme,nx=THEMES[(THEMES.indexOf(cur)+1)%3];setTheme(nx);Snd.play('click');banner(t('th_'+nx))};
+setTheme(THEMES.includes(LS.get('ss_theme','navy'))?LS.get('ss_theme','navy'):'navy');
+const syncSnd=()=>$('#bSnd').textContent=Snd.mute?'🔇':'🔊';
+$('#bSnd').onclick=()=>{Snd.mute=!Snd.mute;LS.set('ss_mute',Snd.mute?'1':'0');syncSnd();Snd.play('click')};
+syncSnd();applyLang();
+(function(){const q=new URLSearchParams(location.search).get('room');if(q){openLobby();$('#joinCode').value=q.toUpperCase().slice(0,5);joinRoom(q)}})();
+</script>
+</body>
+</html>

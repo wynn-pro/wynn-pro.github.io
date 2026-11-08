@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 Questions</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:linear-gradient(160deg,#5b3ea8,#2b9cff);font-family:'Noto Sans Thai','Trebuchet MS',sans-serif;color:#1d2b4f;display:flex;align-items:center;justify-content:center;padding:70px 16px 24px}
+  .top{position:fixed;top:10px;left:10px;display:flex;gap:8px;z-index:5}
+  .top a,.top button{background:#fff;color:#5b3ea8;text-decoration:none;font:bold 14px 'Noto Sans Thai','Trebuchet MS',sans-serif;padding:6px 12px;border-radius:20px;border:3px solid #5b3ea8;cursor:pointer}
+  .card{background:#fff;border-radius:24px;padding:24px;width:100%;max-width:640px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  h1{margin:0 0 8px;font-size:2rem;color:#5b3ea8}
+  .bar{height:12px;background:#e3e8f5;border-radius:8px;overflow:hidden;margin:8px 0 14px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb020,#ff5a8a);transition:width .3s}
+  .meta{display:flex;justify-content:space-between;font-weight:bold;font-size:.95rem}
+  .q{font-size:1.35rem;font-weight:bold;margin:12px 0 16px;min-height:3.4em}
+  .opts{display:grid;gap:10px}
+  .opt{font:inherit;font-size:1.05rem;text-align:left;padding:12px 16px;border-radius:14px;border:3px solid #c9d3f0;background:#f5f7ff;cursor:pointer;color:inherit}
+  .opt:hover:not(:disabled){border-color:#5b3ea8;background:#ece6ff}
+  .opt.right{background:#c9f5d2;border-color:#2cb34a}
+  .opt.wrong{background:#ffd3d3;border-color:#e03b3b}
+  .btn{margin-top:16px;font:bold 1.1rem 'Noto Sans Thai','Trebuchet MS',sans-serif;background:#5b3ea8;color:#fff;border:0;border-radius:30px;padding:12px 28px;cursor:pointer}
+  .fb{min-height:1.6em;margin-top:12px;font-weight:bold}
+  .big{font-size:3rem;margin:6px 0}
+  .timer{color:#e03b3b}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="top"><a href="../index.html">← Home</a><button id="lang" type="button">🌐 ไทย</button></div>
+<div class="card" id="card"></div>
+<script>
+(() => {
+  const T = {
+    en:{title:'40 Questions',intro:'Answer 40 questions: science, geography, animals, space, numbers and more. 15 seconds each. Streaks give bonus points!',start:'▶ Start',q:'Question',score:'Score',streak:'Streak',ok:'✅ Correct!',no:'❌ The answer is: ',time:'⏰ Time up! Answer: ',next:'Next →',finish:'See result',done:'Finished!',correct:'correct',again:'↻ Play again',best:'Best',
+      grade:[[36,'🏆 Genius!'],[28,'🌟 Great job!'],[20,'👍 Good work!'],[0,'💪 Keep practising!']]},
+    th:{title:'40 คำถาม',intro:'ตอบ 40 คำถาม วิทยาศาสตร์ ภูมิศาสตร์ สัตว์ อวกาศ ตัวเลข และอื่นๆ ข้อละ 15 วินาที ตอบถูกติดกันได้คะแนนโบนัส!',start:'▶ เริ่ม',q:'ข้อ',score:'คะแนน',streak:'ถูกติดกัน',ok:'✅ ถูกต้อง!',no:'❌ คำตอบคือ: ',time:'⏰ หมดเวลา! คำตอบ: ',next:'ถัดไป →',finish:'ดูผล',done:'จบเกม!',correct:'ข้อถูก',again:'↻ เล่นอีกครั้ง',best:'สูงสุด',
+      grade:[[36,'🏆 อัจฉริยะ!'],[28,'🌟 เยี่ยมมาก!'],[20,'👍 ทำได้ดี!'],[0,'💪 สู้ต่อไป!']]}
+  };
+  // [en question, th question, [en options], [th options], correct index]
+  const Q = [
+   ['How many days are in a week?','หนึ่งสัปดาห์มีกี่วัน',['5','6','7','8'],['5','6','7','8'],2],
+   ['What colour do you get by mixing blue and yellow?','ผสมสีน้ำเงินกับสีเหลืองได้สีอะไร',['Green','Purple','Orange','Pink'],['เขียว','ม่วง','ส้ม','ชมพู'],0],
+   ['Which planet is closest to the Sun?','ดาวเคราะห์ดวงไหนอยู่ใกล้ดวงอาทิตย์ที่สุด',['Venus','Mercury','Earth','Mars'],['ดาวศุกร์','ดาวพุธ','โลก','ดาวอังคาร'],1],
+   ['What is the capital of Thailand?','เมืองหลวงของประเทศไทยคือ',['Chiang Mai','Phuket','Bangkok','Pattaya'],['เชียงใหม่','ภูเก็ต','กรุงเทพฯ','พัทยา'],2],
+   ['How many legs does a spider have?','แมงมุมมีกี่ขา',['6','8','10','4'],['6','8','10','4'],1],
+   ['What is 7 × 8?','7 × 8 เท่ากับเท่าไร',['54','56','48','64'],['54','56','48','64'],1],
+   ['Which animal is the largest on Earth?','สัตว์ชนิดใดตัวใหญ่ที่สุดในโลก',['Elephant','Giraffe','Blue whale','Shark'],['ช้าง','ยีราฟ','วาฬสีน้ำเงิน','ฉลาม'],2],
+   ['What do plants take in from the air to make food?','พืชดูดสิ่งใดจากอากาศเพื่อสร้างอาหาร',['Oxygen','Carbon dioxide','Nitrogen','Helium'],['ออกซิเจน','คาร์บอนไดออกไซด์','ไนโตรเจน','ฮีเลียม'],1],
+   ['How many continents are there?','โลกมีกี่ทวีป',['5','6','7','8'],['5','6','7','8'],2],
+   ['What is the largest ocean?','มหาสมุทรใดใหญ่ที่สุด',['Atlantic','Indian','Arctic','Pacific'],['แอตแลนติก','อินเดีย','อาร์กติก','แปซิฟิก'],3],
+   ['Water freezes at what temperature (°C)?','น้ำแข็งตัวที่อุณหภูมิกี่องศาเซลเซียส',['0','10','-10','100'],['0','10','-10','100'],0],
+   ['Which shape has 3 sides?','รูปทรงใดมี 3 ด้าน',['Square','Triangle','Circle','Pentagon'],['สี่เหลี่ยมจัตุรัส','สามเหลี่ยม','วงกลม','ห้าเหลี่ยม'],1],
+   ['Which gas do humans need to breathe?','มนุษย์ต้องหายใจเอาก๊าซใด',['Oxygen','Hydrogen','Helium','Methane'],['ออกซิเจน','ไฮโดรเจน','ฮีเลียม','มีเทน'],0],
+   ['What is the tallest animal?','สัตว์ชนิดใดสูงที่สุด',['Camel','Horse','Giraffe','Ostrich'],['อูฐ','ม้า','ยีราฟ','นกกระจอกเทศ'],2],
+   ['How many minutes are in an hour?','หนึ่งชั่วโมงมีกี่นาที',['30','60','90','100'],['30','60','90','100'],1],
+   ['Which is the biggest planet in our solar system?','ดาวเคราะห์ดวงใดใหญ่ที่สุดในระบบสุริยะ',['Saturn','Earth','Jupiter','Neptune'],['ดาวเสาร์','โลก','ดาวพฤหัสบดี','ดาวเนปจูน'],2],
+   ['What is 100 ÷ 4?','100 ÷ 4 เท่ากับเท่าไร',['20','25','40','30'],['20','25','40','30'],1],
+   ['Which country is famous for the pyramids of Giza?','ประเทศใดมีชื่อเสียงเรื่องพีระมิดกีซา',['Mexico','India','Egypt','Peru'],['เม็กซิโก','อินเดีย','อียิปต์','เปรู'],2],
+   ['What do bees make?','ผึ้งสร้างสิ่งใด',['Milk','Honey','Silk','Sugar'],['นม','น้ำผึ้ง','ไหม','น้ำตาล'],1],
+   ['Which body part pumps blood?','อวัยวะใดสูบฉีดเลือด',['Brain','Lungs','Heart','Liver'],['สมอง','ปอด','หัวใจ','ตับ'],2],
+   ['Which river flows through Bangkok?','แม่น้ำสายสำคัญที่ไหลผ่านกรุงเทพฯ คือ',['Chao Phraya','Mekong','Yom','Ping'],['เจ้าพระยา','โขง','ยม','ปิง'],0],
+   ['How many sides does a hexagon have?','หกเหลี่ยมมีกี่ด้าน',['5','6','7','8'],['5','6','7','8'],1],
+   ['What is the hardest natural material?','วัสดุธรรมชาติใดแข็งที่สุด',['Gold','Iron','Diamond','Quartz'],['ทอง','เหล็ก','เพชร','ควอตซ์'],2],
+   ['Which animal is known as the "king of the jungle"?','สัตว์ใดได้ชื่อว่า "ราชาแห่งป่า"',['Tiger','Lion','Bear','Wolf'],['เสือ','สิงโต','หมี','หมาป่า'],1],
+   ['What is the chemical symbol for water?','สัญลักษณ์เคมีของน้ำคือ',['CO2','O2','H2O','NaCl'],['CO2','O2','H2O','NaCl'],2],
+   ['How many players are on a football (soccer) team on the pitch?','ทีมฟุตบอลมีผู้เล่นในสนามกี่คน',['9','10','11','12'],['9','10','11','12'],2],
+   ['Which planet is known as the Red Planet?','ดาวดวงใดได้ชื่อว่าดาวเคราะห์สีแดง',['Mars','Venus','Jupiter','Mercury'],['ดาวอังคาร','ดาวศุกร์','ดาวพฤหัสบดี','ดาวพุธ'],0],
+   ['What is 15 + 27?','15 + 27 เท่ากับเท่าไร',['41','42','43','52'],['41','42','43','52'],1],
+   ['Which instrument has black and white keys?','เครื่องดนตรีใดมีคีย์สีดำและสีขาว',['Guitar','Drum','Piano','Flute'],['กีตาร์','กลอง','เปียโน','ขลุ่ย'],2],
+   ['What is the name of Earth\'s natural satellite?','ดาวบริวารตามธรรมชาติของโลกคืออะไร',['Sun','Moon','Star','Comet'],['ดวงอาทิตย์','ดวงจันทร์','ดวงดาว','ดาวหาง'],1],
+   ['Which language has the most native speakers?','ภาษาใดมีเจ้าของภาษามากที่สุด',['English','Spanish','Mandarin Chinese','Hindi'],['อังกฤษ','สเปน','จีนกลาง','ฮินดี'],2],
+   ['What do caterpillars turn into?','หนอนผีเสื้อกลายเป็นอะไร',['Beetles','Butterflies','Bees','Ants'],['ด้วง','ผีเสื้อ','ผึ้ง','มด'],1],
+   ['How many seconds are in one minute?','หนึ่งนาทีมีกี่วินาที',['30','60','100','120'],['30','60','100','120'],1],
+   ['Which country has the city of Tokyo?','โตเกียวอยู่ในประเทศใด',['China','Korea','Japan','Vietnam'],['จีน','เกาหลี','ญี่ปุ่น','เวียดนาม'],2],
+   ['What force pulls objects toward the Earth?','แรงใดดึงวัตถุเข้าหาโลก',['Magnetism','Gravity','Friction','Wind'],['แม่เหล็ก','แรงโน้มถ่วง','แรงเสียดทาน','ลม'],1],
+   ['What is the square root of 81?','รากที่สองของ 81 คือ',['7','8','9','10'],['7','8','9','10'],2],
+   ['Which animal lays the largest egg?','สัตว์ใดวางไข่ใหญ่ที่สุด',['Ostrich','Eagle','Crocodile','Penguin'],['นกกระจอกเทศ','นกอินทรี','จระเข้','เพนกวิน'],0],
+   ['Which sea creature has eight arms?','สัตว์ทะเลชนิดใดมีแปดแขน',['Starfish','Octopus','Jellyfish','Crab'],['ปลาดาว','ปลาหมึกยักษ์','แมงกะพรุน','ปู'],1],
+   ['How many colours are in a rainbow?','รุ้งกินน้ำมีกี่สี',['5','6','7','8'],['5','6','7','8'],2],
+   ['How many months are in a year?','หนึ่งปีมีกี่เดือน',['10','11','12','13'],['10','11','12','13'],2]
+  ];
+  const card = document.getElementById('card');
+  const langBtn = document.getElementById('lang');
+  let lang = 'en', order = [], i = 0, score = 0, right = 0, streak = 0, left = 15, tm = null, answered = false, state = 'intro';
+  try { lang = localStorage.getItem('q40lang') || 'en'; } catch(e){}
+  const t = () => T[lang];
+  const best = () => { try { return +localStorage.getItem('q40best')||0 } catch(e){ return 0 } };
+  function shuffle(a){ for(let k=a.length-1;k>0;k--){ const j=Math.floor(Math.random()*(k+1)); [a[k],a[j]]=[a[j],a[k]]; } return a; }
+  function setLang(){ document.documentElement.lang = lang; langBtn.textContent = lang==='en' ? '🌐 ไทย' : '🌐 English'; document.title = t().title; }
+  function intro(){
+    state='intro'; clearInterval(tm);
+    card.innerHTML = `<h1>🧠 ${t().title}</h1><p>${t().intro}</p><p><b>${t().best}:</b> ${best()}</p><button class="btn" id="go">${t().start}</button>`;
+    document.getElementById('go').onclick = start;
+  }
+  function start(){ order = shuffle(Q.map((_,k)=>k)); i=0; score=0; right=0; streak=0; show(); }
+  function show(){
+    state='q'; answered=false; left=15;
+    const q = Q[order[i]], L = lang==='en'?0:1;
+    // shuffle options but remember the correct one
+    const idx = shuffle([0,1,2,3]);
+    const opts = idx.map(k=>({txt:q[2+L][k], ok:k===q[4]}));
+    card.innerHTML = `<div class="meta"><span>${t().q} ${i+1}/40</span><span class="timer" id="tm">⏱ 15</span><span>${t().score}: ${score}</span></div>
+      <div class="bar"><i style="width:${i/40*100}%"></i></div>
+      <div class="q"></div><div class="opts"></div><div class="fb" id="fb"></div><div id="nx"></div>`;
+    card.querySelector('.q').textContent = q[L];
+    const box = card.querySelector('.opts');
+    opts.forEach(o=>{ const b=document.createElement('button'); b.className='opt'; b.textContent=o.txt; b.onclick=()=>pick(b,o.ok,opts); b._ok=o.ok; box.appendChild(b); });
+    clearInterval(tm);
+    tm = setInterval(()=>{ left--; document.getElementById('tm').textContent='⏱ '+left; if(left<=0) pick(null,false,opts,true); },1000);
+  }
+  function pick(btn, ok, opts, timeout){
+    if(answered) return; answered=true; clearInterval(tm);
+    const btns=[...card.querySelectorAll('.opt')]; btns.forEach(b=>{ b.disabled=true; if(b._ok) b.classList.add('right'); });
+    const fb=document.getElementById('fb');
+    if(ok){ streak++; right++; score += 10 + Math.min(streak-1,5)*2 + Math.ceil(left/3); fb.textContent=t().ok+(streak>1?' 🔥 x'+streak:''); }
+    else { streak=0; if(btn) btn.classList.add('wrong'); fb.textContent=(timeout?t().time:t().no)+btns.find(b=>b._ok).textContent; }
+    card.querySelector('.meta span:last-child').textContent=`${t().score}: ${score}`;
+    const n=document.getElementById('nx');
+    n.innerHTML=`<button class="btn" id="n">${i===39?t().finish:t().next}</button>`;
+    document.getElementById('n').onclick=()=>{ i++; i<40?show():end(); };
+    document.getElementById('n').focus();
+  }
+  function end(){
+    state='end'; const b=Math.max(best(),score); try{localStorage.setItem('q40best',b)}catch(e){}
+    const g=t().grade.find(x=>right>=x[0])[1];
+    card.innerHTML=`<h1>${t().done}</h1><div class="big">${g}</div><p><b>${right}/40</b> ${t().correct}<br><b>${t().score}:</b> ${score} &nbsp; <b>${t().best}:</b> ${b}</p><button class="btn" id="again">${t().again}</button>`;
+    document.getElementById('again').onclick=start;
+  }
+  langBtn.onclick=()=>{ lang=lang==='en'?'th':'en'; try{localStorage.setItem('q40lang',lang)}catch(e){} setLang(); if(state==='intro') intro(); else if(state==='end') end(); else { /* re-render current question, keep progress */ const a=answered; if(!a){ show(); } } };
+  setLang(); intro();
+})();
+</script>
+</body>
+</html>
