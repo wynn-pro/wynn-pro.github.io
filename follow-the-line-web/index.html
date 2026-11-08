@@ -35,10 +35,10 @@
   const TXT = {
     en: { title: 'Follow the Line', stay: 'Stay on the yellow line!', steer: 'Steer with ← → / A D, or move the mouse.', legend: '🪙 coins   🟩 boosts   🚩 checkpoints',
       play: '▶ Play (Space)', again: '↻ Again (Space)', over: 'Game Over!', score: 'Score', best: 'Best', newBest: '🏆 New best score!',
-      back: 'Get back on the line!', zoom: 'ZOOM! 🚀', check: 'Checkpoint! 🚩', oops: 'Oops! Back to the line', home: '← Home', toggle: '🌐 ไทย' },
+      back: 'Get back on the line!', zoom: 'ZOOM! 🚀', check: 'Checkpoint! 🚩', oops: 'Oops! Back to the line', home: '← Home', toggle: '🌐 ไทย', level: 'Level', menu: '☰ Levels', easy: 'Easy', mid: 'Medium', hard: 'Hard' },
     th: { title: 'ขับตามเส้น', stay: 'อยู่บนเส้นสีเหลืองให้ได้!', steer: 'บังคับด้วย ← → / A D หรือขยับเมาส์', legend: '🪙 เหรียญ   🟩 เร่งความเร็ว   🚩 จุดเช็คพอยต์',
       play: '▶ เล่น (Space)', again: '↻ เล่นอีกครั้ง (Space)', over: 'จบเกม!', score: 'คะแนน', best: 'สูงสุด', newBest: '🏆 คะแนนสูงสุดใหม่!',
-      back: 'กลับขึ้นเส้นเร็ว!', zoom: 'พุ่ง! 🚀', check: 'เช็คพอยต์! 🚩', oops: 'อุ๊ปส์! กลับไปที่เส้น', home: '← หน้าแรก', toggle: '🌐 English' }
+      back: 'กลับขึ้นเส้นเร็ว!', zoom: 'พุ่ง! 🚀', check: 'เช็คพอยต์! 🚩', oops: 'อุ๊ปส์! กลับไปที่เส้น', home: '← หน้าแรก', toggle: '🌐 English', level: 'ระดับ', menu: '☰ เลือกระดับ', easy: 'ง่าย', mid: 'กลาง', hard: 'ยาก' }
   };
   const L = () => TXT[lang];
   const FONT = () => lang === 'th' ? "'Noto Sans Thai', 'Thonburi', 'Tahoma', sans-serif" : "'Trebuchet MS', sans-serif";
@@ -72,12 +72,21 @@
   const sOver = () => { beep(400, 0.3, 'sawtooth', 0.1, -300); setTimeout(() => beep(200, 0.5, 'sawtooth', 0.1, -100), 300); };
 
   // ---------- high score ----------
+  const DIFFS = {
+    easy: { name: 'easy', col: '#2ec27e', tol: 44, speed: 115, ramp: 0.10, cap: 70,  curve: 0.032, wig: 0.008, lives: 5, grace: 0.55, coinMul: 1 },
+    mid:  { name: 'mid',  col: '#ffb703', tol: 30, speed: 150, ramp: 0.18, cap: 160, curve: 0.050, wig: 0.012, lives: 3, grace: 0.30, coinMul: 1.5 },
+    hard: { name: 'hard', col: '#ff5d8f', tol: 20, speed: 185, ramp: 0.28, cap: 210, curve: 0.070, wig: 0.018, lives: 2, grace: 0.18, coinMul: 2 }
+  };
+  let diff = 'mid';
+  try { const d = localStorage.getItem('follow-the-line-diff'); if (DIFFS[d]) diff = d; } catch (e) {}
+  const D = () => DIFFS[diff];
   let best = 0;
-  try { best = parseInt(localStorage.getItem('follow-the-line-best') || '0', 10) || 0; } catch (e) {}
+  function loadBest() { best = 0; try { best = parseInt(localStorage.getItem('follow-the-line-best-' + diff) || '0', 10) || 0; } catch (e) {} }
+  function setDiff(d) { diff = d; TOL = D().tol; try { localStorage.setItem('follow-the-line-diff', d); } catch (e) {} loadBest(); }
 
   // ---------- track generation ----------
   const STEP = 10;           // distance between path points
-  const TOL = 30;            // how far from the line is still "on the line"
+  let TOL = 30;              // how far from the line is still "on the line"
   const CHECK_EVERY = 160;   // points between checkpoints
   let px, py, ph, coins, boosts, genH, genC, genX, genY;
   function resetTrack() {
@@ -89,9 +98,9 @@
   function extend(n, straight) {
     for (let i = 0; i < n; i++) {
       if (!straight) {
-        genC += (Math.random() - 0.5) * 0.012;
+        genC += (Math.random() - 0.5) * D().wig;
         genC *= 0.985;
-        genC = Math.max(-0.05, Math.min(0.05, genC));
+        genC = Math.max(-D().curve, Math.min(D().curve, genC));
         genH += genC;
         const lim = 1.25; // keep heading mostly "up"
         const d = genH + Math.PI / 2;
@@ -116,7 +125,7 @@
   function newGame() {
     resetTrack();
     car = { x: 0, y: 0, a: -Math.PI / 2, speed: 150 };
-    lives = 3; score = 0; nCoins = 0; trackIdx = 0; lastCheck = 0; offTime = 0; invuln = 1.2; boostT = 0; shake = 0;
+    lives = D().lives; score = 0; nCoins = 0; trackIdx = 0; lastCheck = 0; offTime = 0; invuln = 1.2; boostT = 0; shake = 0;
     particles = []; banner = null;
     state = 'play';
   }
@@ -127,13 +136,22 @@
   let keyLast = 0;
   window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true; keyLast = performance.now();
-    if ((e.key === ' ' || e.key === 'Enter') && state !== 'play') { newGame(); }
+    if (state !== 'play' && DIFFS[{ '1': 'easy', '2': 'mid', '3': 'hard' }[e.key]]) setDiff({ '1': 'easy', '2': 'mid', '3': 'hard' }[e.key]);
+    if (state === 'over' && e.key.toLowerCase() === 'm') state = 'title';
+    else if ((e.key === ' ' || e.key === 'Enter') && state !== 'play') { newGame(); }
     if (e.key.startsWith('Arrow') || e.key === ' ') e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
   function ptr(e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true; mouse.lastMove = performance.now(); }
   window.addEventListener('pointermove', ptr);
-  window.addEventListener('pointerdown', e => { ptr(e); if (state !== 'play' && !e.target.closest('#back')) newGame(); });
+  let hits = [];
+  window.addEventListener('pointerdown', e => {
+    ptr(e);
+    if (state === 'play' || e.target.closest('#back')) return;
+    for (const h of hits) {
+      if (e.clientX >= h.x && e.clientX <= h.x + h.w && e.clientY >= h.y && e.clientY <= h.y + h.h) { h.fn(); return; }
+    }
+  });
 
   // ---------- helpers ----------
   function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
@@ -167,7 +185,7 @@
     }
 
     // speed ramps with distance; boost pads add more
-    const base = 150 + Math.min(160, trackIdx * 0.18);
+    const base = D().speed + Math.min(D().cap, trackIdx * D().ramp);
     if (boostT > 0) boostT -= dt;
     car.speed = base * (boostT > 0 ? 1.6 : 1);
     car.x += Math.cos(car.a) * car.speed * dt;
@@ -185,13 +203,13 @@
     if (px.length - trackIdx < 300) extend(150);
 
     // score = distance
-    score = Math.floor(trackIdx / 4) + nCoins * 10;
+    score = Math.floor((Math.floor(trackIdx / 4) + nCoins * 10) * D().coinMul);
 
     // off the line?
     if (invuln > 0) invuln -= dt;
     if (dist > TOL && invuln <= 0) {
       offTime += dt;
-      if (offTime > 0.3) loseLife();
+      if (offTime > D().grace) loseLife();
     } else offTime = Math.max(0, offTime - dt * 2);
 
     // pickups
@@ -219,7 +237,7 @@
     spawn(car.x, car.y, '#ff5d8f', 20, 160);
     if (lives <= 0) {
       state = 'over'; sOver();
-      if (score > best) { best = score; try { localStorage.setItem('follow-the-line-best', String(best)); } catch (e) {} }
+      if (score > best) { best = score; try { localStorage.setItem('follow-the-line-best-' + diff, String(best)); } catch (e) {} }
       return;
     }
     // respawn on the line at the last checkpoint
@@ -324,8 +342,8 @@
       pill(W - 190, 10, 180, 40, '#fff', '#5b3ea8');
       ctx.fillStyle = '#5b3ea8'; ctx.font = 'bold 20px Trebuchet MS'; ctx.textAlign = 'center';
       ctx.fillText(L().score + ' ' + score, W - 100, 31);
-      pill(W / 2 - 80, 10, 160, 40, '#fff', '#ff5d8f');
-      ctx.font = '22px sans-serif'; ctx.fillText('❤️'.repeat(Math.max(0, lives)) + '🤍'.repeat(3 - Math.max(0, lives)), W / 2, 31);
+      pill(W / 2 - 95, 10, 190, 40, '#fff', '#ff5d8f');
+      ctx.font = '22px sans-serif'; ctx.fillText('❤️'.repeat(Math.max(0, lives)) + '🤍'.repeat(Math.max(0, D().lives - Math.max(0, lives))), W / 2, 31);
       pill(10, 56, 120, 34, '#fff8d6', '#ffb703');
       ctx.fillStyle = '#b07a00'; ctx.font = 'bold 18px Trebuchet MS'; ctx.fillText('🪙 ' + nCoins, 70, 74);
       ctx.fillStyle = '#5b3ea8'; ctx.font = 'bold 14px Trebuchet MS'; ctx.textAlign = 'right';
@@ -337,33 +355,56 @@
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.strokeText(banner.text, W / 2, H * 0.2); ctx.fillText(banner.text, W / 2, H * 0.2);
       ctx.globalAlpha = 1;
     }
+    hits = [];
     if (state !== 'play') {
       ctx.fillStyle = 'rgba(91,62,168,0.35)'; ctx.fillRect(0, 0, W, H);
-      const bw = Math.min(460, W - 30), bx = W / 2 - bw / 2, by = H / 2 - 150;
-      pill(bx, by, bw, 300, '#fff', '#5b3ea8');
+      const bw = Math.min(460, W - 30), bx = W / 2 - bw / 2, by = H / 2 - 180;
+      pill(bx, by, bw, 360, '#fff', '#5b3ea8');
       ctx.fillStyle = '#5b3ea8'; ctx.textAlign = 'center';
       if (state === 'title') {
-        ctx.font = 'bold 44px ' + FONT(); ctx.fillText(L().title, W / 2, by + 50);
-        ctx.font = '60px sans-serif'; ctx.fillText('🚗', W / 2, by + 112);
-        ctx.font = '17px ' + FONT(); ctx.fillStyle = '#444';
-        ctx.fillText(L().stay, W / 2, by + 165);
-        ctx.fillText(L().steer, W / 2, by + 192);
-        ctx.fillText(L().legend, W / 2, by + 219);
+        ctx.font = 'bold 44px ' + FONT(); ctx.fillText(L().title, W / 2, by + 48);
+        ctx.font = '52px sans-serif'; ctx.fillText('🚗', W / 2, by + 102);
+        ctx.font = '16px ' + FONT(); ctx.fillStyle = '#444';
+        ctx.fillText(L().stay, W / 2, by + 150);
+        ctx.fillText(L().steer, W / 2, by + 174);
+        ctx.fillText(L().legend, W / 2, by + 198);
       } else {
-        ctx.font = 'bold 40px ' + FONT(); ctx.fillText(L().over, W / 2, by + 50);
+        ctx.font = 'bold 40px ' + FONT(); ctx.fillText(L().over, W / 2, by + 48);
         ctx.font = '22px ' + FONT(); ctx.fillStyle = '#444';
-        ctx.fillText(L().score + ': ' + score + '   🪙 ' + nCoins, W / 2, by + 110);
+        ctx.fillText(L().score + ': ' + score + '   🪙 ' + nCoins, W / 2, by + 105);
         ctx.fillStyle = score >= best && score > 0 ? '#2ec27e' : '#444';
-        ctx.fillText(score >= best && score > 0 ? L().newBest : L().best + ': ' + best, W / 2, by + 150);
+        ctx.fillText(score >= best && score > 0 ? L().newBest : L().best + ': ' + best, W / 2, by + 142);
+        ctx.fillStyle = '#444'; ctx.font = '17px ' + FONT();
+        ctx.fillText(L().level + ': ' + L()[diff], W / 2, by + 180);
+      }
+      // difficulty buttons (title only)
+      if (state === 'title') {
+        const bwid = (bw - 60) / 3;
+        ['easy', 'mid', 'hard'].forEach((k, i) => {
+          const x = bx + 20 + i * (bwid + 10), y = by + 215, sel = diff === k;
+          pill(x, y, bwid, 44, sel ? DIFFS[k].col : '#f3f0ff', sel ? '#5b3ea8' : '#c9bdf0');
+          ctx.fillStyle = sel ? '#fff' : '#5b3ea8'; ctx.font = 'bold 18px ' + FONT();
+          ctx.fillText((i + 1) + '. ' + L()[k], x + bwid / 2, y + 23);
+          hits.push({ x, y, w: bwid, h: 44, fn: () => setDiff(k) });
+        });
       }
       const pulse = 1 + Math.sin(t * 5) * 0.04;
-      ctx.save(); ctx.translate(W / 2, by + 262); ctx.scale(pulse, pulse);
+      const py0 = by + (state === 'title' ? 295 : 245);
+      ctx.save(); ctx.translate(W / 2, py0); ctx.scale(pulse, pulse);
       pill(-110, -22, 220, 44, '#ff5d8f', '#a3265a');
       ctx.fillStyle = '#fff'; ctx.font = 'bold 22px ' + FONT(); ctx.fillText(state === 'title' ? L().play : L().again, 0, 1);
       ctx.restore();
+      hits.push({ x: W / 2 - 110, y: py0 - 22, w: 220, h: 44, fn: newGame });
+      if (state === 'over') {
+        const my = by + 300;
+        pill(W / 2 - 90, my - 20, 180, 40, '#f3f0ff', '#5b3ea8');
+        ctx.fillStyle = '#5b3ea8'; ctx.font = 'bold 18px ' + FONT(); ctx.fillText(L().menu + ' (M)', W / 2, my + 1);
+        hits.push({ x: W / 2 - 90, y: my - 20, w: 180, h: 40, fn: () => { state = 'title'; } });
+      }
     }
   }
 
+  setDiff(diff);
   setLang(lang);
 
   // ---------- main loop ----------
