@@ -845,7 +845,7 @@ function turnStart(P){
   const evs=[],foe=other(P);
   alive(P).forEach(s=>{
     if(s.def.power==='repair'&&s.hit.size>0){
-      s.cnt++;if(s.cnt>=PV.repair(s.level)){s.cnt=0;const c=pick([...s.hit]);s.hit.delete(c);foe.seen[c]=0;evs.push({t:'repair'})}
+      s.cnt++;if(s.cnt>=PV.repair(s.level)){s.cnt=0;const c=pick([...s.hit]);s.hit.delete(c);P.seen[c]=0;evs.push({t:'repair'})}
     }else if(s.def.power==='radar'){
       s.cnt++;if(s.cnt>=PV.radar(s.level)){
         const cand=[];alive(foe).forEach(f=>f.cells.forEach(c=>{if(foe.seen[c]===0&&!P.radar.has(c))cand.push(c)}));
