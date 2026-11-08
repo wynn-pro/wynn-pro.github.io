@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Orbit Defender</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f2a; font-family: 'Trebuchet MS', 'Noto Sans Thai', sans-serif; touch-action: none; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .pill { position: fixed; top: 10px; background: #fff; color: #2b2a8f; text-decoration: none; font: bold 14px 'Noto Sans Thai', 'Trebuchet MS', sans-serif; padding: 6px 12px; border-radius: 20px; border: 3px solid #2b2a8f; z-index: 5; cursor: pointer; }
+  #back { left: 10px; } #lang { left: 90px; }
+</style>
+</head>
+<body>
+<a id="back" class="pill" href="../index.html">← Home</a>
+<button id="lang" class="pill" type="button">🌐 ไทย</button>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  let W = 0, H = 0;
+  function resize() {
+    const d = window.devicePixelRatio || 1;
+    W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d;
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  addEventListener('resize', resize); resize();
+
+  let lang = 'en';
+  try { lang = localStorage.getItem('lang') === 'th' ? 'th' : 'en'; } catch (e) {}
+  const TXT = {
+    en: { title: 'Orbit Defender', how: 'Aim with the mouse / touch. Click, tap or Space to shoot.', how2: 'Protect the planet from asteroids! 💎 gems give power-ups.',
+      play: '▶ Play (Space)', again: '↻ Again (Space)', over: 'Game Over!', score: 'Score', best: 'Best', newBest: '🏆 New best!', wave: 'Wave', home: '← Home', toggle: '🌐 ไทย' },
+    th: { title: 'ผู้พิทักษ์วงโคจร', how: 'เล็งด้วยเมาส์ / แตะ คลิก แตะ หรือกด Space เพื่อยิง', how2: 'ปกป้องดาวเคราะห์จากอุกกาบาต! 💎 เพชรให้พลังพิเศษ',
+      play: '▶ เล่น (Space)', again: '↻ เล่นอีกครั้ง (Space)', over: 'จบเกม!', score: 'คะแนน', best: 'สูงสุด', newBest: '🏆 สถิติใหม่!', wave: 'รอบ', home: '← หน้าแรก', toggle: '🌐 English' }
+  };
+  const t = k => TXT[lang][k];
+  const backEl = document.getElementById('back'), langEl = document.getElementById('lang');
+  function applyLang() {
+    document.documentElement.lang = lang; backEl.textContent = t('home'); langEl.textContent = t('toggle');
+    document.title = t('title');
+  }
+  langEl.onclick = () => { lang = lang === 'en' ? 'th' : 'en'; try { localStorage.setItem('lang', lang); } catch (e) {} applyLang(); };
+  applyLang();
+
+  let best = 0;
+  try { best = +localStorage.getItem('orbit-best') || 0; } catch (e) {}
+
+  const FONT = s => `bold ${s}px 'Noto Sans Thai','Trebuchet MS',sans-serif`;
+  const stars = Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.6 + 0.4 }));
+
+  let state = 'menu', score = 0, hp = 5, wave = 1, rocks = [], bullets = [], parts = [], gems = [], aim = -Math.PI / 2,
+      spawnT = 0, shotT = 0, power = null, powerT = 0, shake = 0, waveLeft = 0, newBest = false;
+  const mouse = { x: 0, y: 0, down: false };
+
+  function reset() {
+    score = 0; hp = 5; wave = 1; rocks = []; bullets = []; parts = []; gems = [];
+    aim = -Math.PI / 2; spawnT = 1; shotT = 0; power = null; powerT = 0; shake = 0; waveLeft = 12; newBest = false;
+    state = 'play';
+  }
+  const cx = () => W / 2, cy = () => H / 2;
+  const R = () => Math.min(W, H) * 0.09;
+
+  function burst(x, y, col, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, s = 60 + Math.random() * 200;
+      parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, l: 0.5 + Math.random() * 0.4, col });
+    }
+  }
+  function spawn() {
+    const a = Math.random() * 6.283, d = Math.hypot(W, H) / 2 + 40;
+    const x = cx() + Math.cos(a) * d, y = cy() + Math.sin(a) * d;
+    const big = Math.random() < 0.25;
+    const sp = 45 + wave * 8 + Math.random() * 30;
+    const an = Math.atan2(cy() - y, cx() - x);
+    rocks.push({ x, y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, r: big ? 34 : 20, hp: big ? 3 : 1, rot: 0, vr: (Math.random() - 0.5) * 3,
+      gem: Math.random() < 0.1, shape: Array.from({ length: 9 }, () => 0.78 + Math.random() * 0.3) });
+  }
+  function shoot() {
+    if (state !== 'play' || shotT > 0) return;
+    const spread = power === 'triple' ? [-0.2, 0, 0.2] : [0];
+    spread.forEach(o => bullets.push({ x: cx() + Math.cos(aim) * R(), y: cy() + Math.sin(aim) * R(), vx: Math.cos(aim + o) * 620, vy: Math.sin(aim + o) * 620, l: 1.6 }));
+    shotT = power === 'rapid' ? 0.08 : 0.24;
+  }
+  function collect(g) {
+    burst(g.x, g.y, '#7df9ff', 14);
+    const k = Math.random();
+    if (k < 0.4) { power = 'triple'; powerT = 10; }
+    else if (k < 0.8) { power = 'rapid'; powerT = 10; }
+    else hp = Math.min(5, hp + 1);
+    score += 20;
+  }
+
+  function update(dt) {
+    if (state !== 'play') return;
+    aim = Math.atan2(mouse.y - cy(), mouse.x - cx());
+    shotT -= dt; shake = Math.max(0, shake - dt * 20);
+    if (mouse.down) shoot();
+    if (powerT > 0) { powerT -= dt; if (powerT <= 0) power = null; }
+    spawnT -= dt;
+    if (spawnT <= 0 && waveLeft > 0) { spawn(); waveLeft--; spawnT = Math.max(0.35, 1.3 - wave * 0.08); }
+    if (waveLeft <= 0 && rocks.length === 0) { wave++; waveLeft = 10 + wave * 2; spawnT = 1.5; }
+
+    bullets.forEach(b => { b.x += b.vx * dt; b.y += b.vy * dt; b.l -= dt; });
+    rocks.forEach(r => {
+      r.x += r.vx * dt; r.y += r.vy * dt; r.rot += r.vr * dt;
+      bullets.forEach(b => {
+        if (b.l > 0 && r.hp > 0 && Math.hypot(b.x - r.x, b.y - r.y) < r.r + 4) {
+          b.l = 0; r.hp--; burst(b.x, b.y, '#ffd86b', 5);
+          if (r.hp <= 0) {
+            score += r.r > 25 ? 30 : 10; burst(r.x, r.y, '#ff9a5e', 16);
+            if (r.gem) gems.push({ x: r.x, y: r.y, vx: r.vx * 0.3, vy: r.vy * 0.3, l: 8 });
+          }
+        }
+      });
+      if (r.hp > 0 && Math.hypot(r.x - cx(), r.y - cy()) < R() + r.r * 0.8) {
+        r.hp = 0; hp--; shake = 8; burst(r.x, r.y, '#ff5e5e', 22);
+      }
+    });
+    gems.forEach(g => {
+      g.x += g.vx * dt; g.y += g.vy * dt; g.l -= dt;
+      bullets.forEach(b => { if (b.l > 0 && g.l > 0 && Math.hypot(b.x - g.x, b.y - g.y) < 20) { b.l = 0; g.l = 0; collect(g); } });
+    });
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.l -= dt; });
+    bullets = bullets.filter(b => b.l > 0);
+    rocks = rocks.filter(r => r.hp > 0);
+    gems = gems.filter(g => g.l > 0);
+    parts = parts.filter(p => p.l > 0);
+
+    if (hp <= 0) {
+      state = 'over';
+      if (score > best) { best = score; newBest = true; try { localStorage.setItem('orbit-best', best); } catch (e) {} }
+    }
+  }
+
+  function rock(r) {
+    ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.rot);
+    ctx.beginPath();
+    r.shape.forEach((s, i) => { const a = i / r.shape.length * 6.283; const x = Math.cos(a) * r.r * s, y = Math.sin(a) * r.r * s; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.closePath(); ctx.fillStyle = r.gem ? '#6fd8e8' : (r.hp > 1 ? '#9a8272' : '#b59c88'); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#3a2d26'; ctx.stroke();
+    if (r.gem) { ctx.fillStyle = '#fff'; ctx.font = FONT(r.r); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('💎', 0, 2); }
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0b0f2a'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    stars.forEach(s => { ctx.globalAlpha = 0.5 + s.r / 4; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, 6.283); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    ctx.strokeStyle = 'rgba(125,249,255,0.25)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+    ctx.beginPath(); ctx.arc(cx(), cy(), R() * 1.8, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+    const g = ctx.createRadialGradient(cx() - R() * 0.3, cy() - R() * 0.3, R() * 0.2, cx(), cy(), R());
+    g.addColorStop(0, '#6fe08a'); g.addColorStop(1, '#2a7bd1');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx(), cy(), R(), 0, 6.283); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = '#12365e'; ctx.stroke();
+    if (state !== 'menu') {
+      ctx.save(); ctx.translate(cx(), cy()); ctx.rotate(aim);
+      ctx.fillStyle = power ? '#ffd23f' : '#ff7a59'; ctx.strokeStyle = '#12365e'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(R() * 0.6, -9, R() * 0.9, 18, 6); ctx.fill(); ctx.stroke(); ctx.restore();
+    }
+    rocks.forEach(rock);
+    ctx.fillStyle = '#fff'; ctx.font = FONT(26); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    gems.forEach(g => ctx.fillText('💎', g.x, g.y));
+    ctx.fillStyle = '#ffe45e';
+    bullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, 6.283); ctx.fill(); });
+    parts.forEach(p => { ctx.globalAlpha = Math.max(0, Math.min(1, p.l * 1.6)); ctx.fillStyle = p.col; ctx.fillRect(p.x - 2, p.y - 2, 4, 4); });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    ctx.textBaseline = 'alphabetic';
+    if (state === 'play') {
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.font = FONT(20);
+      ctx.fillText(`${t('score')}: ${score}   ${t('best')}: ${best}`, W - 14, 30);
+      ctx.fillText(`${t('wave')} ${wave}`, W - 14, 56);
+      ctx.textAlign = 'center'; ctx.font = FONT(24);
+      ctx.fillText('❤️'.repeat(Math.max(0, hp)), W / 2, H - 20);
+      if (power) { ctx.font = FONT(16); ctx.fillStyle = '#7df9ff'; ctx.fillText(`${power === 'triple' ? '✦ x3' : '⚡'} ${Math.ceil(powerT)}s`, W / 2, H - 52); }
+    } else {
+      ctx.fillStyle = 'rgba(5,8,30,0.72)'; ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+      ctx.font = FONT(Math.min(54, W / 9)); ctx.fillText(state === 'over' ? t('over') : t('title'), W / 2, H / 2 - 70);
+      ctx.font = FONT(Math.min(22, W / 24));
+      if (state === 'over') {
+        ctx.fillText(`${t('score')}: ${score}   ${t('best')}: ${best}`, W / 2, H / 2 - 28);
+        if (newBest) { ctx.fillStyle = '#ffe45e'; ctx.fillText(t('newBest'), W / 2, H / 2 + 4); }
+      } else { ctx.fillText(t('how'), W / 2, H / 2 - 28); ctx.fillText(t('how2'), W / 2, H / 2 + 4); }
+      ctx.fillStyle = '#7df9ff'; ctx.font = FONT(28);
+      ctx.fillText(state === 'over' ? t('again') : t('play'), W / 2, H / 2 + 70);
+    }
+  }
+
+  let last = performance.now();
+  function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+
+  function setPos(e) { mouse.x = e.clientX; mouse.y = e.clientY; }
+  cv.addEventListener('pointerdown', e => { setPos(e); if (state !== 'play') { reset(); return; } mouse.down = true; shoot(); });
+  addEventListener('pointermove', setPos);
+  addEventListener('pointerup', () => { mouse.down = false; });
+  addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (state !== 'play') reset(); else mouse.down = true; } });
+  addEventListener('keyup', e => { if (e.code === 'Space') mouse.down = false; });
+  mouse.x = W / 2; mouse.y = 0;
+})();
+</script>
+</body>
+</html>
