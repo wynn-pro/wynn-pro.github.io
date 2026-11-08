@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Battleship Bay</title>
+<style>
+:root{
+  --ink:#12365e; --sun:#ffd23f; --coral:#ff6b5e; --grass:#5fd16a; --sky:#6fd0ff; --blue:#3b8cff;
+  --w1:#3bb4f2; --w2:#33a9ea; --cs:34px;
+  --c0:#8fa3b8; --c1:#4cc36a; --c2:#3b8cff; --c3:#a85cff; --c4:#ffb020;
+  --font: ui-rounded,"Arial Rounded MT Bold","Trebuchet MS","Hiragino Maru Gothic ProN","Noto Sans Thai","Noto Sans JP","Noto Sans SC",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:var(--font);color:var(--ink);min-height:100vh;
+  background:
+   radial-gradient(ellipse 120px 40px at 12% 14%,#fff 60%,transparent 62%),
+   radial-gradient(ellipse 160px 50px at 78% 9%,#fff 60%,transparent 62%),
+   radial-gradient(ellipse 100px 34px at 55% 22%,#ffffffcc 60%,transparent 62%),
+   linear-gradient(#bdeeff,#7dd6ff 45%,#38aef0 100%);
+  background-attachment:fixed}
+button,select{font-family:inherit}
+#bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#fff;border-bottom:4px solid var(--ink);position:sticky;top:0;z-index:20}
+#bar h1{margin:0;font-size:1.2rem;flex:1;min-width:120px;letter-spacing:.5px}
+.pill{background:#fff6cc;border:3px solid var(--ink);border-radius:999px;padding:3px 12px;font-weight:800}
+.btn{background:var(--sun);color:var(--ink);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:9px 16px;font-weight:800;font-size:1rem;cursor:pointer;text-decoration:none;display:inline-block;transition:transform .08s,box-shadow .08s}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.blue{background:#8cc8ff}.btn.green{background:#8ff08f}.btn.red{background:#ff9d92}.btn.white{background:#fff}
+.btn.sm{padding:5px 11px;font-size:.85rem;border-radius:11px;box-shadow:0 3px 0 var(--ink)}
+.btn.lg{padding:14px 26px;font-size:1.25rem}
+select{border:3px solid var(--ink);border-radius:10px;padding:4px 6px;font-weight:700;background:#fff;color:var(--ink)}
+.screen{display:none;max-width:1100px;margin:0 auto;padding:14px 12px 40px}
+.screen.on{display:block}
+.card{background:#fff;border:3px solid var(--ink);border-radius:18px;box-shadow:0 5px 0 var(--ink);padding:14px}
+h2{margin:6px 0 12px;font-size:1.5rem}
+.muted{opacity:.7;font-size:.9rem}
+/* menu */
+.hero{text-align:center;padding:10px 0 4px}
+.hero h2{font-size:clamp(2rem,7vw,3.4rem);margin:4px 0;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 var(--ink);letter-spacing:1px}
+.hero p{font-weight:800;font-size:1.1rem;margin:0 0 8px;background:#ffffffb0;display:inline-block;padding:4px 14px;border-radius:999px}
+.menu{display:grid;gap:12px;max-width:380px;margin:14px auto}
+.menu .btn{font-size:1.2rem;padding:14px}
+.badge-dot{display:inline-block;background:var(--coral);color:#fff;border:2px solid var(--ink);border-radius:999px;font-size:.75rem;padding:0 7px;margin-left:6px}
+.wave{height:40px;background:radial-gradient(circle at 20px 0,transparent 18px,#fff 19px,#fff 22px,transparent 23px) 0 0/40px 40px repeat-x;opacity:.7;margin-top:10px}
+/* setup */
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0}
+.lbl{font-weight:800;min-width:110px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sg{border:3px solid var(--ink);background:#fff;border-radius:11px;padding:6px 12px;font-weight:800;cursor:pointer;color:var(--ink)}
+.sg.on{background:var(--sun);box-shadow:0 3px 0 var(--ink)}
+.err{color:#c0281a;font-weight:800;min-height:1.4em}
+/* ships */
+.mini{display:grid;gap:2px;justify-content:center;align-content:center}
+.mini i{display:block;width:14px;height:14px;border-radius:4px;border:2px solid var(--ink);background:var(--c)}
+.mini u{display:block;width:14px;height:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.sc{background:#fff;border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:10px;display:flex;flex-direction:column;gap:6px;position:relative}
+.sc .pv{background:#d9f3ff;border-radius:10px;border:2px dashed #9ccbe6;height:78px;display:flex;align-items:center;justify-content:center}
+.sc .nm{font-weight:900}
+.sc .rb{position:absolute;top:8px;right:8px;font-size:.7rem;font-weight:900;color:#fff;border:2px solid var(--ink);border-radius:999px;padding:1px 8px;background:var(--c)}
+.sc .pw{font-size:.82rem;min-height:3.3em}
+.sc .ft{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto;flex-wrap:wrap}
+.sc.r4{background:linear-gradient(#fff,#fff0c4)}
+.sc.owned{background:#eaffea}
+.filters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px}
+.pager{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:14px;font-weight:800}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin:8px 0 4px}
+.slot{height:84px;border:3px dashed #7aa9cc;border-radius:12px;background:#ffffffa8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;cursor:pointer;text-align:center;overflow:hidden;padding:2px}
+.slot.f{border-style:solid;border-color:var(--ink);background:#fff}
+/* goals */
+.mi{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:2px dashed #cfe6f5}
+.bar{flex:1;min-width:120px;height:14px;border:2px solid var(--ink);border-radius:99px;background:#e6f4fb;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--grass)}
+.meds{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.med{border:3px solid var(--ink);border-radius:12px;padding:8px;background:#f2f2f2;opacity:.65;display:flex;gap:8px;align-items:center;font-weight:700;font-size:.9rem}
+.med.on{background:#fff3b8;opacity:1}
+.med span{font-size:1.6rem}
+.stt{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.stt div{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:10px;text-align:center}
+.stt b{display:block;font-size:1.6rem}
+/* boards */
+.boards{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.bwrap{text-align:center}
+.bwrap h3{margin:4px 0 6px}
+.board{display:grid;background:#1d83c8;border:4px solid var(--ink);border-radius:14px;padding:6px;box-shadow:0 5px 0 var(--ink);width:max-content;margin:0 auto;user-select:none;touch-action:manipulation;position:relative}
+.board.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,-1px)}80%{transform:translate(2px,2px)}}
+.lab{font-size:calc(var(--cs)*.34);font-weight:900;color:#d8f3ff;display:flex;align-items:center;justify-content:center;height:calc(var(--cs)*.55)}
+.lab.v{height:var(--cs)}
+.cell{width:var(--cs);height:var(--cs);position:relative;border:1px solid rgba(255,255,255,.28);background:var(--w1)}
+.cell.a{background:var(--w2)}
+.cell .ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cs)*.58);line-height:1;pointer-events:none;z-index:2}
+.cell.s{background:linear-gradient(var(--c),color-mix(in srgb,var(--c) 62%,#000));border-style:solid;border-color:var(--ink)}
+.cell.s::after{content:'';position:absolute;left:18%;right:18%;top:20%;height:18%;background:#ffffff55;border-radius:99px}
+.cell.d{filter:saturate(.7) brightness(.85)}
+.cell.k{background:linear-gradient(#5b6b7a,#2a3744);border-color:#0b1c2e;animation:sinkA 1s}
+.cell.k::after{display:none}
+@keyframes sinkA{0%{transform:translateY(0) rotate(0)}40%{transform:translateY(5px) rotate(4deg)}100%{transform:none}}
+.cell.m::before{content:'';position:absolute;left:50%;top:50%;width:26%;height:26%;margin:-13%;border-radius:50%;background:#fff;opacity:.85}
+.cell.bl{background:#9fd6ff}
+.cell.rd{background:#42d68b;animation:blip 1.2s infinite}
+@keyframes blip{50%{filter:brightness(1.35)}}
+.cell.pvo{outline:3px solid #7cff7c;outline-offset:-3px;background:#7cff7c88}
+.cell.pvb{outline:3px solid #ff5a4d;outline-offset:-3px;background:#ff5a4d88}
+.cell.last{box-shadow:inset 0 0 0 3px #fff}
+.board.tgt .cell.w:not(.m):not(.x):hover,.board.tgt .cell.bl:hover{background:#ffffff88;cursor:crosshair}
+.fx{position:absolute;left:-40%;top:-40%;width:180%;height:180%;pointer-events:none;z-index:6}
+.fx.splash::before,.fx.splash::after{content:'';position:absolute;left:50%;top:50%;width:30%;height:30%;margin:-15%;border:3px solid #fff;border-radius:50%;animation:ring .7s ease-out forwards}
+.fx.splash::after{animation-delay:.15s}
+@keyframes ring{from{transform:scale(.3);opacity:1}to{transform:scale(2.6);opacity:0}}
+.fx.splash b{position:absolute;left:50%;top:50%;width:9%;height:9%;margin:-4.5%;background:#fff;border-radius:50%;animation:drop .6s ease-out forwards}
+.fx.splash b:nth-child(1){--dx:-30px;--dy:-34px}.fx.splash b:nth-child(2){--dx:30px;--dy:-34px}
+.fx.splash b:nth-child(3){--dx:-18px;--dy:-48px}.fx.splash b:nth-child(4){--dx:18px;--dy:-48px}
+@keyframes drop{from{transform:translate(0,0)}60%{opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
+.fx.boom{background:radial-gradient(circle,#fff 0,#ffe45e 22%,#ff8a3d 42%,#ff4b3a 56%,transparent 68%);animation:boom .75s ease-out forwards}
+@keyframes boom{from{transform:scale(.2);opacity:1}55%{opacity:1}to{transform:scale(1.5);opacity:0}}
+.fx.sink b{position:absolute;bottom:35%;width:14%;height:14%;border:2px solid #fff;border-radius:50%;background:#ffffff55;animation:bub 1s ease-in forwards}
+.fx.sink b:nth-child(1){left:30%}.fx.sink b:nth-child(2){left:52%;animation-delay:.2s}.fx.sink b:nth-child(3){left:42%;animation-delay:.4s}.fx.sink b:nth-child(4){display:none}
+@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-34px);opacity:0}}
+/* battle ui */
+.status{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;margin-bottom:10px}
+#turnTxt{font-weight:900;font-size:1.15rem;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:4px 16px}
+#tbar{width:min(260px,60vw);height:14px;border:3px solid var(--ink);border-radius:99px;background:#fff;overflow:hidden;display:none}
+#tbar b{display:block;height:100%;background:var(--coral);width:100%}
+.fleetrow{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:8px;min-height:26px}
+.fleetrow .mini i,.fleetrow .mini u{width:8px;height:8px;border-width:1px;border-radius:2px}
+.fleetrow .mini{gap:1px;padding:3px;background:#fff;border-radius:6px;border:2px solid var(--ink)}
+.fleetrow .mini.dead{opacity:.35;filter:grayscale(1)}
+#flash{position:fixed;left:50%;top:26%;transform:translateX(-50%);z-index:60;pointer-events:none;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:900;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);opacity:0;text-align:center;width:90vw}
+#flash.go{animation:fl 1s ease-out}
+@keyframes fl{0%{opacity:0;transform:translateX(-50%) scale(.5)}15%{opacity:1;transform:translateX(-50%) scale(1.15)}30%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-20px)}}
+#toasts{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:90;display:grid;gap:6px;pointer-events:none}
+.toast{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:6px 14px;font-weight:800;box-shadow:0 4px 0 var(--ink);animation:tin .25s}
+@keyframes tin{from{transform:translateY(-14px);opacity:0}}
+.tray{display:flex;flex-direction:column;gap:6px;min-width:200px;max-width:260px}
+.ts{display:flex;align-items:center;gap:8px;border:3px solid var(--ink);border-radius:12px;background:#fff;padding:5px 8px;cursor:pointer;font-weight:800;font-size:.85rem;text-align:left;color:var(--ink)}
+.ts.sel{background:var(--sun);box-shadow:0 3px 0 var(--ink)}
+.ts.done{opacity:.55}
+.ts .mini{width:56px}
+.ts .mini i,.ts .mini u{width:9px;height:9px;border-width:1.5px;border-radius:3px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+#modal{position:fixed;inset:0;background:rgba(10,40,80,.62);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+#modal.on{display:flex}
+#modal .box{background:#fff;border:4px solid var(--ink);border-radius:22px;padding:20px;max-width:430px;width:100%;text-align:center;box-shadow:0 8px 0 var(--ink);animation:pop .3s}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+#modal h3{margin:0 0 8px;font-size:1.7rem}
+#modal .bt{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.rw{display:flex;justify-content:space-between;gap:20px;font-weight:800;padding:3px 0;border-bottom:2px dashed #cfe6f5}
+@media (max-width:640px){.lbl{min-width:100%}.tray{max-width:none;width:100%;flex-direction:row;flex-wrap:wrap}.ts{flex:1 1 140px}}
+</style>
+</head>
+<body>
+<div id="bar">
+  <button class="btn sm white" id="btnHome" title="Menu">🏠</button>
+  <h1 data-i="app">Battleship Bay</h1>
+  <span class="pill" id="coins">🪙 0</span>
+  <button class="btn sm white" id="btnSnd" title="Sound">🔊</button>
+  <select id="langSel" aria-label="Language">
+    <option value="en">English</option><option value="th">ไทย</option><option value="ja">日本語</option><option value="zh">中文</option>
+  </select>
+  <a class="btn sm blue" href="../index.html" data-i="back_site">← Wynn's Games</a>
+</div>
+
+<section class="screen" id="scr-menu">
+  <div class="hero">
+    <svg viewBox="0 0 320 120" width="320" style="max-width:80%">
+      <path d="M0 96 Q40 80 80 96 T160 96 T240 96 T320 96 V120 H0Z" fill="#2aa0e4" stroke="#12365e" stroke-width="4"/>
+      <path d="M60 80 L250 80 L228 100 L84 100Z" fill="#ff6b5e" stroke="#12365e" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="100" y="56" width="110" height="24" rx="6" fill="#e8eef5" stroke="#12365e" stroke-width="4"/>
+      <rect x="130" y="32" width="46" height="24" rx="6" fill="#fff" stroke="#12365e" stroke-width="4"/>
+      <rect x="146" y="12" width="14" height="20" rx="3" fill="#ffd23f" stroke="#12365e" stroke-width="4"/>
+      <circle cx="114" cy="68" r="4" fill="#12365e"/><circle cx="132" cy="68" r="4" fill="#12365e"/><circle cx="150" cy="68" r="4" fill="#12365e"/><circle cx="168" cy="68" r="4" fill="#12365e"/><circle cx="186" cy="68" r="4" fill="#12365e"/>
+      <rect x="208" y="64" width="40" height="8" rx="4" fill="#5b6b7a" stroke="#12365e" stroke-width="3"/>
+    </svg>
+    <h2 data-i="app">Battleship Bay</h2>
+    <p data-i="tag">Build your fleet. Sink the enemy!</p>
+  </div>
+  <div class="menu">
+    <button class="btn green" id="mBattle" data-i="m_battle">Battle!</button>
+    <button class="btn blue" id="mFleet" data-i="m_fleet">My Fleet</button>
+    <button class="btn" id="mShop" data-i="m_shop">Ship Shop</button>
+    <button class="btn red" id="mGoals"><span data-i="m_goals">Missions &amp; Medals</span><span class="badge-dot" id="goalDot" style="display:none">!</span></button>
+    <button class="btn white" id="mStats" data-i="m_stats">Stats</button>
+  </div>
+  <div class="wave"></div>
+</section>
+
+<section class="screen" id="scr-setup"><h2 data-i="setup_title">Battle Setup</h2><div class="card" id="setupBox"></div></section>
+<section class="screen" id="scr-shop"><h2 data-i="shop_title">Ship Shop</h2><div class="filters" id="shopF"></div><div class="grid" id="shopG"></div><div class="pager" id="shopP"></div></section>
+<section class="screen" id="scr-fleet"><h2 data-i="fleet_title">My Fleet</h2><div class="card"><div id="fleetInfo" style="font-weight:800"></div><div class="slots" id="slots"></div></div><div class="grid" id="fleetG" style="margin-top:14px"></div></section>
+<section class="screen" id="scr-goals"><h2 data-i="goals_title">Missions &amp; Medals</h2><div id="goalsBox"></div></section>
+<section class="screen" id="scr-stats"><h2 data-i="stats_title">Stats</h2><div class="stt" id="statsBox"></div></section>
+
+<section class="screen" id="scr-place">
+  <h2 id="placeTitle"></h2>
+  <p class="muted" data-i="p_hint">Pick a ship, then tap the sea to place it. Tap a placed ship to pick it up.</p>
+  <div class="boards"><div class="bwrap"><div class="board" id="placeBoard"></div></div><div class="tray" id="tray"></div></div>
+  <div class="acts">
+    <button class="btn blue" id="pRot" data-i="p_rotate">Rotate (R)</button>
+    <button class="btn" id="pRand" data-i="p_random">Randomize</button>
+    <button class="btn white" id="pClear" data-i="p_clear">Clear</button>
+    <button class="btn green" id="pReady" data-i="p_ready">Ready!</button>
+  </div>
+  <div class="err" id="placeErr" style="text-align:center"></div>
+</section>
+
+<section class="screen" id="scr-battle">
+  <div class="status"><span id="turnTxt"></span><div id="tbar"><b></b></div><span class="pill" id="turnNo"></span><button class="btn sm red" id="bQuit" data-i="quit">Quit</button></div>
+  <div class="boards">
+    <div class="bwrap"><h3 data-i="enemy_waters">Enemy waters</h3><div class="board tgt" id="enemyBoard"></div><div class="fleetrow" id="enemyRow"></div><div class="muted" id="enemyLeft"></div></div>
+    <div class="bwrap"><h3 id="ownTitle"></h3><div class="board" id="ownBoard"></div><div class="fleetrow" id="ownRow"></div>
+      <div class="acts" style="margin-top:8px"><button class="btn sm blue" id="peekBtn" style="display:none" data-i="peek">Hold to peek at your fleet</button></div></div>
+  </div>
+</section>
+
+<div id="flash"></div><div id="toasts"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+/* ================= i18n ================= */
+const TX = {
+en:{app:"Battleship Bay",tag:"Build your fleet. Sink the enemy!",back_site:"← Wynn's Games",
+ m_battle:"Battle!",m_fleet:"My Fleet",m_shop:"Ship Shop",m_goals:"Missions & Medals",m_stats:"Stats",
+ setup_title:"Battle Setup",mode:"Mode",mode_ai:"vs Computer",mode_pvp:"2 Players",diff:"Difficulty",d_easy:"Easy",d_medium:"Medium",d_hard:"Hard",
+ grid:"Grid size",rule:"Turn rule",rule_alt:"Take turns",rule_again:"Fire again on hit",timer:"Turn timer",t_off:"Off",
+ fleet_sum:"Fleet: {n} ships · {c}/{m} deck cells",edit_fleet:"Edit fleet",deploy:"Deploy fleet!",
+ err_few:"Pick at least 3 ships for your fleet.",err_big:"Your fleet is too big for this grid ({c}/{m} cells). Remove ships or pick a bigger grid.",
+ pvp_note:"Both players use your fleet.",
+ shop_title:"Ship Shop",f_all:"All",f_rarity:"Rarity",f_size:"Size",f_power:"Power",p_none:"No power",f_hide:"Hide owned",sort:"Sort",s_up:"Price ↑",s_down:"Price ↓",s_size:"Size",
+ buy:"Buy",owned:"Owned ✓",need:"Need more coins",page:"Page {a}/{b}",bought:"Bought {name}!",cells:"{n} cells",
+ r0:"Common",r1:"Uncommon",r2:"Rare",r3:"Epic",r4:"Legendary",
+ fleet_title:"My Fleet",slots:"Fleet slots {n}/9 · {c}/{m} deck cells (grid {g}×{g})",fleet_hint:"Pick 3–9 ships. Tap a slot to remove it.",in_fleet:"In fleet ✓",add:"Add",remove:"Remove",upgrade:"Upgrade",lvl:"Lv {n}",maxed:"MAX",upgraded:"{name} is now Lv {n}!",no_power:"No special power",fleet_full:"Fleet is full (9 ships).",
+ pw_armor:"Armor",pw_armor_d:"Absorbs the first {n} hit(s) on this ship.",
+ pw_decoy:"Decoy",pw_decoy_d:"Hides {n} fake ship cell(s) that look real to the enemy.",
+ pw_repair:"Repair",pw_repair_d:"Every {n} turns, fixes one damaged cell.",
+ pw_radar:"Radar",pw_radar_d:"Every {n} turns, a radar blip reveals a hidden enemy ship cell.",
+ pw_multi:"Bomb",pw_multi_d:"Every {n} shots, a bonus shell also hits a neighbouring cell.",
+ pw_evade:"Evasive",pw_evade_d:"While untouched, sails to a new spot every {n} enemy shots.",
+ goals_title:"Missions & Medals",daily:"Daily gift",claim:"Claim",claimed:"Claimed ✓",come_back:"Come back tomorrow!",streak:"Day streak: {n}",missions:"Today's missions",medals:"Medals",got:"+{n} coins!",
+ mi_sink:"Sink {n} enemy ships",mi_hit:"Land {n} hits",mi_win:"Win {n} battle(s)",mi_play:"Play {n} battle(s)",mi_flawless:"Win without losing a ship",mi_winmed:"Win {n} battle(s) on Medium or Hard",
+ a_first_win:"Win your first battle",a_win10:"Win 10 battles",a_sink25:"Sink 25 ships",a_sink100:"Sink 100 ships",a_flawless:"Win without losing a ship",a_hard:"Win a battle on Hard",a_own20:"Own 20 ships",a_own50:"Own 50 ships",a_legend:"Own a Legendary ship",a_lvl5:"Upgrade a ship to Lv 5",a_pvp:"Finish a 2-player battle",a_big12:"Win on a 12×12 grid",medal:"Medal unlocked: {name}",
+ stats_title:"Stats",st_games:"Battles",st_wins:"Wins",st_losses:"Losses",st_rate:"Win rate",st_shots:"Shots fired",st_hits:"Hits",st_acc:"Accuracy",st_sunk:"Ships sunk",st_lost:"Ships lost",st_coins:"Coins earned",st_best:"Best win streak",st_owned:"Ships owned",
+ place_title:"{name}: place your fleet",p_hint:"Pick a ship, then tap the sea to place it. Tap a placed ship to pick it up.",p_rotate:"Rotate (R)",p_random:"Randomize",p_clear:"Clear",p_ready:"Ready!",p_unplaced:"Place all ships first!",
+ you:"You",p1:"Player 1",p2:"Player 2",ai_name:"Computer",
+ your_turn:"Your move — tap enemy waters!",ai_think:"Computer is aiming…",turn_of:"{name}'s turn",enemy_waters:"Enemy waters",your_fleet:"Your fleet",fleet_of:"{name}'s fleet",peek:"Hold to peek at your fleet",left:"Ships left: {n}/{m}",turnn:"Turn {n}",quit:"Quit",quit_q:"Quit this battle?",yes:"Yes",no:"No",
+ hit:"Hit!",miss:"Miss!",blocked:"Blocked!",sunk:"{name} sunk!",e_hit:"Enemy hit you!",e_miss:"Enemy missed!",e_sunk:"Your {name} sank!",bonus:"Bonus shell!",radar:"Radar blip!",repaired:"Ship repaired!",evaded:"A ship slipped away!",
+ cover:"Pass the device to {name}",tap_start:"Tap to start",
+ win_t:"Victory!",lose_t:"Defeat…",pvp_win:"{name} wins!",rw_hits:"Hits",rw_sunk:"Ships sunk",rw_win:"Result bonus",rw_total:"Coins earned",again:"Play again",to_menu:"Menu",sound:"Sound",lang:"Language"},
+th:{app:"อ่าวเรือรบ",tag:"สร้างกองเรือ แล้วจมศัตรู!",back_site:"← เกมของวินน์",
+ m_battle:"ลุยเลย!",m_fleet:"กองเรือของฉัน",m_shop:"ร้านเรือ",m_goals:"ภารกิจและเหรียญตรา",m_stats:"สถิติ",
+ setup_title:"ตั้งค่าการรบ",mode:"โหมด",mode_ai:"เจอคอมพิวเตอร์",mode_pvp:"2 ผู้เล่น",diff:"ความยาก",d_easy:"ง่าย",d_medium:"กลาง",d_hard:"ยาก",
+ grid:"ขนาดกระดาน",rule:"กติกาตา",rule_alt:"สลับกันยิง",rule_again:"ยิงโดนได้ยิงต่อ",timer:"จับเวลาต่อตา",t_off:"ปิด",
+ fleet_sum:"กองเรือ: {n} ลำ · {c}/{m} ช่อง",edit_fleet:"แก้ไขกองเรือ",deploy:"ลงเรือรบ!",
+ err_few:"เลือกเรืออย่างน้อย 3 ลำ",err_big:"กองเรือใหญ่เกินกระดานนี้ ({c}/{m} ช่อง) ลดเรือหรือเลือกกระดานที่ใหญ่ขึ้น",
+ pvp_note:"ผู้เล่นทั้งสองใช้กองเรือของคุณ",
+ shop_title:"ร้านเรือ",f_all:"ทั้งหมด",f_rarity:"ความหายาก",f_size:"ขนาด",f_power:"พลัง",p_none:"ไม่มีพลัง",f_hide:"ซ่อนที่มีแล้ว",sort:"เรียง",s_up:"ราคา ↑",s_down:"ราคา ↓",s_size:"ขนาด",
+ buy:"ซื้อ",owned:"มีแล้ว ✓",need:"เหรียญไม่พอ",page:"หน้า {a}/{b}",bought:"ซื้อ {name} แล้ว!",cells:"{n} ช่อง",
+ r0:"ธรรมดา",r1:"ไม่ธรรมดา",r2:"หายาก",r3:"มหากาพย์",r4:"ตำนาน",
+ fleet_title:"กองเรือของฉัน",slots:"ช่องกองเรือ {n}/9 · {c}/{m} ช่อง (กระดาน {g}×{g})",fleet_hint:"เลือก 3–9 ลำ แตะช่องเพื่อเอาออก",in_fleet:"อยู่ในกองเรือ ✓",add:"เพิ่ม",remove:"เอาออก",upgrade:"อัปเกรด",lvl:"เลเวล {n}",maxed:"สูงสุด",upgraded:"{name} เป็นเลเวล {n} แล้ว!",no_power:"ไม่มีพลังพิเศษ",fleet_full:"กองเรือเต็มแล้ว (9 ลำ)",
+ pw_armor:"เกราะ",pw_armor_d:"รับการยิงที่โดนเรือลำนี้ได้ {n} ครั้งแรก",
+ pw_decoy:"เหยื่อล่อ",pw_decoy_d:"ซ่อนช่องเรือปลอม {n} ช่อง ที่ศัตรูดูไม่ออก",
+ pw_repair:"ซ่อมแซม",pw_repair_d:"ทุก {n} ตา ซ่อมช่องที่เสียหาย 1 ช่อง",
+ pw_radar:"เรดาร์",pw_radar_d:"ทุก {n} ตา เรดาร์เปิดเผยช่องเรือศัตรู 1 ช่อง",
+ pw_multi:"ระเบิด",pw_multi_d:"ทุก {n} นัด กระสุนโบนัสยิงช่องข้างเคียงด้วย",
+ pw_evade:"หลบหลีก",pw_evade_d:"ถ้ายังไม่ถูกยิง จะแล่นไปที่ใหม่ทุก {n} นัดของศัตรู",
+ goals_title:"ภารกิจและเหรียญตรา",daily:"ของขวัญประจำวัน",claim:"รับ",claimed:"รับแล้ว ✓",come_back:"พรุ่งนี้มาใหม่นะ!",streak:"มาติดต่อกัน: {n} วัน",missions:"ภารกิจวันนี้",medals:"เหรียญตรา",got:"+{n} เหรียญ!",
+ mi_sink:"จมเรือศัตรู {n} ลำ",mi_hit:"ยิงโดน {n} ครั้ง",mi_win:"ชนะ {n} ศึก",mi_play:"เล่น {n} ศึก",mi_flawless:"ชนะโดยไม่เสียเรือเลย",mi_winmed:"ชนะ {n} ศึกในระดับกลางหรือยาก",
+ a_first_win:"ชนะศึกแรก",a_win10:"ชนะ 10 ศึก",a_sink25:"จมเรือ 25 ลำ",a_sink100:"จมเรือ 100 ลำ",a_flawless:"ชนะโดยไม่เสียเรือเลย",a_hard:"ชนะในระดับยาก",a_own20:"มีเรือ 20 ลำ",a_own50:"มีเรือ 50 ลำ",a_legend:"มีเรือระดับตำนาน",a_lvl5:"อัปเกรดเรือถึงเลเวล 5",a_pvp:"เล่นศึก 2 ผู้เล่นจบ",a_big12:"ชนะบนกระดาน 12×12",medal:"ปลดล็อกเหรียญ: {name}",
+ stats_title:"สถิติ",st_games:"จำนวนศึก",st_wins:"ชนะ",st_losses:"แพ้",st_rate:"อัตราชนะ",st_shots:"ยิงทั้งหมด",st_hits:"ยิงโดน",st_acc:"ความแม่นยำ",st_sunk:"เรือที่จม",st_lost:"เรือที่เสีย",st_coins:"เหรียญที่ได้",st_best:"ชนะติดต่อกันสูงสุด",st_owned:"เรือที่มี",
+ place_title:"{name}: วางกองเรือ",p_hint:"เลือกเรือ แล้วแตะทะเลเพื่อวาง แตะเรือที่วางแล้วเพื่อยกขึ้น",p_rotate:"หมุน (R)",p_random:"สุ่ม",p_clear:"ล้าง",p_ready:"พร้อม!",p_unplaced:"วางเรือให้ครบก่อน!",
+ you:"คุณ",p1:"ผู้เล่น 1",p2:"ผู้เล่น 2",ai_name:"คอมพิวเตอร์",
+ your_turn:"ตาคุณ — แตะน่านน้ำศัตรู!",ai_think:"คอมพิวเตอร์กำลังเล็ง…",turn_of:"ตาของ {name}",enemy_waters:"น่านน้ำศัตรู",your_fleet:"กองเรือของคุณ",fleet_of:"กองเรือของ {name}",peek:"กดค้างเพื่อแอบดูกองเรือ",left:"เรือที่เหลือ: {n}/{m}",turnn:"ตาที่ {n}",quit:"ออก",quit_q:"ออกจากศึกนี้ไหม?",yes:"ใช่",no:"ไม่",
+ hit:"โดน!",miss:"พลาด!",blocked:"ถูกป้องกัน!",sunk:"{name} จม!",e_hit:"ศัตรูยิงโดนคุณ!",e_miss:"ศัตรูยิงพลาด!",e_sunk:"{name} ของคุณจม!",bonus:"กระสุนโบนัส!",radar:"เรดาร์จับได้!",repaired:"ซ่อมเรือแล้ว!",evaded:"เรือลำหนึ่งหลบไปแล้ว!",
+ cover:"ส่งเครื่องให้ {name}",tap_start:"แตะเพื่อเริ่ม",
+ win_t:"ชนะแล้ว!",lose_t:"แพ้…",pvp_win:"{name} ชนะ!",rw_hits:"ยิงโดน",rw_sunk:"เรือที่จม",rw_win:"โบนัสผลลัพธ์",rw_total:"เหรียญที่ได้",again:"เล่นอีก",to_menu:"เมนู",sound:"เสียง",lang:"ภาษา"},
+ja:{app:"バトルシップ・ベイ",tag:"艦隊を作って、敵を沈めよう!",back_site:"← Wynnのゲーム",
+ m_battle:"バトル!",m_fleet:"マイ艦隊",m_shop:"船ショップ",m_goals:"ミッションとメダル",m_stats:"成績",
+ setup_title:"バトル設定",mode:"モード",mode_ai:"コンピューター戦",mode_pvp:"2人対戦",diff:"難しさ",d_easy:"かんたん",d_medium:"ふつう",d_hard:"むずかしい",
+ grid:"盤のサイズ",rule:"ターンルール",rule_alt:"交代で撃つ",rule_again:"命中したら続けて撃つ",timer:"ターン制限",t_off:"なし",
+ fleet_sum:"艦隊: {n}隻 · {c}/{m}マス",edit_fleet:"艦隊を編集",deploy:"出撃!",
+ err_few:"船を3隻以上選んでください。",err_big:"この盤には艦隊が大きすぎます ({c}/{m}マス)。船を減らすか大きい盤を選んでください。",
+ pvp_note:"2人ともあなたの艦隊を使います。",
+ shop_title:"船ショップ",f_all:"すべて",f_rarity:"レア度",f_size:"大きさ",f_power:"能力",p_none:"能力なし",f_hide:"所持済みを隠す",sort:"並び替え",s_up:"価格 ↑",s_down:"価格 ↓",s_size:"大きさ",
+ buy:"買う",owned:"所持 ✓",need:"コインが足りません",page:"{a}/{b} ページ",bought:"{name}を買いました!",cells:"{n}マス",
+ r0:"コモン",r1:"アンコモン",r2:"レア",r3:"エピック",r4:"レジェンド",
+ fleet_title:"マイ艦隊",slots:"艦隊スロット {n}/9 · {c}/{m}マス (盤 {g}×{g})",fleet_hint:"3〜9隻を選びます。スロットをタップで外す。",in_fleet:"編成中 ✓",add:"追加",remove:"外す",upgrade:"強化",lvl:"Lv {n}",maxed:"MAX",upgraded:"{name}が Lv {n} になりました!",no_power:"特別な能力なし",fleet_full:"艦隊がいっぱいです(9隻)。",
+ pw_armor:"装甲",pw_armor_d:"この船への最初の{n}回の命中を防ぎます。",
+ pw_decoy:"おとり",pw_decoy_d:"本物そっくりの偽の船マスを{n}個隠します。",
+ pw_repair:"修理",pw_repair_d:"{n}ターンごとに壊れたマスを1つ直します。",
+ pw_radar:"レーダー",pw_radar_d:"{n}ターンごとに敵の船のマスを1つ見つけます。",
+ pw_multi:"爆弾",pw_multi_d:"{n}発ごとに、ボーナス弾が隣のマスにも当たります。",
+ pw_evade:"回避",pw_evade_d:"無傷のあいだ、敵の{n}発ごとに別の場所へ移動します。",
+ goals_title:"ミッションとメダル",daily:"毎日のプレゼント",claim:"受け取る",claimed:"受け取り済み ✓",come_back:"また明日来てね!",streak:"連続日数: {n}",missions:"今日のミッション",medals:"メダル",got:"+{n}コイン!",
+ mi_sink:"敵の船を{n}隻沈める",mi_hit:"{n}回命中させる",mi_win:"{n}回勝つ",mi_play:"{n}回遊ぶ",mi_flawless:"1隻も失わずに勝つ",mi_winmed:"ふつう以上で{n}回勝つ",
+ a_first_win:"初勝利",a_win10:"10回勝つ",a_sink25:"25隻沈める",a_sink100:"100隻沈める",a_flawless:"1隻も失わずに勝つ",a_hard:"むずかしいで勝つ",a_own20:"船を20隻持つ",a_own50:"船を50隻持つ",a_legend:"レジェンドの船を持つ",a_lvl5:"船をLv 5にする",a_pvp:"2人対戦を終える",a_big12:"12×12の盤で勝つ",medal:"メダル獲得: {name}",
+ stats_title:"成績",st_games:"バトル数",st_wins:"勝ち",st_losses:"負け",st_rate:"勝率",st_shots:"発射数",st_hits:"命中",st_acc:"命中率",st_sunk:"沈めた船",st_lost:"失った船",st_coins:"獲得コイン",st_best:"最高連勝",st_owned:"所持している船",
+ place_title:"{name}: 艦隊を配置",p_hint:"船を選んで海をタップして置きます。置いた船をタップで持ち上げ。",p_rotate:"回転 (R)",p_random:"ランダム",p_clear:"クリア",p_ready:"準備OK!",p_unplaced:"先に全部の船を置いてください!",
+ you:"あなた",p1:"プレイヤー1",p2:"プレイヤー2",ai_name:"コンピューター",
+ your_turn:"あなたの番 — 敵の海をタップ!",ai_think:"コンピューターが狙っています…",turn_of:"{name}の番",enemy_waters:"敵の海",your_fleet:"あなたの艦隊",fleet_of:"{name}の艦隊",peek:"長押しで艦隊をのぞく",left:"残りの船: {n}/{m}",turnn:"ターン {n}",quit:"やめる",quit_q:"このバトルをやめますか?",yes:"はい",no:"いいえ",
+ hit:"命中!",miss:"はずれ!",blocked:"防がれた!",sunk:"{name}を撃沈!",e_hit:"敵に当てられた!",e_miss:"敵ははずした!",e_sunk:"あなたの{name}が沈んだ!",bonus:"ボーナス弾!",radar:"レーダー反応!",repaired:"修理完了!",evaded:"船が逃げた!",
+ cover:"{name}に渡してください",tap_start:"タップで開始",
+ win_t:"勝利!",lose_t:"敗北…",pvp_win:"{name}の勝ち!",rw_hits:"命中",rw_sunk:"沈めた船",rw_win:"結果ボーナス",rw_total:"獲得コイン",again:"もう一度",to_menu:"メニュー",sound:"サウンド",lang:"言語"},
+zh:{app:"战舰湾",tag:"组建舰队,击沉敌人!",back_site:"← Wynn 的游戏",
+ m_battle:"开战!",m_fleet:"我的舰队",m_shop:"船只商店",m_goals:"任务与勋章",m_stats:"统计",
+ setup_title:"战斗设置",mode:"模式",mode_ai:"对战电脑",mode_pvp:"双人对战",diff:"难度",d_easy:"简单",d_medium:"中等",d_hard:"困难",
+ grid:"棋盘大小",rule:"回合规则",rule_alt:"轮流开火",rule_again:"命中后再射一次",timer:"回合计时",t_off:"关闭",
+ fleet_sum:"舰队:{n} 艘 · {c}/{m} 格",edit_fleet:"编辑舰队",deploy:"出击!",
+ err_few:"舰队至少要选 3 艘船。",err_big:"舰队对这个棋盘来说太大了({c}/{m} 格)。请减少船只或选更大的棋盘。",
+ pvp_note:"两位玩家都使用你的舰队。",
+ shop_title:"船只商店",f_all:"全部",f_rarity:"稀有度",f_size:"大小",f_power:"能力",p_none:"无能力",f_hide:"隐藏已拥有",sort:"排序",s_up:"价格 ↑",s_down:"价格 ↓",s_size:"大小",
+ buy:"购买",owned:"已拥有 ✓",need:"金币不足",page:"第 {a}/{b} 页",bought:"已购买 {name}!",cells:"{n} 格",
+ r0:"普通",r1:"优秀",r2:"稀有",r3:"史诗",r4:"传说",
+ fleet_title:"我的舰队",slots:"舰队栏位 {n}/9 · {c}/{m} 格(棋盘 {g}×{g})",fleet_hint:"选择 3–9 艘船。点击栏位可移除。",in_fleet:"已编入 ✓",add:"加入",remove:"移除",upgrade:"升级",lvl:"Lv {n}",maxed:"满级",upgraded:"{name} 升到 Lv {n}!",no_power:"没有特殊能力",fleet_full:"舰队已满(9 艘)。",
+ pw_armor:"装甲",pw_armor_d:"抵挡这艘船受到的前 {n} 次命中。",
+ pw_decoy:"诱饵",pw_decoy_d:"藏有 {n} 个看起来很真的假船格。",
+ pw_repair:"维修",pw_repair_d:"每 {n} 回合修好一个受损格。",
+ pw_radar:"雷达",pw_radar_d:"每 {n} 回合,雷达发现一个敌船格。",
+ pw_multi:"炸弹",pw_multi_d:"每 {n} 发,额外炮弹还会打中相邻的格子。",
+ pw_evade:"闪避",pw_evade_d:"未受损时,敌人每开 {n} 炮就驶向新位置。",
+ goals_title:"任务与勋章",daily:"每日礼物",claim:"领取",claimed:"已领取 ✓",come_back:"明天再来吧!",streak:"连续天数:{n}",missions:"今日任务",medals:"勋章",got:"+{n} 金币!",
+ mi_sink:"击沉 {n} 艘敌船",mi_hit:"命中 {n} 次",mi_win:"赢 {n} 场战斗",mi_play:"玩 {n} 场战斗",mi_flawless:"一艘船都不损失就获胜",mi_winmed:"在中等或困难难度赢 {n} 场",
+ a_first_win:"赢下第一场战斗",a_win10:"赢 10 场战斗",a_sink25:"击沉 25 艘船",a_sink100:"击沉 100 艘船",a_flawless:"一艘船都不损失就获胜",a_hard:"在困难难度获胜",a_own20:"拥有 20 艘船",a_own50:"拥有 50 艘船",a_legend:"拥有一艘传说船",a_lvl5:"把一艘船升到 Lv 5",a_pvp:"完成一场双人对战",a_big12:"在 12×12 棋盘获胜",medal:"解锁勋章:{name}",
+ stats_title:"统计",st_games:"战斗数",st_wins:"胜",st_losses:"负",st_rate:"胜率",st_shots:"开火次数",st_hits:"命中",st_acc:"命中率",st_sunk:"击沉船只",st_lost:"损失船只",st_coins:"获得金币",st_best:"最高连胜",st_owned:"拥有船只",
+ place_title:"{name}:布置舰队",p_hint:"选一艘船,再点海面放下。点已放的船可拿起。",p_rotate:"旋转 (R)",p_random:"随机",p_clear:"清除",p_ready:"准备好!",p_unplaced:"请先放好所有船!",
+ you:"你",p1:"玩家 1",p2:"玩家 2",ai_name:"电脑",
+ your_turn:"轮到你 — 点击敌方海域!",ai_think:"电脑正在瞄准…",turn_of:"{name}的回合",enemy_waters:"敌方海域",your_fleet:"你的舰队",fleet_of:"{name}的舰队",peek:"按住偷看你的舰队",left:"剩余船只:{n}/{m}",turnn:"第 {n} 回合",quit:"退出",quit_q:"退出这场战斗吗?",yes:"是",no:"否",
+ hit:"命中!",miss:"没打中!",blocked:"被挡住了!",sunk:"{name} 沉没!",e_hit:"敌人打中你了!",e_miss:"敌人没打中!",e_sunk:"你的 {name} 沉没了!",bonus:"额外炮弹!",radar:"雷达发现目标!",repaired:"船只已修好!",evaded:"有一艘船溜走了!",
+ cover:"请把设备交给 {name}",tap_start:"点击开始",
+ win_t:"胜利!",lose_t:"失败…",pvp_win:"{name} 获胜!",rw_hits:"命中",rw_sunk:"击沉船只",rw_win:"结果奖励",rw_total:"获得金币",again:"再来一局",to_menu:"菜单",sound:"声音",lang:"语言"}
+};
+
+/* ================= utils ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const RC=['var(--c0)','var(--c1)','var(--c2)','var(--c3)','var(--c4)'];
+function today(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+/* ================= ships ================= */
+const SHAPES={
+ dot:[[0,0]], i2:[[0,0],[1,0]], i3:[[0,0],[1,0],[2,0]], l3:[[0,0],[0,1],[1,1]],
+ i4:[[0,0],[1,0],[2,0],[3,0]], l4:[[0,0],[0,1],[0,2],[1,2]], t4:[[0,0],[1,0],[2,0],[1,1]], sq4:[[0,0],[1,0],[0,1],[1,1]], z4:[[0,0],[1,0],[1,1],[2,1]],
+ i5:[[0,0],[1,0],[2,0],[3,0],[4,0]], l5:[[0,0],[0,1],[0,2],[0,3],[1,3]], t5:[[0,0],[1,0],[2,0],[1,1],[1,2]], plus5:[[1,0],[0,1],[1,1],[2,1],[1,2]],
+ u5:[[0,0],[2,0],[0,1],[1,1],[2,1]], p5:[[0,0],[1,0],[0,1],[1,1],[0,2]], w5:[[0,0],[0,1],[1,1],[1,2],[2,2]],
+ i6:[[0,0],[1,0],[2,0],[3,0],[4,0],[5,0]], r6:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]], l6:[[0,0],[0,1],[0,2],[0,3],[1,3],[2,3]], t6:[[0,0],[1,0],[2,0],[3,0],[1,1],[2,1]]
+};
+const SHC={};
+function shapeCells(key,rot){
+  const ck=key+rot; if(SHC[ck]) return SHC[ck];
+  let c=SHAPES[key].map(p=>p.slice());
+  for(let i=0;i<rot;i++) c=c.map(([x,y])=>[-y,x]);
+  const mx=Math.min(...c.map(p=>p[0])), my=Math.min(...c.map(p=>p[1]));
+  return SHC[ck]=c.map(([x,y])=>[x-mx,y-my]);
+}
+const dims=c=>[Math.max(...c.map(p=>p[0]))+1,Math.max(...c.map(p=>p[1]))+1];
+const POWERS={armor:'🛡️',decoy:'🎭',repair:'🔧',radar:'📡',multi:'💣',evade:'🌀'};
+const PV={armor:L=>Math.ceil(L/2),decoy:L=>Math.ceil(L/2),repair:L=>7-L,radar:L=>8-L,multi:L=>7-L,evade:L=>9-L};
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const CLASSIC=[
+ {id:'c5',name:'Carrier',shape:'i5',r:0,price:0,power:null},
+ {id:'c4',name:'Battleship',shape:'i4',r:0,price:0,power:null},
+ {id:'c3',name:'Cruiser',shape:'i3',r:0,price:0,power:null},
+ {id:'c3b',name:'Submarine',shape:'i3',r:0,price:0,power:null},
+ {id:'c2',name:'Destroyer',shape:'i2',r:0,price:0,power:null}];
+function buildCatalog(){
+  const R=rng(20261108);
+  const quota=[32,26,20,14,8];
+  const pool=[['dot','i2','i2','i3','l3','i3'],['l3','i3','l4','t4','sq4','z4','i4'],['l4','t4','z4','i5','l5','p5','sq4','i4'],['t5','plus5','u5','w5','p5','l5','i5'],['i6','r6','l6','t6','plus5','w5','u5']];
+  const range=[[50,100],[150,300],[400,800],[1200,2400],[3000,5000]];
+  const pchance=[.25,.5,.75,.95,1], pnames=Object.keys(POWERS);
+  const list=[];
+  quota.forEach((q,r)=>{for(let k=0;k<q;k++){
+    const shape=pool[r][Math.floor(R()*pool[r].length)];
+    let price=range[r][0]+R()*(range[r][1]-range[r][0]); const step=price>=500?50:10; price=Math.round(price/step)*step;
+    const power=R()<pchance[r]?pnames[Math.floor(R()*pnames.length)]:null;
+    list.push({shape,r,price,power});
+  }});
+  list.sort((a,b)=>a.r-b.r||a.price-b.price);
+  const ADJ=['Brave','Sneaky','Salty','Swift','Jolly','Mighty','Lucky','Crimson','Golden','Silver','Stormy','Sunny','Rusty','Shiny','Wild','Misty','Cosmic','Thunder','Coral','Frosty','Royal','Pirate','Turbo','Jade','Ember'];
+  const NOUN={1:['Buoy','Dinghy','Raft','Canoe','Kayak'],2:['Skiff','Tug','Sloop','Cutter','Launch'],3:['Corvette','Brig','Schooner','Ketch','Clipper'],4:['Frigate','Galleon','Barque','Lugger','Gunboat'],5:['Cruiser','Monitor','Warship','Trawler','Man-o-War'],6:['Dreadnought','Leviathan','Flagship','Titan','Behemoth']};
+  const used=new Set();
+  return list.map((s,i)=>{
+    const size=SHAPES[s.shape].length; let nm;
+    do{nm=ADJ[Math.floor(R()*ADJ.length)]+' '+NOUN[size][Math.floor(R()*5)]}while(used.has(nm)); used.add(nm);
+    return Object.assign({id:'sh'+(i+1),name:nm},s);
+  });
+}
+const SHOP=buildCatalog(), ALL=CLASSIC.concat(SHOP), BYID={}; ALL.forEach(s=>BYID[s.id]=s);
+const sizeOf=d=>SHAPES[d.shape].length;
+
+/* ================= save ================= */
+const KEY='battleship-bay-v1';
+function defaults(){return{coins:0,owned:{c5:1,c4:1,c3:1,c3b:1,c2:1},levels:{},loadout:['c5','c4','c3','c3b','c2'],ach:{},
+  stats:{games:0,wins:0,losses:0,shots:0,hits:0,sunk:0,lost:0,earned:0,streak:0,best:0,pvp:0,flawless:0,hardWins:0,bigWins:0},
+  daily:{date:'',claimed:false,missions:[]},lastClaim:'',streak:0,
+  settings:{lang:'en',sound:true,mode:'ai',diff:'medium',grid:10,rule:'alt',timer:0}}}
+function load(){const d=defaults();try{const j=JSON.parse(localStorage.getItem(KEY));if(j)return Object.assign(d,j,{stats:Object.assign(d.stats,j.stats||{}),settings:Object.assign(d.settings,j.settings||{}),daily:Object.assign(d.daily,j.daily||{})})}catch(e){}return d}
+let S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}$('#coins').textContent='🪙 '+S.coins;updDot()}
+let LANG=S.settings.lang;
+if(!TX[LANG])LANG='en';
+function t(k,v){let s=(TX[LANG]&&TX[LANG][k])||TX.en[k]||k; if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]); return s}
+const lvOf=id=>S.levels[id]||1;
+const budget=N=>Math.floor(N*N*0.4);
+const loadCells=()=>S.loadout.reduce((a,id)=>a+sizeOf(BYID[id]),0);
+
+/* ================= sound ================= */
+let AC=null;
+function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
+function tone(f,d,type,vol,to,delay){if(!S.settings.sound)return;const a=ac();if(!a)return;const t0=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);if(to)o.frequency.exponentialRampToValueAtTime(to,t0+d);g.gain.setValueAtTime(vol||.15,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+d+.02)}
+function noise(d,f1,f2,vol,delay){if(!S.settings.sound)return;const a=ac();if(!a)return;const t0=a.currentTime+(delay||0),n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<n;i++)ch[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.setValueAtTime(f1,t0);fl.frequency.exponentialRampToValueAtTime(f2,t0+d);const g=a.createGain();g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);s.connect(fl).connect(g).connect(a.destination);s.start(t0)}
+const sfx={
+ click(){tone(660,.07,'square',.06)},
+ fire(){noise(.18,3000,300,.2);tone(240,.2,'sawtooth',.1,70)},
+ splash(){noise(.4,1400,250,.25)},
+ hit(){noise(.5,2200,120,.35);tone(130,.4,'square',.18,35)},
+ block(){tone(1000,.25,'triangle',.18,700);tone(1500,.15,'triangle',.08)},
+ sink(){tone(420,.9,'sawtooth',.14,50);for(let i=0;i<4;i++)tone(500+i*90,.08,'sine',.08,null,.25+i*.16)},
+ radar(){tone(1300,.15,'sine',.15);tone(1300,.15,'sine',.15,null,.22)},
+ good(){tone(700,.1,'triangle',.12);tone(950,.14,'triangle',.12,null,.1)},
+ coin(){tone(1200,.08,'square',.08);tone(1700,.14,'square',.08,null,.07)},
+ win(){[523,659,784,1047].forEach((f,i)=>tone(f,.25,'triangle',.18,null,i*.14))},
+ lose(){[392,330,262,196].forEach((f,i)=>tone(f,.3,'sawtooth',.12,null,i*.18))}
+};
+
+/* ================= navigation ================= */
+let CUR='menu', G=null, GID=0;
+const RENDER={};
+function show(name){
+  CUR=name;
+  $$('.screen').forEach(s=>s.classList.toggle('on',s.id==='scr-'+name));
+  if(RENDER[name])RENDER[name]();
+  window.scrollTo(0,0);
+}
+function refresh(){ $$('[data-i]').forEach(e=>e.textContent=t(e.dataset.i)); document.documentElement.lang=LANG; $('#langSel').value=LANG; $('#btnSnd').textContent=S.settings.sound?'🔊':'🔇'; if(RENDER[CUR]&&CUR!=='battle')RENDER[CUR](); }
+function toast(msg){const d=document.createElement('div');d.className='toast';d.textContent=msg;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),2600)}
+function modal(html,buttons){return new Promise(res=>{const m=$('#modal'),b=$('#modalBox');b.innerHTML=html+'<div class="bt"></div>';buttons.forEach(([label,val,cls])=>{const x=document.createElement('button');x.className='btn '+(cls||'');x.textContent=label;x.onclick=()=>{sfx.click();m.classList.remove('on');res(val)};b.querySelector('.bt').appendChild(x)});m.classList.add('on')})}
+
+/* ================= mini shapes ================= */
+function miniHTML(shape,color,rot,cls){
+  const c=shapeCells(shape,rot||0),[w,h]=dims(c),set=new Set(c.map(p=>p[0]+','+p[1]));
+  let s=`<div class="mini${cls?' '+cls:''}" style="--c:${color};grid-template-columns:repeat(${w},auto)">`;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)s+=set.has(x+','+y)?'<i></i>':'<u></u>';
+  return s+'</div>';
+}
+function powerText(def,lvl){
+  if(!def.power)return `<span class="muted">${t('no_power')}</span>`;
+  return `${POWERS[def.power]} <b>${t('pw_'+def.power)}</b> — ${t('pw_'+def.power+'_d',{n:PV[def.power](lvl)})}`;
+}
+
+/* ================= menu / setup ================= */
+$('#mBattle').onclick=()=>{sfx.click();show('setup')};
+$('#mFleet').onclick=()=>{sfx.click();show('fleet')};
+$('#mShop').onclick=()=>{sfx.click();show('shop')};
+$('#mGoals').onclick=()=>{sfx.click();show('goals')};
+$('#mStats').onclick=()=>{sfx.click();show('stats')};
+$('#btnHome').onclick=async()=>{sfx.click();if(CUR==='battle'&&G&&G.phase==='battle'){if(await modal(`<h3>${t('quit_q')}</h3>`,[[t('yes'),true,'red'],[t('no'),false]]))quitBattle()}else{if(G&&CUR==='place')G.dead=true;show('menu')}};
+$('#btnSnd').onclick=()=>{S.settings.sound=!S.settings.sound;save();refresh();sfx.click()};
+$('#langSel').onchange=e=>{LANG=e.target.value;S.settings.lang=LANG;save();refresh();if(CUR==='battle')renderBattle()};
+
+function seg(label,opts,val,cb){
+  const d=document.createElement('div');d.className='row';d.innerHTML=`<div class="lbl">${label}</div><div class="seg"></div>`;
+  opts.forEach(([v,txt])=>{const b=document.createElement('button');b.className='sg'+(v===val?' on':'');b.textContent=txt;b.onclick=()=>{sfx.click();cb(v);save();RENDER.setup()};d.querySelector('.seg').appendChild(b)});
+  return d;
+}
+RENDER.setup=function(){
+  const box=$('#setupBox'),st=S.settings;box.innerHTML='';
+  box.appendChild(seg(t('mode'),[['ai',t('mode_ai')],['pvp',t('mode_pvp')]],st.mode,v=>st.mode=v));
+  if(st.mode==='ai')box.appendChild(seg(t('diff'),[['easy',t('d_easy')],['medium',t('d_medium')],['hard',t('d_hard')]],st.diff,v=>st.diff=v));
+  box.appendChild(seg(t('grid'),[[8,'8×8'],[10,'10×10'],[12,'12×12']],st.grid,v=>st.grid=v));
+  box.appendChild(seg(t('rule'),[['alt',t('rule_alt')],['again',t('rule_again')]],st.rule,v=>st.rule=v));
+  box.appendChild(seg(t('timer'),[[0,t('t_off')],[15,'15s'],[30,'30s']],st.timer,v=>st.timer=v));
+  const c=loadCells(),m=budget(st.grid);
+  const info=document.createElement('div');info.className='row';
+  info.innerHTML=`<div class="lbl" style="min-width:0">${t('fleet_sum',{n:S.loadout.length,c,m})}</div>`;
+  const eb=document.createElement('button');eb.className='btn sm blue';eb.textContent=t('edit_fleet');eb.onclick=()=>{sfx.click();show('fleet')};info.appendChild(eb);
+  box.appendChild(info);
+  if(st.mode==='pvp'){const p=document.createElement('div');p.className='muted';p.textContent=t('pvp_note');box.appendChild(p)}
+  let err='';if(S.loadout.length<3)err=t('err_few');else if(c>m)err=t('err_big',{c,m});
+  const e=document.createElement('div');e.className='err';e.textContent=err;box.appendChild(e);
+  const go=document.createElement('button');go.className='btn green lg';go.id='goBtn';go.textContent=t('deploy');go.disabled=!!err;go.onclick=()=>{sfx.click();newGame()};box.appendChild(go);
+};
+
+/* ================= shop ================= */
+const F={r:-1,size:0,power:'all',hide:false,sort:'up',page:0};
+function chipSet(label,opts,val,cb){
+  const d=document.createElement('div');d.className='seg';const l=document.createElement('b');l.textContent=label+':';d.appendChild(l);
+  opts.forEach(([v,txt])=>{const b=document.createElement('button');b.className='sg'+(v===val?' on':'');b.textContent=txt;b.onclick=()=>{sfx.click();cb(v);F.page=0;RENDER.shop()};d.appendChild(b)});return d;
+}
+function shipCard(def,opts){
+  const lvl=lvOf(def.id),el=document.createElement('div');
+  el.className=`sc r${def.r}`+(opts.owned?' owned':'');
+  el.style.setProperty('--c',RC[def.r]);
+  el.innerHTML=`<span class="rb">${t('r'+def.r)}</span><div class="pv">${miniHTML(def.shape,RC[def.r])}</div><div class="nm">${def.name}</div>
+   <div class="pw">${powerText(def,opts.owned?lvl:1)}</div><div class="ft"><span class="muted">${t('cells',{n:sizeOf(def)})}</span></div>`;
+  return el;
+}
+RENDER.shop=function(){
+  const fb=$('#shopF');fb.innerHTML='';
+  fb.appendChild(chipSet(t('f_rarity'),[[-1,t('f_all')]].concat([0,1,2,3,4].map(i=>[i,t('r'+i)])),F.r,v=>F.r=v));
+  fb.appendChild(chipSet(t('f_size'),[[0,t('f_all')]].concat([1,2,3,4,5,6].map(i=>[i,String(i)])),F.size,v=>F.size=v));
+  const pw=document.createElement('div');pw.className='seg';pw.innerHTML=`<b>${t('f_power')}:</b>`;
+  const sel=document.createElement('select');[['all',t('f_all')],['none',t('p_none')]].concat(Object.keys(POWERS).map(k=>[k,POWERS[k]+' '+t('pw_'+k)])).forEach(([v,txt])=>{const o=document.createElement('option');o.value=v;o.textContent=txt;if(v===F.power)o.selected=true;sel.appendChild(o)});
+  sel.onchange=()=>{F.power=sel.value;F.page=0;RENDER.shop()};pw.appendChild(sel);fb.appendChild(pw);
+  const so=document.createElement('div');so.className='seg';so.innerHTML=`<b>${t('sort')}:</b>`;
+  const s2=document.createElement('select');[['up',t('s_up')],['down',t('s_down')],['size',t('s_size')]].forEach(([v,txt])=>{const o=document.createElement('option');o.value=v;o.textContent=txt;if(v===F.sort)o.selected=true;s2.appendChild(o)});
+  s2.onchange=()=>{F.sort=s2.value;F.page=0;RENDER.shop()};so.appendChild(s2);fb.appendChild(so);
+  const hb=document.createElement('button');hb.className='sg'+(F.hide?' on':'');hb.textContent=t('f_hide');hb.onclick=()=>{F.hide=!F.hide;F.page=0;RENDER.shop()};fb.appendChild(hb);
+  let list=SHOP.filter(d=>(F.r<0||d.r===F.r)&&(!F.size||sizeOf(d)===F.size)&&(F.power==='all'||(F.power==='none'?!d.power:d.power===F.power))&&(!F.hide||!S.owned[d.id]));
+  list.sort((a,b)=>F.sort==='down'?b.price-a.price:F.sort==='size'?sizeOf(a)-sizeOf(b)||a.price-b.price:a.price-b.price);
+  const PER=12,pages=Math.max(1,Math.ceil(list.length/PER));F.page=Math.min(F.page,pages-1);
+  const g=$('#shopG');g.innerHTML='';
+  list.slice(F.page*PER,F.page*PER+PER).forEach(d=>{
+    const own=!!S.owned[d.id],el=shipCard(d,{owned:own}),ft=el.querySelector('.ft');
+    const b=document.createElement('button');b.className='btn sm '+(own?'white':'green');b.dataset.buy=d.id;
+    if(own){b.textContent=t('owned');b.disabled=true}else{b.textContent=`${t('buy')} 🪙${d.price}`;b.disabled=S.coins<d.price;b.title=S.coins<d.price?t('need'):'';b.onclick=()=>buyShip(d)}
+    ft.appendChild(b);g.appendChild(el);
+  });
+  const p=$('#shopP');p.innerHTML='';
+  const pb=document.createElement('button');pb.className='btn sm';pb.textContent='◀';pb.disabled=F.page===0;pb.onclick=()=>{F.page--;RENDER.shop()};
+  const nb=document.createElement('button');nb.className='btn sm';nb.textContent='▶';nb.disabled=F.page>=pages-1;nb.onclick=()=>{F.page++;RENDER.shop()};
+  const sp=document.createElement('span');sp.textContent=t('page',{a:F.page+1,b:pages});p.append(pb,sp,nb);
+};
+function buyShip(d){
+  if(S.coins<d.price||S.owned[d.id])return;
+  S.coins-=d.price;S.owned[d.id]=1;sfx.coin();toast(t('bought',{name:d.name}));checkAch();save();RENDER.shop();
+}
+
+/* ================= fleet ================= */
+RENDER.fleet=function(){
+  const N=S.settings.grid;
+  $('#fleetInfo').textContent=t('slots',{n:S.loadout.length,c:loadCells(),m:budget(N),g:N})+' — '+t('fleet_hint');
+  const sl=$('#slots');sl.innerHTML='';
+  for(let i=0;i<9;i++){
+    const id=S.loadout[i],d=document.createElement('div');d.className='slot'+(id?' f':'');
+    if(id){const def=BYID[id];d.innerHTML=miniHTML(def.shape,RC[def.r])+`<div>${def.name}</div>`;d.onclick=()=>{S.loadout.splice(i,1);sfx.click();save();RENDER.fleet()}}
+    else d.textContent='+';
+    sl.appendChild(d);
+  }
+  const g=$('#fleetG');g.innerHTML='';
+  const mine=ALL.filter(d=>S.owned[d.id]).sort((a,b)=>b.r-a.r||b.price-a.price);
+  mine.forEach(def=>{
+    const lvl=lvOf(def.id),el=shipCard(def,{owned:true}),ft=el.querySelector('.ft'),inF=S.loadout.includes(def.id);
+    if(def.power){const lb=document.createElement('span');lb.className='pill';lb.style.padding='0 8px';lb.textContent=lvl>=5?t('lvl',{n:5})+' · '+t('maxed'):t('lvl',{n:lvl});ft.prepend(lb);}
+    const b=document.createElement('button');b.className='btn sm '+(inF?'white':'green');b.textContent=inF?t('remove'):t('add');
+    b.onclick=()=>{sfx.click();if(inF)S.loadout.splice(S.loadout.indexOf(def.id),1);else if(S.loadout.length>=9){toast(t('fleet_full'));return}else S.loadout.push(def.id);save();RENDER.fleet()};
+    ft.appendChild(b);
+    if(def.power&&lvl<5){
+      const cost=Math.max(60,Math.round(def.price*0.25*lvl/10)*10),u=document.createElement('button');u.className='btn sm blue';u.textContent=`⬆ 🪙${cost}`;u.title=t('upgrade');u.disabled=S.coins<cost;
+      u.onclick=()=>{S.coins-=cost;S.levels[def.id]=lvl+1;sfx.good();toast(t('upgraded',{name:def.name,n:lvl+1}));checkAch();save();RENDER.fleet()};
+      ft.appendChild(u);
+    }
+    g.appendChild(el);
+  });
+};
+
+/* ================= missions / medals ================= */
+const MIS=[
+ {k:'sink',type:'sink',goals:[3,5,8],rew:[50,80,120]},
+ {k:'hit',type:'hit',goals:[15,25,40],rew:[40,70,110]},
+ {k:'win',type:'win',goals:[1,2,3],rew:[60,100,160]},
+ {k:'play',type:'play',goals:[2,3,5],rew:[40,60,100]},
+ {k:'flawless',type:'flawless',goals:[1],rew:[120]},
+ {k:'winmed',type:'winmed',goals:[1,2],rew:[90,160]}];
+const ACH=[
+ ['first_win','🏆',50,s=>s.stats.wins>=1],['win10','🎖️',150,s=>s.stats.wins>=10],['sink25','⚓',100,s=>s.stats.sunk>=25],['sink100','🌊',300,s=>s.stats.sunk>=100],
+ ['flawless','🛡️',100,s=>s.stats.flawless>=1],['hard','💪',200,s=>s.stats.hardWins>=1],['own20','🚢',150,s=>Object.keys(s.owned).length>=20],['own50','🏴‍☠️',400,s=>Object.keys(s.owned).length>=50],
+ ['legend','👑',200,s=>SHOP.some(d=>d.r===4&&s.owned[d.id])],['lvl5','⭐',150,s=>Object.values(s.levels).some(v=>v>=5)],['pvp','🤝',30,s=>s.stats.pvp>=1],['big12','🗺️',100,s=>s.stats.bigWins>=1]];
+function ensureDaily(){
+  const d=today();if(S.daily.date===d&&S.daily.missions.length)return;
+  const R=rng([...d].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7));
+  const defs=MIS.slice(),ms=[];
+  for(let i=0;i<3;i++){const m=defs.splice(Math.floor(R()*defs.length),1)[0],tier=Math.floor(R()*m.goals.length);ms.push({k:m.k,type:m.type,goal:m.goals[tier],rew:m.rew[tier],p:0,claimed:false})}
+  S.daily={date:d,claimed:false,missions:ms};
+}
+function mprog(type,n){ensureDaily();S.daily.missions.forEach(m=>{if(m.type===type)m.p=Math.min(m.goal,m.p+n)})}
+function updDot(){try{ensureDaily();const open=!S.daily.claimed||S.daily.missions.some(m=>m.p>=m.goal&&!m.claimed);$('#goalDot').style.display=open?'inline-block':'none'}catch(e){}}
+function checkAch(){ACH.forEach(([id,ic,rew,test])=>{if(!S.ach[id]&&test(S)){S.ach[id]=1;S.coins+=rew;S.stats.earned+=rew;setTimeout(()=>{sfx.good();toast(ic+' '+t('medal',{name:t('a_'+id)})+' '+t('got',{n:rew}))},300)}})}
+RENDER.goals=function(){
+  ensureDaily();const box=$('#goalsBox');box.innerHTML='';
+  const dc=document.createElement('div');dc.className='card';
+  const streak=S.streak||0,bonus=100+20*Math.min(streak,6);
+  dc.innerHTML=`<h3 style="margin:0 0 6px">🎁 ${t('daily')}</h3><div class="muted">${t('streak',{n:streak})}</div>`;
+  const cb=document.createElement('button');cb.className='btn green';cb.id='dailyBtn';cb.style.marginTop='8px';
+  if(S.daily.claimed){cb.textContent=t('claimed')+' — '+t('come_back');cb.disabled=true}
+  else{cb.textContent=`${t('claim')} 🪙${bonus}`;cb.onclick=()=>{const y=today(new Date(Date.now()-864e5));S.streak=(S.lastClaim===y?streak:0)+1;const b=100+20*Math.min(S.streak-1,6);S.lastClaim=today();S.daily.claimed=true;S.coins+=b;S.stats.earned+=b;sfx.coin();toast(t('got',{n:b}));save();RENDER.goals()}}
+  dc.appendChild(cb);box.appendChild(dc);
+  const mc=document.createElement('div');mc.className='card';mc.style.marginTop='14px';mc.innerHTML=`<h3 style="margin:0 0 6px">📋 ${t('missions')}</h3>`;
+  S.daily.missions.forEach(m=>{
+    const r=document.createElement('div');r.className='mi';
+    const done=m.p>=m.goal;
+    r.innerHTML=`<div style="min-width:200px;font-weight:800">${t('mi_'+m.k,{n:m.goal})}</div><div class="bar"><b style="width:${100*m.p/m.goal}%"></b></div><span>${m.p}/${m.goal}</span>`;
+    const b=document.createElement('button');b.className='btn sm '+(m.claimed?'white':'green');
+    if(m.claimed){b.textContent=t('claimed');b.disabled=true}else{b.textContent=`${t('claim')} 🪙${m.rew}`;b.disabled=!done;b.onclick=()=>{m.claimed=true;S.coins+=m.rew;S.stats.earned+=m.rew;sfx.coin();toast(t('got',{n:m.rew}));save();RENDER.goals()}}
+    r.appendChild(b);mc.appendChild(r);
+  });
+  box.appendChild(mc);
+  const ac2=document.createElement('div');ac2.className='card';ac2.style.marginTop='14px';ac2.innerHTML=`<h3 style="margin:0 0 8px">🏅 ${t('medals')}</h3><div class="meds"></div>`;
+  ACH.forEach(([id,ic,rew])=>{const d=document.createElement('div');d.className='med'+(S.ach[id]?' on':'');d.innerHTML=`<span>${ic}</span><div>${t('a_'+id)}<div class="muted">🪙${rew}</div></div>`;ac2.querySelector('.meds').appendChild(d)});
+  box.appendChild(ac2);
+};
+RENDER.stats=function(){
+  const s=S.stats,acc=s.shots?Math.round(100*s.hits/s.shots):0,rate=(s.wins+s.losses)>0?Math.round(100*s.wins/(s.wins+s.losses)):0;
+  const items=[['st_games',s.games],['st_wins',s.wins],['st_losses',s.losses],['st_rate',rate+'%'],['st_shots',s.shots],['st_hits',s.hits],['st_acc',acc+'%'],['st_sunk',s.sunk],['st_lost',s.lost],['st_coins','🪙'+s.earned],['st_best',s.best],['st_owned',Object.keys(S.owned).length+'/'+ALL.length]];
+  $('#statsBox').innerHTML=items.map(([k,v])=>`<div><b>${v}</b>${t(k)}</div>`).join('');
+};
+RENDER.menu=function(){updDot()};
+RENDER.place=function(){paintPlace();renderTray()};
+
+/* ================= board DOM ================= */
+function makeBoard(el,N){
+  el.innerHTML='';el._N=N;el._cells=[];
+  el.style.gridTemplateColumns=`calc(var(--cs)*.55) repeat(${N},var(--cs))`;
+  el.appendChild(Object.assign(document.createElement('div'),{className:'lab'}));
+  for(let x=0;x<N;x++){const l=document.createElement('div');l.className='lab';l.textContent=String.fromCharCode(65+x);el.appendChild(l)}
+  for(let y=0;y<N;y++){
+    const l=document.createElement('div');l.className='lab v';l.textContent=y+1;el.appendChild(l);
+    for(let x=0;x<N;x++){const c=document.createElement('div');c.className='cell '+((x+y)%2?'a':'b');c.dataset.i=y*N+x;c._p=(x+y)%2?'a':'b';c._ic=document.createElement('span');c._ic.className='ic';c.appendChild(c._ic);el.appendChild(c);el._cells.push(c)}
+  }
+}
+const EMPTY=new Set();
+function shipStyle(i,set,N,col){
+  const x=i%N,y=(i/N)|0,u=y>0&&set.has(i-N),d=y<N-1&&set.has(i+N),l=x>0&&set.has(i-1),r=x<N-1&&set.has(i+1),R='calc(var(--cs)*.32)';
+  return `--c:${col};border-width:${u?0:3}px ${r?0:3}px ${d?0:3}px ${l?0:3}px;border-radius:${!u&&!l?R:0} ${!u&&!r?R:0} ${!d&&!r?R:0} ${!d&&!l?R:0}`;
+}
+/* mode 'own' = truth about P's ships; 'enemy' = what an attacker knows */
+function paintBoard(el,P,mode,radar,hold,lastIdx){
+  const N=P.N,cells=el._cells;hold=hold||EMPTY;
+  const info=new Map();
+  P.ships.forEach(sh=>{
+    if(!sh.cells)return;
+    const held=sh.cells.some(c=>hold.has(c));
+    if(mode==='own'||(sh.sunk&&!held)){const set=new Set(sh.cells);sh.cells.forEach((c,k)=>info.set(c,{sh,set,first:k===0,held}))}
+  });
+  for(let i=0;i<N*N;i++){
+    const c=cells[i];let cls='w',ic='',st='';const si=info.get(i),seen=hold.has(i)?0:P.seen[i];
+    if(si){
+      const sh=si.sh;cls='s';st=shipStyle(i,si.set,N,RC[sh.def.r]);
+      if(sh.sunk&&!si.held){cls+=' k';if(si.first)ic='☠️'}
+      else if(mode==='own'&&sh.hit.has(i)&&!hold.has(i)){cls+=' d';ic='🔥'}
+      else if(mode==='own'&&seen===3)ic='🛡️';
+      else if(mode==='own'&&si.first&&sh.def.power)ic=POWERS[sh.def.power];
+    }else{
+      if(seen===1)cls='w m';
+      else if(seen===2){cls='w x';ic='💥'}
+      else if(seen===3){cls='w bl';ic='🛡️'}
+      else if(mode==='enemy'&&radar&&radar.has(i)){cls='w rd';ic='📡'}
+      else if(mode==='own'&&P.decoyAt.has(i)){cls='w dc';ic='🎭'}
+    }
+    if(i===lastIdx)cls+=' last';
+    c.className='cell '+c._p+' '+cls;c._ic.textContent=ic;c.style.cssText=st;
+  }
+}
+function fx(el,idx,kind){
+  const c=el._cells&&el._cells[idx];if(!c)return;
+  const d=document.createElement('div');d.className='fx '+kind;if(kind==='splash'||kind==='sink')d.innerHTML='<b></b><b></b><b></b><b></b>';
+  c.appendChild(d);setTimeout(()=>d.remove(),1100);
+}
+function fit(){
+  const N=(G&&G.N)||S.settings.grid,w=Math.min(window.innerWidth-24,1100);
+  const two=CUR==='battle'&&w>=780,bw=two?(w-24)/2:w;
+  const cs=Math.max(22,Math.min(46,Math.floor((bw-40)/(N+.55))));
+  document.documentElement.style.setProperty('--cs',cs+'px');
+}
+window.addEventListener('resize',fit);
+
+/* ================= game setup ================= */
+function mkPlayer(name,human,defs,N){
+  return{name,human,N,seen:new Uint8Array(N*N),radar:new Set(),decoyAt:new Set(),occ:new Array(N*N).fill(null),shots:0,hits:0,sunkCount:0,lost:0,
+   ships:defs.map(([def,lvl])=>({def,level:lvl,cells:null,rot:0,ax:0,ay:0,hit:new Set(),sunk:false,cnt:0,absorb:def.power==='armor'?PV.armor(lvl):0}))};
+}
+function rebuildOcc(P){P.occ.fill(null);P.ships.forEach(s=>{if(s.cells)s.cells.forEach(c=>P.occ[c]=s)})}
+function offsetsOf(sh,rot){return shapeCells(sh.def.shape,rot)}
+function cellsAt(P,sh,rot,ax,ay){return offsetsOf(sh,rot).map(([x,y])=>(ay+y)*P.N+ax+x)}
+function canPlace(P,sh,rot,ax,ay,strict){
+  const o=offsetsOf(sh,rot),[w,h]=dims(o);if(ax<0||ay<0||ax+w>P.N||ay+h>P.N)return false;
+  return cellsAt(P,sh,rot,ax,ay).every(c=>{const q=P.occ[c];return(!q||q===sh)&&(!strict||(P.seen[c]===0&&!P.decoyAt.has(c)))});
+}
+function setPlace(P,sh,rot,ax,ay){sh.rot=rot;sh.ax=ax;sh.ay=ay;sh.cells=cellsAt(P,sh,rot,ax,ay);rebuildOcc(P)}
+function randPlace(P,sh,strict){
+  for(let k=0;k<300;k++){const rot=rnd(4),[w,h]=dims(offsetsOf(sh,rot)),ax=rnd(P.N-w+1),ay=rnd(P.N-h+1);
+    if(canPlace(P,sh,rot,ax,ay,strict)){setPlace(P,sh,rot,ax,ay);return true}}
+  return false;
+}
+function randomFleet(P){
+  for(let t2=0;t2<200;t2++){
+    P.ships.forEach(s=>s.cells=null);rebuildOcc(P);
+    const order=P.ships.slice().sort((a,b)=>sizeOf(b.def)-sizeOf(a.def));
+    if(order.every(s=>randPlace(P,s)))return true;
+  }
+  return false;
+}
+function aiFleet(diff,N,playerCells,count){
+  const W={easy:[60,30,10,0,0],medium:[30,30,25,12,3],hard:[10,20,30,25,15]}[diff];
+  const cap=Math.min(budget(N),Math.max(playerCells,12)+4),pool=CLASSIC.concat(SHOP);
+  const out=[];let cells=0;const total=W.reduce((a,b)=>a+b,0);
+  for(let tries=0;tries<600&&out.length<count;tries++){
+    const x=rnd(total);let acc=0,r=0;for(;r<5;r++){acc+=W[r];if(x<acc)break}if(r>4)r=4;
+    const left=count-out.length-1;
+    const cand=pool.filter(d=>d.r===r&&cells+sizeOf(d)+left<=cap);
+    if(!cand.length)continue;const d=pick(cand);
+    out.push([d,d.power?({easy:1,medium:1+rnd(2),hard:2+rnd(3)}[diff]):1]);cells+=sizeOf(d);
+  }
+  while(out.length<3){const d=pick(CLASSIC);out.push([d,1])}
+  return out;
+}
+function newGame(){
+  const st=S.settings,N=st.grid,ai=st.mode==='ai';
+  const defs=S.loadout.map(id=>[BYID[id],lvOf(id)]);
+  const p0=mkPlayer(ai?t('you'):t('p1'),true,defs,N);
+  const p1=ai?mkPlayer(t('ai_name'),false,aiFleet(st.diff,N,loadCells(),defs.length),N):mkPlayer(t('p2'),true,defs,N);
+  if(ai){randomFleet(p1)}
+  if(G){G.dead=true;stopTimer()}
+  G={id:++GID,mode:st.mode,diff:st.diff,N,rule:st.rule,players:[p0,p1],cur:0,turn:1,phase:'place',busy:false,dead:false,peek:false,
+     place:{pi:0,sel:0,rot:0,hover:-1},hold:new Map(),last:new Map(),ptimer:null};
+  startPlace();
+}
+
+/* ================= placement ================= */
+const pBoard=$('#placeBoard');
+function startPlace(){
+  makeBoard(pBoard,G.N);G.place.sel=0;G.place.rot=0;G.place.hover=-1;
+  show('place');fit();
+}
+function curP(){return G.players[G.place.pi]}
+function paintPlace(){
+  if(!G||G.phase!=='place')return;
+  const P=curP();$('#placeTitle').textContent=t('place_title',{name:P.name});
+  if(!pBoard._cells||pBoard._N!==G.N)makeBoard(pBoard,G.N);
+  paintBoard(pBoard,P,'own',null,null);
+  const pl=G.place,sh=P.ships[pl.sel];
+  if(sh&&!sh.cells&&pl.hover>=0){
+    const o=offsetsOf(sh,pl.rot),[w,h]=dims(o),x=Math.min(pl.hover%G.N,G.N-w),y=Math.min((pl.hover/G.N)|0,G.N-h),ok=canPlace(P,sh,pl.rot,x,y);
+    cellsAt(P,sh,pl.rot,x,y).forEach(c=>pBoard._cells[c].classList.add(ok?'pvo':'pvb'));
+  }
+}
+function renderTray(){
+  if(!G||G.phase!=='place')return;
+  const P=curP(),tr=$('#tray');tr.innerHTML='';
+  P.ships.forEach((sh,i)=>{
+    const b=document.createElement('button');b.className='ts'+(i===G.place.sel?' sel':'')+(sh.cells?' done':'');
+    b.innerHTML=miniHTML(sh.def.shape,RC[sh.def.r],i===G.place.sel?G.place.rot:0)+`<span>${sh.def.name}${sh.cells?' ✓':''}</span>`;
+    b.onclick=()=>{sfx.click();if(sh.cells){sh.cells=null;rebuildOcc(P)}G.place.sel=i;paintPlace();renderTray()};
+    tr.appendChild(b);
+  });
+}
+function nextUnplaced(P){const i=P.ships.findIndex(s=>!s.cells);return i<0?G.place.sel:i}
+pBoard.addEventListener('pointerover',e=>{const c=e.target.closest('.cell');if(!c||!G)return;G.place.hover=+c.dataset.i;paintPlace()});
+pBoard.addEventListener('pointerleave',()=>{if(G&&G.phase==='place'){G.place.hover=-1;paintPlace()}});
+pBoard.addEventListener('contextmenu',e=>{e.preventDefault();rotatePlace()});
+pBoard.addEventListener('click',e=>{
+  const c=e.target.closest('.cell');if(!c||!G||G.phase!=='place')return;
+  const i=+c.dataset.i,P=curP(),pl=G.place,sh=P.ships[pl.sel];$('#placeErr').textContent='';
+  if(sh&&!sh.cells){
+    const o=offsetsOf(sh,pl.rot),[w,h]=dims(o),x=Math.min(i%G.N,G.N-w),y=Math.min((i/G.N)|0,G.N-h);
+    if(canPlace(P,sh,pl.rot,x,y)){setPlace(P,sh,pl.rot,x,y);sfx.click();pl.sel=nextUnplaced(P);pl.hover=-1;paintPlace();renderTray();return}
+  }
+  const q=P.occ[i];
+  if(q){q.cells=null;rebuildOcc(P);pl.sel=P.ships.indexOf(q);pl.rot=q.rot;sfx.click();paintPlace();renderTray()}
+});
+function rotatePlace(){if(!G||G.phase!=='place')return;G.place.rot=(G.place.rot+1)%4;sfx.click();paintPlace();renderTray()}
+$('#pRot').onclick=rotatePlace;
+document.addEventListener('keydown',e=>{if((e.key==='r'||e.key==='R')&&CUR==='place')rotatePlace()});
+$('#pRand').onclick=()=>{sfx.click();const P=curP();if(randomFleet(P)){G.place.sel=0;paintPlace();renderTray()}};
+$('#pClear').onclick=()=>{sfx.click();const P=curP();P.ships.forEach(s=>s.cells=null);rebuildOcc(P);G.place.sel=0;paintPlace();renderTray()};
+$('#pReady').onclick=async()=>{
+  const P=curP();if(P.ships.some(s=>!s.cells)){$('#placeErr').textContent=t('p_unplaced');return}
+  sfx.good();
+  if(G.mode==='pvp'&&G.place.pi===0){
+    const id=G.id;
+    await modal(`<h3>${t('cover',{name:G.players[1].name})}</h3>`,[[t('tap_start'),true,'green']]);
+    if(!G||G.id!==id||G.dead)return;
+    G.place.pi=1;G.place.sel=0;G.place.rot=0;G.place.hover=-1;paintPlace();renderTray();return;
+  }
+  startBattle();
+};
+
+/* ================= battle core ================= */
+const other=P=>G.players[0]===P?G.players[1]:G.players[0];
+const viewer=()=>G.mode==='ai'?G.players[0]:G.players[G.cur];
+const alive=P=>P.ships.filter(s=>!s.sunk);
+const allSunk=P=>P.ships.every(s=>s.sunk);
+const enemyEl=$('#enemyBoard'), ownEl=$('#ownBoard');
+function holdOf(P){let h=G.hold.get(P);if(!h){h=new Set();G.hold.set(P,h)}return h}
+
+function placeDecoys(P){
+  P.ships.forEach(s=>{
+    if(s.def.power!=='decoy')return;
+    for(let k=0;k<PV.decoy(s.level);k++){
+      for(let tries=0;tries<200;tries++){const c=rnd(P.N*P.N);if(!P.occ[c]&&!P.decoyAt.has(c)){P.decoyAt.add(c);break}}
+    }
+  });
+}
+function startBattle(){
+  G.players.forEach(P=>{rebuildOcc(P);placeDecoys(P)});
+  G.phase='battle';G.cur=0;G.turn=1;
+  makeBoard(enemyEl,G.N);makeBoard(ownEl,G.N);
+  $('#peekBtn').style.display=G.mode==='pvp'?'inline-block':'none';
+  show('battle');fit();
+  beginTurn();
+}
+/* resolve a single shot (no animation) */
+function shoot(a,d,idx,bonus){
+  a.shots++;let r,ship=null;
+  if(d.decoyAt.has(idx)){d.seen[idx]=2;r='decoy'}
+  else{
+    const sh=d.occ[idx];
+    if(!sh){d.seen[idx]=1;r='miss'}
+    else if(sh.absorb>0){sh.absorb--;d.seen[idx]=3;r='block';ship=sh}
+    else{
+      sh.hit.add(idx);d.seen[idx]=2;a.hits++;r='hit';ship=sh;
+      if(sh.hit.size===sh.cells.length){sh.sunk=true;sh.cells.forEach(c=>{d.seen[c]=4;a.radar.delete(c)});a.sunkCount++;d.lost++;r='sunk'}
+    }
+  }
+  a.radar.delete(idx);
+  return{t:'shot',idx,r,bonus:!!bonus,ship,att:a,def:d};
+}
+function neighbors(N,i){const x=i%N,y=(i/N)|0,o=[];if(y>0)o.push(i-N);if(y<N-1)o.push(i+N);if(x>0)o.push(i-1);if(x<N-1)o.push(i+1);return o}
+function doShot(a,d,idx){
+  const evs=[shoot(a,d,idx,false)];
+  // Bomb ships: bonus shell next to the main shot
+  alive(a).filter(s=>s.def.power==='multi').forEach(s=>{
+    s.cnt++;
+    if(s.cnt>=PV.multi(s.level)&&!allSunk(d)){
+      const nb=neighbors(d.N,idx).filter(c=>d.seen[c]===0);
+      if(nb.length){s.cnt=0;const e=shoot(a,d,pick(nb),true);evs.push(e);const h=holdOf(d);if(e.r==='sunk')e.ship.cells.forEach(c=>h.add(c));else h.add(e.idx);}
+    }
+  });
+  // Evasive ships slip away
+  if(!allSunk(d))alive(d).filter(s=>s.def.power==='evade'&&s.cells.every(c=>d.seen[c]===0)).forEach(s=>{
+    s.cnt++;
+    if(s.cnt>=PV.evade(s.level)){
+      s.cnt=0;const old=s.cells.slice();
+      for(let k=0;k<300;k++){const rot=rnd(4),[w,h]=dims(offsetsOf(s,rot)),ax=rnd(d.N-w+1),ay=rnd(d.N-h+1);
+        if(canPlace(d,s,rot,ax,ay,true)){setPlace(d,s,rot,ax,ay);old.forEach(c=>a.radar.delete(c));evs.push({t:'evade',def:d});break}}
+    }
+  });
+  return evs;
+}
+function turnStart(P){
+  const evs=[],foe=other(P);
+  alive(P).forEach(s=>{
+    if(s.def.power==='repair'&&s.hit.size>0){
+      s.cnt++;if(s.cnt>=PV.repair(s.level)){s.cnt=0;const c=pick([...s.hit]);s.hit.delete(c);foe.seen[c]=0;evs.push({t:'repair'})}
+    }else if(s.def.power==='radar'){
+      s.cnt++;if(s.cnt>=PV.radar(s.level)){
+        const cand=[];alive(foe).forEach(f=>f.cells.forEach(c=>{if(foe.seen[c]===0&&!P.radar.has(c))cand.push(c)}));
+        if(cand.length){s.cnt=0;P.radar.add(pick(cand));evs.push({t:'radar'})}
+      }
+    }
+  });
+  return evs;
+}
+/* ---- AI ---- */
+function aiPick(me,foe,diff){
+  const N=foe.N,seen=foe.seen,c0=[],c3=[];
+  for(let i=0;i<N*N;i++){if(seen[i]===0)c0.push(i);else if(seen[i]===3)c3.push(i)}
+  if(diff==='easy'||!c0.length&&!c3.length)return pick(c0.length?c0:c3);
+  if(c3.length&&Math.random()<(diff==='hard'?1:.7))return pick(c3);
+  const blips=[...me.radar].filter(i=>seen[i]===0);
+  if(blips.length&&(diff==='hard'||Math.random()<.7))return pick(blips);
+  if(diff==='medium'){
+    const near=[];for(let i=0;i<N*N;i++)if(seen[i]===2)neighbors(N,i).forEach(n=>{if(seen[n]===0)near.push(n)});
+    if(near.length)return pick(near);
+    const par=c0.filter(i=>((i%N)+((i/N)|0))%2===0);return pick(par.length?par:c0);
+  }
+  const dens=new Float32Array(N*N);
+  alive(foe).forEach(sh=>{
+    for(let rot=0;rot<4;rot++){
+      const o=shapeCells(sh.def.shape,rot),[w,h]=dims(o);
+      for(let ay=0;ay<=N-h;ay++)for(let ax=0;ax<=N-w;ax++){
+        const cs=o.map(([x,y])=>(ay+y)*N+ax+x);
+        if(!cs.every(c=>seen[c]===0||seen[c]===2||seen[c]===3))continue;
+        let wt=1;cs.forEach(c=>{if(seen[c]===2)wt*=8;else if(seen[c]===3)wt*=12;else if(me.radar.has(c))wt*=4});
+        cs.forEach(c=>{if(seen[c]===0)dens[c]+=wt});
+      }
+    }
+  });
+  let best=0,top=[];
+  c0.forEach(i=>{if(dens[i]>best){best=dens[i];top=[i]}else if(dens[i]===best&&best>0)top.push(i)});
+  return top.length?pick(top):pick(c0);
+}
+
+/* ================= battle flow ================= */
+function flash(msg){const f=$('#flash');f.textContent=msg;f.classList.remove('go');void f.offsetWidth;f.classList.add('go')}
+function boardFor(P){return P===viewer()?ownEl:enemyEl}
+function renderBattle(){
+  if(!G||G.phase==='place')return;
+  const v=viewer(),f=other(v),showOwn=G.mode==='ai'||G.peek;
+  paintBoard(enemyEl,f,'enemy',v.radar,holdOf(f),G.last.get(f));
+  paintBoard(ownEl,v,showOwn?'own':'enemy',null,holdOf(v),G.last.get(v));
+  $('#ownTitle').textContent=G.mode==='ai'?t('your_fleet'):t('fleet_of',{name:v.name});
+  $('#turnNo').textContent=t('turnn',{n:G.turn});
+  const cp=G.players[G.cur];
+  $('#turnTxt').textContent=G.phase==='over'?'':(cp.human?(G.mode==='ai'?t('your_turn'):t('turn_of',{name:cp.name})):t('ai_think'));
+  enemyEl.classList.toggle('tgt',cp===v&&cp.human&&!G.busy&&G.phase==='battle');
+  $('#ownRow').innerHTML=v.ships.map(s=>miniHTML(s.def.shape,RC[s.def.r],0,s.sunk?'dead':'')).join('');
+  $('#enemyRow').innerHTML=f.ships.filter(s=>s.sunk).map(s=>miniHTML(s.def.shape,RC[s.def.r],0,'dead')).join('');
+  $('#enemyLeft').textContent=t('left',{n:alive(f).length,m:f.ships.length});
+}
+function say(ev,viewerIsAtt){
+  const nm=ev.ship?ev.ship.def.name:'';
+  if(ev.bonus)toast('💣 '+t('bonus'));
+  if(viewerIsAtt){
+    flash(ev.r==='miss'?'💦 '+t('miss'):ev.r==='block'?'🛡️ '+t('blocked'):ev.r==='sunk'?'☠️ '+t('sunk',{name:nm}):'💥 '+t('hit'));
+  }else{
+    flash(ev.r==='miss'?'💦 '+t('e_miss'):ev.r==='sunk'?'☠️ '+t('e_sunk',{name:nm}):ev.r==='block'?'🛡️ '+t('blocked'):'💥 '+t('e_hit'));
+  }
+}
+async function playEvents(evs){
+  const gid=G.id;
+  for(const ev of evs){
+    if(G.dead||G.id!==gid)return;
+    if(ev.t==='shot'){
+      const d=ev.def,bd=boardFor(d),viewerIsAtt=ev.att===viewer();
+      sfx.fire();await sleep(ev.bonus?160:240);if(G.dead||G.id!==gid)return;
+      const h=holdOf(d);if(ev.r==='sunk')ev.ship.cells.forEach(c=>h.delete(c));else h.delete(ev.idx);
+      G.last.set(d,ev.idx);renderBattle();
+      if(ev.r==='miss'){sfx.splash();fx(bd,ev.idx,'splash')}
+      else if(ev.r==='block'){sfx.block();fx(bd,ev.idx,'splash')}
+      else{sfx.hit();fx(bd,ev.idx,'boom');bd.classList.remove('shake');void bd.offsetWidth;bd.classList.add('shake')}
+      say(ev,viewerIsAtt);
+      if(ev.r==='sunk'){sfx.sink();ev.ship.cells.forEach((c,k)=>setTimeout(()=>fx(bd,c,'sink'),k*90));await sleep(1000)}else await sleep(ev.bonus?450:560);
+    }else if(ev.t==='evade'){
+      sfx.radar();flash('🌀 '+t('evaded'));renderBattle();await sleep(650);
+    }else if(ev.t==='repair'){
+      sfx.good();flash('🔧 '+t('repaired'));renderBattle();await sleep(650);
+    }else if(ev.t==='radar'){
+      sfx.radar();flash('📡 '+t('radar'));renderBattle();await sleep(650);
+    }
+  }
+}
+async function beginTurn(){
+  if(G.dead)return;
+  const gid=G.id,a=G.players[G.cur];
+  G.busy=true;
+  if(G.mode==='pvp'){
+    renderBattleHidden();
+    await modal(`<h3>${t('cover',{name:a.name})}</h3>`,[[t('tap_start'),true,'green']]);
+    if(G.dead||G.id!==gid)return;
+  }
+  renderBattle();
+  const evs=turnStart(a);
+  await playEvents(evs);
+  if(G.dead||G.id!==gid)return;
+  renderBattle();
+  if(a.human){G.busy=false;renderBattle();startTimer()}
+  else{await sleep(650);if(!G.dead&&G.id===gid)aiMove()}
+}
+function renderBattleHidden(){
+  [enemyEl,ownEl].forEach(el=>el._cells.forEach(c=>{c.className='cell '+c._p+' w';c._ic.textContent='';c.style.cssText=''}));
+}
+async function aiMove(){
+  if(G.dead)return;
+  const a=G.players[G.cur],d=other(a);
+  await takeShot(aiPick(a,d,G.diff));
+}
+async function takeShot(idx){
+  if(G.dead||G.phase!=='battle')return;
+  const gid=G.id,a=G.players[G.cur],d=other(a);
+  G.busy=true;stopTimer();renderBattle();
+  const evs=doShot(a,d,idx);
+  await playEvents(evs);
+  if(G.dead||G.id!==gid)return;
+  G.hold.forEach(h=>h.clear());renderBattle();
+  if(allSunk(d)){endBattle(a);return}
+  if(G.rule==='again'&&evs[0].r!=='miss'){
+    if(a.human){G.busy=false;renderBattle();startTimer()}else{await sleep(450);if(!G.dead&&G.id===gid)aiMove()}
+    return;
+  }
+  G.cur=1-G.cur;G.turn++;
+  beginTurn();
+}
+enemyEl.addEventListener('click',e=>{
+  const c=e.target.closest('.cell');if(!c||!G||G.phase!=='battle'||G.busy)return;
+  const a=G.players[G.cur];if(!a.human||a!==viewer())return;
+  const i=+c.dataset.i,s=other(a).seen[i];
+  if(s===0||s===3)takeShot(i);
+});
+function startTimer(){
+  stopTimer();const T=S.settings.timer,bar=$('#tbar');
+  if(!T){bar.style.display='none';return}
+  bar.style.display='block';G.tLeft=T;bar.firstElementChild.style.width='100%';
+  G.ptimer=setInterval(()=>{
+    G.tLeft-=.1;bar.firstElementChild.style.width=Math.max(0,100*G.tLeft/T)+'%';
+    if(G.tLeft<=0){stopTimer();if(!G.busy&&G.phase==='battle'){const d=other(G.players[G.cur]),c=[];for(let i=0;i<d.N*d.N;i++)if(d.seen[i]===0)c.push(i);takeShot(pick(c))}}
+  },100);
+}
+function stopTimer(){if(G&&G.ptimer){clearInterval(G.ptimer);G.ptimer=null}}
+function quitBattle(){if(G){G.dead=true;stopTimer()}show('menu')}
+$('#bQuit').onclick=async()=>{sfx.click();if(await modal(`<h3>${t('quit_q')}</h3>`,[[t('yes'),true,'red'],[t('no'),false]]))quitBattle()};
+const peek=on=>{if(!G||G.mode!=='pvp'||G.phase!=='battle')return;G.peek=on;renderBattle()};
+$('#peekBtn').addEventListener('pointerdown',()=>peek(true));
+['pointerup','pointerleave','pointercancel'].forEach(ev=>$('#peekBtn').addEventListener(ev,()=>peek(false)));
+
+/* ================= end of battle ================= */
+async function endBattle(winner){
+  const gid=G.id;G.phase='over';stopTimer();G.hold.forEach(h=>h.clear());renderBattle();
+  const me=G.players[0],ai=G.mode==='ai',won=winner===me;
+  let coins,rows='';
+  const st=S.stats;st.games++;st.shots+=me.shots+(ai?0:G.players[1].shots);st.hits+=me.hits+(ai?0:G.players[1].hits);
+  if(ai){
+    const bonus=won?{easy:60,medium:100,hard:160}[G.diff]:20;
+    coins=me.hits*3+me.sunkCount*15+bonus;
+    st.sunk+=me.sunkCount;st.lost+=me.lost;
+    if(won){st.wins++;st.streak++;st.best=Math.max(st.best,st.streak);if(me.lost===0)st.flawless++;if(G.diff==='hard')st.hardWins++;if(G.N===12)st.bigWins++}
+    else{st.losses++;st.streak=0}
+    mprog('play',1);mprog('sink',me.sunkCount);mprog('hit',me.hits);
+    if(won){mprog('win',1);if(me.lost===0)mprog('flawless',1);if(G.diff!=='easy')mprog('winmed',1)}
+    rows=`<div class="rw"><span>${t('rw_hits')}</span><span>${me.hits} × 3</span></div><div class="rw"><span>${t('rw_sunk')}</span><span>${me.sunkCount} × 15</span></div><div class="rw"><span>${t('rw_win')}</span><span>+${bonus}</span></div>`;
+  }else{
+    coins=40;st.pvp++;mprog('play',1);
+    rows=`<div class="rw"><span>${t('rw_hits')}</span><span>${me.hits} / ${G.players[1].hits}</span></div>`;
+  }
+  S.coins+=coins;st.earned+=coins;checkAch();save();
+  (won||!ai)?sfx.win():sfx.lose();
+  const title=ai?(won?'🏆 '+t('win_t'):'🌊 '+t('lose_t')):'🏆 '+t('pvp_win',{name:winner.name});
+  await sleep(500);
+  const r=await modal(`<h3>${title}</h3>${rows}<div class="rw" style="font-size:1.2rem"><span>${t('rw_total')}</span><span>🪙 +${coins}</span></div>`,[[t('again'),'again','green'],[t('to_menu'),'menu']]);
+  if(r==='again')newGame();else show('menu');
+}
+
+/* ================= init ================= */
+$('#langSel').value=LANG;
+ensureDaily();save();refresh();show('menu');
+</script>
+</body>
+</html>
