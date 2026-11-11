@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Throne of the Forsaken</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d10;color:#ece3cf;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Noto Sans SC","Noto Sans JP","Noto Sans KR",sans-serif}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;overflow:auto;background:radial-gradient(ellipse at 50% 22%,#4a2a24 0%,#15181c 70%);z-index:20}
+.scr.on{display:flex}
+.scr.clear{background:rgba(8,9,12,.78);z-index:30}
+h1{margin:0;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(34px,8.5vw,70px);letter-spacing:4px;line-height:1.05;color:#ece3cf;text-shadow:0 3px 0 #6b1f18,0 0 26px rgba(220,70,50,.4);text-align:center}
+h1 b{color:#e2503f}
+h2{margin:0;font-size:24px;letter-spacing:2px;text-transform:uppercase}
+.sub{color:#b9ad96;font-size:15px;text-align:center;max-width:460px}
+.btn{background:linear-gradient(#b8382b,#7a2018);border:2px solid #f08a78;color:#fff;font-weight:800;padding:12px 24px;border-radius:10px;font-size:17px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;min-width:220px;font-family:inherit}
+.btn.sec{background:linear-gradient(#444b55,#272c33);border-color:#8a94a1}
+.btn.sm{min-width:0;padding:8px 14px;font-size:14px}
+.btn:active{transform:translateY(2px)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+input[type=text],select{background:#1a1d22;border:2px solid #59606b;color:#fff;border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;text-align:center;user-select:text;-webkit-user-select:text}
+#joinCode{text-transform:uppercase;width:120px;letter-spacing:4px;font-weight:800}
+.msg{min-height:20px;color:#ffb74d;font-weight:700;text-align:center}
+.seg{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.seg button{background:#22262c;color:#d6d6d6;border:2px solid #59606b;border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer;font-family:inherit}
+.seg button.on{background:#b8382b;border-color:#ffb3a6;color:#fff}.seg button[disabled]{opacity:.5}
+.lab{font-size:13px;color:#b9ad96;text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:center}
+.list{display:flex;flex-direction:column;gap:5px;min-width:260px;max-width:340px;width:100%}
+.li{display:flex;align-items:center;gap:8px;background:rgba(24,27,32,.88);border:1px solid #484f59;border-radius:8px;padding:6px 10px;font-weight:700}
+.dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px}
+.li small{margin-left:auto;color:#a5aab2;font-weight:600}
+.codeBox{background:#14171b;border:2px dashed #e2503f;border-radius:10px;padding:6px 14px;text-align:center}
+.codeBox b{font-size:30px;letter-spacing:6px;color:#ff7d6a}
+#xpBar{width:min(340px,80vw);height:14px;background:#1c1f24;border-radius:7px;overflow:hidden;border:1px solid #59606b}
+#xpBar i{display:block;height:100%;background:linear-gradient(90deg,#e2503f,#ffc25a);width:0}
+#skinGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:380px;width:100%}
+.sk{background:#1f2227;border:2px solid #59606b;border-radius:10px;padding:8px 4px;text-align:center;font-size:12px;font-weight:800;cursor:pointer}
+.sk i{display:block;width:34px;height:34px;border-radius:8px;margin:0 auto 4px;border:2px solid rgba(255,255,255,.35)}
+.sk.on{border-color:#ffc25a;background:#3a2a1c}.sk.lock{opacity:.4}
+.how{white-space:pre-line;max-width:540px;line-height:1.6;font-size:15px;background:rgba(24,27,32,.88);border:1px solid #484f59;border-radius:10px;padding:14px 18px}
+table{border-collapse:collapse;min-width:280px;max-width:520px;width:100%}
+td,th{padding:5px 8px;border-bottom:1px solid #3c434c;text-align:center;font-size:14px}
+td:nth-child(2){text-align:left}tr.me td{color:#ffd54f;font-weight:800}
+#endTitle{font-family:Impact,sans-serif;font-size:clamp(40px,9vw,72px);letter-spacing:4px}
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:10}
+#hud.on{display:block}
+#hud button,#hud .pt{pointer-events:auto}
+#top{position:absolute;top:0;left:0;right:0;display:flex;gap:6px;align-items:center;padding:6px 8px;padding-top:calc(6px + env(safe-area-inset-top));background:linear-gradient(rgba(0,0,0,.55),transparent);flex-wrap:wrap}
+.pill{background:rgba(14,16,20,.78);border:1px solid #4e5560;border-radius:8px;padding:4px 10px;font-weight:800;font-variant-numeric:tabular-nums;font-size:15px;white-space:nowrap}
+.pill.gold{color:#ffd54f}.pill.red{color:#ff7d6a;border-color:#a33}
+.ib{background:rgba(14,16,20,.8);border:1px solid #4e5560;border-radius:8px;min-width:34px;height:30px;color:#fff;font-size:15px;cursor:pointer;padding:0 8px;font-family:inherit;font-weight:800}
+.sp{flex:1}
+#radar{position:absolute;right:8px;top:calc(46px + env(safe-area-inset-top));width:112px;height:112px;border:2px solid #59606b;border-radius:50%;background:rgba(8,10,12,.55)}
+#boss{position:absolute;top:calc(44px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(360px,50vw);display:none;text-align:center;font-weight:800;font-size:13px;letter-spacing:2px;color:#ff7d6a}
+#boss div{height:10px;background:#2a1412;border:1px solid #a33;border-radius:5px;overflow:hidden;margin-top:2px}#boss i{display:block;height:100%;background:#e2503f;width:100%}
+#xh{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%)}
+#xh:before,#xh:after{content:"";position:absolute;background:rgba(255,255,255,.85);box-shadow:0 0 2px #000}
+#xh:before{left:10px;top:0;width:2px;height:22px;clip-path:polygon(0 0,100% 0,100% 32%,0 32%,0 68%,100% 68%,100% 100%,0 100%)}
+#xh:after{top:10px;left:0;height:2px;width:22px;clip-path:polygon(0 0,32% 0,32% 100%,0 100%,68% 100%,68% 0,100% 0,100% 100%)}
+#hm{position:absolute;left:50%;top:50%;width:30px;height:30px;transform:translate(-50%,-50%) rotate(45deg);opacity:0;border:2px solid #fff;border-radius:3px;clip-path:polygon(0 0,35% 0,35% 100%,0 100%,0 65%,100% 65%,100% 100%,65% 100%,65% 0,100% 0,100% 35%,0 35%)}
+#hm.on{opacity:1}#hm.kill{border-color:#ff3b2e}
+#scope{position:absolute;inset:0;display:none;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 26vmin,#000 26.4vmin)}
+#scope:before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.8)}
+#scope:after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(0,0,0,.8)}
+#hurt{position:absolute;inset:0;box-shadow:inset 0 0 120px 40px rgba(220,20,10,.85);opacity:0;transition:opacity .35s}
+#bl{position:absolute;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:min(230px,40vw)}
+.bar{height:14px;background:rgba(10,10,12,.7);border:1px solid #59606b;border-radius:7px;overflow:hidden;margin-top:4px;position:relative}
+.bar i{display:block;height:100%}.bar b{position:absolute;left:6px;top:-1px;font-size:11px;color:#fff;text-shadow:0 0 3px #000}
+#hpF{background:linear-gradient(90deg,#c23b2c,#6ede5a)}#arF{background:linear-gradient(90deg,#4a6d8a,#7ec8ff)}
+#br{position:absolute;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));text-align:right;text-shadow:0 0 4px #000}
+#ammo{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums}#ammo small{font-size:18px;color:#bbb}
+#wname{font-size:14px;font-weight:800;letter-spacing:1px;color:#ffd54f}
+#wlist{display:flex;gap:4px;justify-content:flex-end;margin-top:4px}
+#wlist span{background:rgba(14,16,20,.75);border:1px solid #59606b;border-radius:6px;padding:2px 7px;font-size:12px;font-weight:800;opacity:.55}#wlist span.on{opacity:1;border-color:#ffd54f;color:#ffd54f}
+#banner{position:absolute;left:0;right:0;top:24%;text-align:center;font-family:Impact,sans-serif;font-size:clamp(30px,7vw,60px);letter-spacing:4px;color:#ffe3a0;text-shadow:0 3px 0 #6b1f18,0 0 20px rgba(0,0,0,.8);opacity:0;transition:opacity .4s;pointer-events:none}
+#banner.on{opacity:1}
+#feed{position:absolute;left:10px;top:calc(44px + env(safe-area-inset-top));font-size:12px;font-weight:700;text-shadow:0 0 3px #000;display:flex;flex-direction:column;gap:2px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid #777;border-radius:8px;padding:8px 14px;font-weight:700;z-index:60;display:none}
+#touch{position:absolute;inset:0;display:none}
+#touch.on{display:block}
+#joy{position:absolute;left:18px;bottom:calc(60px + env(safe-area-inset-bottom));width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);touch-action:none;pointer-events:auto}
+#joyK{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.35)}
+#lookZ{position:absolute;right:0;top:15%;bottom:0;width:55%;touch-action:none;pointer-events:auto}
+.tb{position:absolute;width:62px;height:62px;border-radius:50%;background:rgba(14,16,20,.6);border:2px solid rgba(255,255,255,.45);color:#fff;font-weight:900;font-size:12px;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1}
+#tFire{right:22px;bottom:calc(110px + env(safe-area-inset-bottom));width:84px;height:84px;background:rgba(200,50,40,.55);font-size:14px}
+#tJump{right:122px;bottom:calc(86px + env(safe-area-inset-bottom))}
+#tReload{right:22px;bottom:calc(206px + env(safe-area-inset-bottom));width:52px;height:52px}
+#tGren{right:86px;bottom:calc(206px + env(safe-area-inset-bottom));width:52px;height:52px}
+#tWeap{right:150px;bottom:calc(176px + env(safe-area-inset-bottom));width:52px;height:52px}
+#tScope{right:150px;bottom:calc(236px + env(safe-area-inset-bottom));width:52px;height:52px}
+/* shop */
+#shopList{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-width:640px;width:100%}
+.si{background:#1f2227;border:2px solid #59606b;border-radius:10px;padding:8px;text-align:center;font-weight:800;cursor:pointer;font-size:14px}
+.si small{display:block;color:#ffd54f;font-size:13px;margin-top:3px}.si.no{opacity:.4}.si.own{border-color:#6ede5a}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="sMenu" class="scr on">
+  <h1>THRONE OF<br>THE <b>FORSAKEN</b></h1>
+  <div class="sub" id="sub"></div>
+  <input type="text" id="pname" maxlength="12">
+  <button class="btn" id="bPlay"></button>
+  <button class="btn" id="bOnline"></button>
+  <div class="row"><button class="btn sec sm" id="bSkin"></button><button class="btn sec sm" id="bHow"></button><button class="btn sec sm" id="bMute">🔊</button></div>
+  <select id="lang"></select>
+</div>
+
+<div id="sLobby" class="scr">
+  <h2 data-i="online"></h2>
+  <button class="btn" id="bCreate" data-i="create"></button>
+  <div class="row"><input type="text" id="joinCode" maxlength="5" placeholder="CODE"><button class="btn sec sm" id="bJoin" data-i="join"></button></div>
+  <div class="msg" id="lobMsg"></div>
+  <button class="btn sec" id="bLobBack" data-i="back"></button>
+</div>
+
+<div id="sRoom" class="scr">
+  <h2 data-i="squad"></h2>
+  <div class="codeBox" id="codeBox" hidden><span data-i="code"></span><br><b id="roomCode"></b><br><button class="btn sec sm" id="bCopy" data-i="copy"></button></div>
+  <div class="list" id="roomList"></div>
+  <div class="lab" data-i="map"></div><div class="seg" id="mapSeg"></div>
+  <div class="lab" data-i="waves"></div><div class="seg" id="waveSeg"></div>
+  <div class="lab" data-i="diff"></div><div class="seg" id="diffSeg"></div>
+  <div class="lab" data-i="bots"></div>
+  <div class="row"><button class="btn sec sm" id="botDn">−</button><b id="botN" style="min-width:30px;text-align:center;font-size:20px"></b><button class="btn sec sm" id="botUp">+</button></div>
+  <div class="msg" id="roomMsg"></div>
+  <div class="row"><button class="btn" id="bStart" data-i="start"></button><button class="btn sec" id="bRoomBack" data-i="back"></button></div>
+</div>
+
+<div id="sSkin" class="scr">
+  <h2 data-i="soldier"></h2>
+  <div class="sub" id="rankTxt"></div>
+  <div id="xpBar"><i></i></div>
+  <div id="skinGrid"></div>
+  <button class="btn sec" id="bSkinBack" data-i="back"></button>
+</div>
+
+<div id="sHow" class="scr">
+  <h2 data-i="how"></h2>
+  <div class="how" id="howTxt"></div>
+  <button class="btn sec" id="bHowBack" data-i="back"></button>
+</div>
+
+<div id="sEnd" class="scr clear">
+  <div id="endTitle"></div>
+  <div class="sub" id="endSub"></div>
+  <table id="endTable"></table>
+  <div class="row"><button class="btn" id="bEndAgain" data-i="again"></button><button class="btn sec" id="bEndMenu" data-i="menu"></button></div>
+</div>
+
+<div id="sShop" class="scr clear">
+  <h2><span data-i="shop"></span> · <span id="shopCoins" style="color:#ffd54f"></span></h2>
+  <div id="shopList"></div>
+  <button class="btn sec" id="bShopClose" data-i="close"></button>
+</div>
+
+<div id="sDead" class="scr clear" style="background:rgba(60,5,5,.55)">
+  <div style="font-family:Impact,sans-serif;font-size:clamp(36px,8vw,64px);letter-spacing:4px;color:#ff7d6a" data-i="dead"></div>
+  <div class="sub" id="deadSub"></div>
+  <button class="btn" id="bResp"></button>
+  <button class="btn sec sm" id="bDeadShop" data-i="shop"></button>
+</div>
+
+<div id="hud">
+  <div id="top">
+    <span class="pill" id="hWave"></span><span class="pill red" id="hLeft"></span><span class="pill gold" id="hCoins"></span>
+    <span class="sp"></span>
+    <button class="ib" id="bShop">🛒 B</button><button class="ib" id="bHMute">🔊</button><button class="ib" id="bQuit">✕</button>
+  </div>
+  <div id="boss"><span id="bossN"></span><div><i id="bossF"></i></div></div>
+  <canvas id="radar" width="224" height="224"></canvas>
+  <div id="feed"></div>
+  <div id="scope"></div>
+  <div id="xh"></div><div id="hm"></div>
+  <div id="hurt"></div>
+  <div id="banner"></div>
+  <div id="bl"><div class="bar"><i id="hpF"></i><b id="hpT"></b></div><div class="bar"><i id="arF"></i><b id="arT"></b></div></div>
+  <div id="br"><div id="ammo"></div><div id="wname"></div><div id="wlist"></div></div>
+  <div id="touch">
+    <div id="joy" class="pt"><div id="joyK"></div></div>
+    <div id="lookZ" class="pt"></div>
+    <div class="tb" id="tFire">FIRE</div><div class="tb" id="tJump">JUMP</div><div class="tb" id="tReload">R</div>
+    <div class="tb" id="tGren">💣</div><div class="tb" id="tWeap">⇄</div><div class="tb" id="tScope">🔭</div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="lang.js"></script>
+<script src="world.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
