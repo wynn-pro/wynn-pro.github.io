@@ -67,7 +67,7 @@ function buildWorld(mi,seed){
  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),gm);gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;world.add(gnd);
  const BG=new THREE.BoxGeometry(1,1,1),CG=new THREE.CylinderGeometry(1,1,1,12),SG=new THREE.IcosahedronGeometry(1,1),CN=new THREE.ConeGeometry(1,1,9);
  const add=(geo,mat,x,y,z,cs=true,rs=true)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=cs&&!MOBILE;m.receiveShadow=rs;world.add(m);return m};
- const free=(x,z,r)=>{if(Math.hypot(x,z)<13)return false;if(Math.abs(x)>HALF-r-2||Math.abs(z)>HALF-r-2)return false;for(const o of OB){const orr=o.t?o.r:Math.hypot(o.hx,o.hz);if(Math.hypot(x-o.x,z-o.z)<r+orr+1.5)return false}return true};
+ const free=(x,z,r)=>{if(Math.hypot(x,z)<13)return false;if(Math.abs(x)>HALF-r-2||Math.abs(z)>HALF-r-2)return false;for(const o of OB){if(o.w)continue;const orr=o.t?o.r:Math.hypot(o.hx,o.hz);if(Math.hypot(x-o.x,z-o.z)<r+orr+1.5)return false}return true};
  const place=(r,fn,tries=40)=>{for(let i=0;i<tries;i++){const x=R(-HALF+6,HALF-6),z=R(-HALF+6,HALF-6);if(free(x,z,r)){fn(x,z);return true}}return false};
  const obox=(x,z,w,d,h,mat,y0=0)=>{OB.push({t:0,x,z,hx:w/2,hz:d/2,h:h+y0});const m=add(BG,mat,x,y0+h/2,z);m.scale.set(w,h,d);return m};
  const ocyl=(x,z,r,h)=>OB.push({t:1,x,z,r,h});
@@ -81,7 +81,7 @@ function buildWorld(mi,seed){
  const bush=()=>{const x=R(-HALF,HALF),z=R(-HALF,HALF);if(Math.hypot(x,z)>8)add(SG,M(T.k==='jungle'?'#3a7a32':'#6a8a5a',1),x,.5,z,false).scale.set(R(.8,1.6),R(.5,.9),R(.8,1.6))};
  // perimeter
  const wm=M(T.acc,.95,0,{k:'w',o:{map:concreteTex(T.acc)}});
- [[0,HALF+1,HALF*2+4,2],[0,-HALF-1,HALF*2+4,2],[HALF+1,0,2,HALF*2+4],[-HALF-1,0,2,HALF*2+4]].forEach(([x,z,w,d])=>{OB.push({t:0,x,z,hx:w/2,hz:d/2,h:9});add(BG,wm,x,4.5,z).scale.set(w,9,d)});
+ [[0,HALF+1,HALF*2+4,2],[0,-HALF-1,HALF*2+4,2],[HALF+1,0,2,HALF*2+4],[-HALF-1,0,2,HALF*2+4]].forEach(([x,z,w,d])=>{OB.push({t:0,x,z,hx:w/2,hz:d/2,h:9,w:1});add(BG,wm,x,4.5,z).scale.set(w,9,d)});
  if(T.k==='city'){
   const fm=new THREE.MeshStandardMaterial({color:0xffffff,map:facadeTex(T.bld),roughness:.95});
   for(let i=0;i<13;i++)place(11,(x,z)=>{const w=R(8,15),d=R(8,15),h=R(7,17);OB.push({t:0,x,z,hx:w/2,hz:d/2,h});add(BG,fm,x,h/2,z).scale.set(w,h,d);add(BG,M('#4a4a48',1),x,h+.25,z).scale.set(w+.4,.5,d+.4);if(rng()<.5)add(BG,M('#3b3b3a',1),x+R(-2,2),h+1,z+R(-2,2)).scale.set(2,1.2,2)},60);
@@ -203,7 +203,7 @@ function buildGun(){
  mkw(g=>{part(g,.06,.09,.95,0,0,-.45,gr);part(g,.03,.03,.5,0,.01,-1.1,dk);part(g,.05,.07,.2,0,.09,-.35,dk);part(g,.07,.12,.25,0,-.02,.15,wd)});
  mkw(g=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,1,10),gr);c.rotation.x=Math.PI/2;c.position.set(0,.02,-.4);c.renderOrder=999;g.add(c);part(g,.05,.12,.06,0,-.1,-.1,dk)});
  flashM=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),new THREE.MeshBasicMaterial({color:0xffd070,depthTest:false}));flashM.renderOrder=1000;flashM.visible=false;gunGroup.add(flashM);
- gunGroup.position.set(.26,-.25,-.5)}
+ gunGroup.scale.setScalar(.72);gunGroup.position.set(.26,-.25,-.5)}
 const MUZ=[[0,0,-.32],[0,.01,-.95],[0,0,-.8],[0,0,-.55],[0,.01,-1.4],[0,.02,-.92]];
 function showGun(i,flash){gunMeshes.forEach((g,k)=>g.visible=k===i);if(flashM){flashM.visible=!!flash;if(flash)flashM.position.set(MUZ[i][0],MUZ[i][1],MUZ[i][2])}}
 
