@@ -279,6 +279,35 @@
     .vault-nav .chip { text-decoration: none; font-family: 'Fredoka', sans-serif; transition: transform 0.15s; }
     .vault-nav .chip:hover { background: var(--blue); color: var(--white); transform: translateY(-2px); }
 
+    /* ---------- Search bar ---------- */
+    .search { position: relative; max-width: 520px; margin: 0 auto 22px; }
+    .search input {
+      width: 100%;
+      padding: 14px 48px 14px 50px;
+      font: 700 1.1rem 'Nunito', sans-serif;
+      color: var(--ink);
+      background: var(--white);
+      border: 4px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 5px 5px 0 var(--ink);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .search input::-webkit-search-cancel-button { display: none; }
+    .search input:focus { border-color: var(--blue); box-shadow: 5px 5px 0 var(--blue); }
+    .search .icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; pointer-events: none; }
+    .search .clear {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      width: 32px; height: 32px; border: 0; border-radius: 50%;
+      background: var(--sky); color: var(--ink); font-size: 1rem; font-weight: 800; cursor: pointer;
+    }
+    .search .clear:hover { background: var(--pink); color: var(--white); }
+    .search-msg { text-align: center; font-weight: 800; margin: -6px 0 22px; min-height: 1.4em; }
+    .no-games { text-align: center; font-size: 1.3rem; font-weight: 800; padding: 40px 0; }
+    [hidden] { display: none !important; }
+
     .group { margin-bottom: 60px; scroll-margin-top: 90px; }
     .group:last-child { margin-bottom: 0; }
     .group-title {
@@ -536,6 +565,14 @@
     <div class="wrap">
       <h2 class="section-title">The Game Vault</h2>
       <p class="section-sub">Click a game to play it right now in your browser!</p>
+
+      <div class="search" role="search">
+        <span class="icon" aria-hidden="true">🔍</span>
+        <input type="search" id="gameSearch" placeholder="Search for a game..." aria-label="Search for a game" autocomplete="off">
+        <button type="button" class="clear" id="gameSearchClear" aria-label="Clear search" hidden>✕</button>
+      </div>
+      <p class="search-msg" id="gameSearchMsg" aria-live="polite"></p>
+      <p class="no-games" id="noGames" hidden>🐉 No games found. Try another word!</p>
 
       <div class="vault-nav">
         <a class="chip" href="#favourites">⭐ Favourites</a>
@@ -2383,6 +2420,56 @@
         });
         card.querySelector('.game-art').appendChild(btn);
       });
+    })();
+  </script>
+
+  <script>
+    // Search bar: type to filter the game cards
+    (function () {
+      const input = document.getElementById('gameSearch');
+      const clear = document.getElementById('gameSearchClear');
+      const msg = document.getElementById('gameSearchMsg');
+      const none = document.getElementById('noGames');
+      const nav = document.querySelector('.vault-nav');
+      const groups = [...document.querySelectorAll('#games .group')];
+      const isTh = () => document.documentElement.lang === 'th';
+
+      function run() {
+        const words = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        const searching = words.length > 0;
+        const seen = new Set();   // favourites also live in their own group: show each game once
+        let found = 0;
+        groups.forEach((group) => {
+          let shown = 0;
+          group.querySelectorAll('article.game').forEach((card) => {
+            const text = card.querySelector('.game-body').textContent.toLowerCase();
+            const link = card.querySelector('a.btn-play');
+            const key = link ? link.getAttribute('href') : card;
+            let ok = !searching || (words.every((w) => text.includes(w)) && !seen.has(key));
+            if (ok && searching) { seen.add(key); found++; }
+            card.hidden = !ok;
+            if (ok) shown++;
+          });
+          group.hidden = shown === 0;
+        });
+        clear.hidden = !searching;
+        nav.hidden = searching;
+        none.hidden = !searching || found > 0;
+        if (!searching || found === 0) msg.textContent = '';
+        else if (isTh()) msg.textContent = 'พบ ' + found + ' เกม';
+        else msg.textContent = found + (found === 1 ? ' game found' : ' games found');
+      }
+      function labels() {
+        input.placeholder = isTh() ? 'ค้นหาเกม...' : 'Search for a game...';
+        none.textContent = isTh() ? '🐉 ไม่พบเกม ลองคำอื่นดูนะ!' : '🐉 No games found. Try another word!';
+        run();
+      }
+
+      input.addEventListener('input', run);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { input.value = ''; run(); } });
+      clear.addEventListener('click', () => { input.value = ''; run(); input.focus(); });
+      new MutationObserver(labels).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+      labels();
     })();
   </script>
 
