@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Writing Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #1a1035;
+    --night2: #2c1a5a;
+    --gold: #f5c542;
+    --gold-dark: #b8860b;
+    --parch: #f6e7c1;
+    --parch-dark: #e3cf9c;
+    --ink: #3a2a14;
+    --ink-soft: #6b5433;
+    --good: #2e8b57;
+    --bad: #b5343c;
+    --purple: #7b4fd6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    font-family: 'Nunito', 'Trebuchet MS', sans-serif;
+    font-weight: 500;
+    color: var(--ink);
+    background:
+      radial-gradient(2px 2px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 78% 9%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 33% 42%, #ffe9a8 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 91% 55%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 58% 28%, #cfc3ff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 6% 72%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 46% 86%, #ffe9a8 50%, transparent 51%),
+      linear-gradient(180deg, var(--night) 0%, var(--night2) 60%, #46256f 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, .fancy { font-family: 'MedievalSharp', 'Papyrus', fantasy; font-weight: 400; }
+  .hidden { display: none !important; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 12px 16px 40px; }
+
+  /* top bar */
+  .top {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    color: #fff; padding: 6px 0 12px;
+  }
+  .top h1 { font-size: 30px; margin: 0; color: var(--gold); text-shadow: 0 2px 0 #000; flex: 1 1 auto; }
+  .pill {
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 15px; color: #fff;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  button.pill:hover { background: rgba(255,255,255,.22); }
+  .home-link { color: #d9ccff; font-weight: 700; text-decoration: none; font-size: 14px; }
+
+  /* parchment panels */
+  .panel {
+    background: linear-gradient(180deg, var(--parch), var(--parch-dark));
+    border: 3px solid var(--gold-dark); border-radius: 16px;
+    box-shadow: 0 8px 0 rgba(0,0,0,.35), inset 0 0 30px rgba(139,101,38,.25);
+    padding: 16px; margin-bottom: 16px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 22px; color: #5a3a10; }
+  .sub { color: var(--ink-soft); font-size: 14px; margin: -6px 0 10px; }
+
+  .btn {
+    border: 2px solid #6b4a12; border-radius: 12px; background: #fff7df; color: var(--ink);
+    font-weight: 700; font-size: 16px; padding: 10px 14px; min-height: 44px;
+    box-shadow: 0 3px 0 #6b4a12; transition: transform .08s;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #6b4a12; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.sel { background: var(--gold); border-color: #7a5200; }
+  .btn.big {
+    width: 100%; font-size: 24px; padding: 14px; background: linear-gradient(180deg, #9a6cf0, #6a3fc4);
+    color: #fff; border-color: #2d1463; box-shadow: 0 5px 0 #2d1463;
+    font-family: 'MedievalSharp', fantasy; letter-spacing: 1px;
+  }
+  :focus-visible { outline: 3px solid #3aa0ff; outline-offset: 2px; }
+
+  /* menu */
+  .heroes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .hero-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; }
+  .hero-card .em { font-size: 42px; line-height: 1.1; }
+  .grades { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+  .grade-btn { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; }
+  .grade-btn small { font-size: 12px; color: var(--ink-soft); font-weight: 700; min-height: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .row + .row { margin-top: 12px; }
+  .row label.lab { font-weight: 900; min-width: 110px; }
+  .shop { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .shop-item { background: rgba(255,255,255,.45); border: 2px dashed #a98a4b; border-radius: 12px; padding: 10px; }
+  .shop-item b { display: block; }
+  .shop-item span { font-size: 13px; color: var(--ink-soft); display: block; margin: 2px 0 8px; min-height: 34px; }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .badge { border: 2px solid #a98a4b; border-radius: 12px; padding: 8px; background: rgba(255,255,255,.5); font-size: 13px; }
+  .badge b { display: block; font-size: 14px; }
+  .badge.locked { filter: grayscale(1); opacity: .55; }
+  .rankbar { height: 14px; background: #cdb67c; border-radius: 99px; overflow: hidden; border: 2px solid #6b4a12; }
+  .rankbar i { display: block; height: 100%; background: linear-gradient(90deg, #7b4fd6, #c59bff); width: 0; }
+
+  /* game */
+  .hud { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .timerbar { height: 12px; border-radius: 99px; background: rgba(255,255,255,.2); overflow: hidden; margin-bottom: 10px; }
+  .timerbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #7ee081, #f5c542); transition: width .1s linear; }
+  .timerbar.low i { background: #ff6b6b; }
+  .stage {
+    position: relative; height: 150px; border-radius: 16px; overflow: hidden; margin-bottom: 12px;
+    border: 3px solid #2d1463;
+    background: linear-gradient(180deg, #3b2a7a 0%, #6a4bb0 55%, #3f7a45 56%, #2c5a33 100%);
+  }
+  .stage .moon { position: absolute; top: 10px; left: 50%; font-size: 30px; transform: translateX(-50%); opacity: .9; }
+  .fighter { position: absolute; bottom: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px #000; }
+  .fighter .em { font-size: 62px; line-height: 1; display: block; }
+  #heroBox { left: 8%; }
+  #monBox { right: 8%; }
+  #bolt { position: absolute; bottom: 50px; left: 20%; font-size: 34px; opacity: 0; pointer-events: none; }
+  #bolt.cast { animation: cast .45s ease-in forwards; }
+  @keyframes cast { 0% { left: 20%; opacity: 1; } 100% { left: 74%; opacity: 1; transform: scale(1.5) rotate(360deg); } }
+  #monBox.defeated .em { animation: poof .6s ease-in forwards; }
+  @keyframes poof { 50% { transform: scale(1.3) rotate(20deg); } 100% { transform: scale(0) rotate(180deg); opacity: 0; } }
+  #monBox.escape .em { animation: flee .7s ease-in forwards; }
+  @keyframes flee { 30% { transform: translateY(-14px); } 100% { transform: translateX(180px); opacity: 0; } }
+  #monBox.enter .em { animation: enter .4s ease-out; }
+  @keyframes enter { 0% { transform: translateX(120px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  #heroBox.hop .em { animation: hop .4s; }
+  @keyframes hop { 50% { transform: translateY(-16px); } }
+
+  .qtype { display: inline-block; background: #5a3a10; color: #ffe9a8; border-radius: 99px; padding: 3px 12px; font-size: 13px; font-weight: 900; letter-spacing: .5px; }
+  .prompt { font-size: 21px; font-weight: 900; margin: 10px 0 6px; line-height: 1.35; }
+  .extra { font-size: 17px; margin: 0 0 12px; color: var(--ink-soft); }
+  .extra .wrongword {
+    display: inline-block; background: #fff; border: 2px dashed var(--bad); border-radius: 10px;
+    padding: 4px 12px; color: var(--bad); font-weight: 900; font-size: 22px; margin-top: 6px;
+  }
+  .opts { display: grid; gap: 10px; }
+  .opt { text-align: left; font-size: 18px; }
+  .opt.right { background: #bfeecb; border-color: var(--good); }
+  .opt.wrong { background: #f6c1c4; border-color: var(--bad); }
+  .opt.gone { visibility: hidden; }
+  input.typed, textarea.story {
+    width: 100%; font-family: inherit; font-size: 20px; padding: 12px; border-radius: 12px;
+    border: 3px solid #6b4a12; background: #fffdf5; color: var(--ink); margin-bottom: 10px;
+  }
+  textarea.story { min-height: 150px; resize: vertical; font-size: 18px; line-height: 1.5; }
+  .checks { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 4px; font-weight: 700; }
+  .checks li { color: var(--ink-soft); }
+  .checks li.ok { color: var(--good); }
+  .bonus span { display: inline-block; background: #fff; border: 2px solid #a98a4b; border-radius: 99px; padding: 2px 10px; margin: 2px 4px 2px 0; font-weight: 700; }
+  .bonus span.used { background: #bfeecb; border-color: var(--good); }
+  .powers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 2px dashed #a98a4b; }
+  .powers .btn { font-size: 14px; padding: 6px 10px; }
+  .feedback { border-radius: 12px; padding: 12px; margin-top: 12px; font-weight: 700; font-size: 17px; }
+  .feedback.good { background: #d3f3dc; border: 2px solid var(--good); }
+  .feedback.bad { background: #fbdcde; border: 2px solid var(--bad); }
+  .feedback.info { background: #e6dcff; border: 2px solid var(--purple); }
+  .feedback .ans { display: block; font-size: 19px; margin: 4px 0; }
+  .feedback .tip { display: block; font-weight: 500; font-size: 15px; margin-top: 4px; }
+  .feedback .row { margin-top: 10px; }
+
+  /* results */
+  .bigscore { font-size: 54px; color: #5a3a10; margin: 4px 0; text-align: center; }
+  .center { text-align: center; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
+  .stats div { background: rgba(255,255,255,.5); border-radius: 12px; padding: 8px; text-align: center; font-size: 13px; font-weight: 700; }
+  .stats b { display: block; font-size: 22px; }
+  .newbadge { background: #fff3c4; border: 2px solid var(--gold-dark); border-radius: 12px; padding: 8px 12px; margin: 6px 0; font-weight: 700; }
+  .linkbtn { background: none; border: none; color: #d9ccff; text-decoration: underline; font-size: 13px; }
+  @media (max-width: 520px) {
+    .top h1 { font-size: 24px; flex-basis: 100%; }
+    .prompt { font-size: 19px; }
+    .fighter .em { font-size: 50px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>✒️ Writing Test</h1>
+    <span class="pill" id="coinPill">🪙 0</span>
+    <span class="pill" id="rankPill">Apprentice Scribe</span>
+    <button class="pill" id="sfxBtn" aria-label="Sound effects on or off">🔊</button>
+    <button class="pill" id="musBtn" aria-label="Music on or off">🎵</button>
+  </div>
+
+  <!-- MENU -->
+  <div id="menu">
+    <div class="panel">
+      <h2>1. Choose your hero</h2>
+      <div class="heroes" id="heroes"></div>
+    </div>
+    <div class="panel">
+      <h2>2. Pick your grade</h2>
+      <p class="sub">Your best score is saved for every grade.</p>
+      <div class="grades" id="grades"></div>
+    </div>
+    <div class="panel">
+      <h2>3. Set up your quest</h2>
+      <div class="row">
+        <label class="lab">Questions</label>
+        <div class="row" id="counts"></div>
+      </div>
+      <div class="row">
+        <label class="lab">Timer</label>
+        <button class="btn" id="timerBtn"></button>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn big" id="startBtn">⚔️ Start Quest</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>🏪 Power-up shop</h2>
+      <p class="sub">Spend your gold coins. Each power-up costs 30 🪙.</p>
+      <div class="shop" id="shop"></div>
+    </div>
+    <div class="panel">
+      <h2>🏅 Rank &amp; badges</h2>
+      <p id="rankText" style="margin:0 0 6px;font-weight:700"></p>
+      <div class="rankbar"><i id="rankFill"></i></div>
+      <div class="badges" id="badges" style="margin-top:12px"></div>
+    </div>
+    <div class="center">
+      <a class="home-link" href="../index.html">← Back to all games</a> &nbsp;
+      <button class="linkbtn" id="resetBtn">Reset my progress</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="hud">
+      <span class="pill" id="hudQ"></span>
+      <span class="pill" id="hudScore"></span>
+      <span class="pill" id="hudStreak"></span>
+      <span class="pill" id="hudGrade"></span>
+      <button class="pill" id="quitBtn">✖ Quit</button>
+    </div>
+    <div class="timerbar hidden" id="timerbar"><i id="timerFill"></i></div>
+    <div class="stage" aria-hidden="true">
+      <div class="moon">🌙</div>
+      <div class="fighter" id="heroBox"><span class="em" id="heroEm"></span><span id="heroName"></span></div>
+      <div id="bolt">✨</div>
+      <div class="fighter" id="monBox"><span class="em" id="monEm"></span><span id="monName"></span></div>
+    </div>
+    <div class="panel">
+      <span class="qtype" id="qtype"></span>
+      <p class="prompt" id="prompt"></p>
+      <div class="extra" id="extra"></div>
+      <div id="answerArea"></div>
+      <div id="feedback" aria-live="polite"></div>
+      <div class="powers" id="powers"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+    <div class="panel">
+      <h2 class="center" id="resTitle"></h2>
+      <div class="bigscore fancy" id="resScore"></div>
+      <p class="center" id="resBest" style="font-weight:700;margin:0"></p>
+      <div class="stats" id="resStats"></div>
+      <div id="resBadges"></div>
+      <p id="resRank" style="font-weight:700"></p>
+      <div class="rankbar"><i id="resRankFill"></i></div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn sel" id="againBtn" style="flex:1">🔁 Play again</button>
+        <button class="btn" id="menuBtn" style="flex:1">🏰 Back to menu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== QUESTION DATA =====================
+   sp: [word, clue, wrong1, wrong2, wrong3]
+   gr: [question, right answer, [wrong answers], tip]
+   pu: [wrong sentence, correct sentence, tip, [other accepted answers]]
+   st: [prompt, [bonus words], sentence starter]                         */
+const GRADES = [
+{ name: "Prep", target: 5,
+  sp: [
+    ["cat", "A pet that says meow.", "kat", "cet", "catt"],
+    ["dog", "A pet that barks.", "dohg", "dogg", "doog"],
+    ["sun", "It shines in the sky.", "sen", "sunn", "zun"],
+    ["hat", "You wear it on your head.", "het", "hatt", "haat"],
+    ["red", "The colour of a strawberry.", "redd", "wred", "raed"],
+    ["big", "Not small.", "bigg", "bihg", "byg"],
+    ["mum", "She looks after you.", "mumm", "muhm", "mmu"],
+    ["run", "To move fast on your legs.", "runn", "ruhn", "wrun"]],
+  gr: [
+    ["I ___ a dog.", "have", ["has"], "We say 'I have'."],
+    ["The cat ___ big.", "is", ["are"], "One cat 'is'. Two cats 'are'."],
+    ["I can ___ fast.", "run", ["runs", "running"], "After 'can' we use the plain word: run."],
+    ["She ___ my friend.", "is", ["am", "are"], "We say 'she is'."],
+    ["I see two ___.", "cats", ["cat"], "More than one needs an 's'."],
+    ["___ am happy.", "I", ["Me", "My"], "We say 'I am'."],
+    ["We ___ at school.", "are", ["is", "am"], "We say 'we are'."],
+    ["This is ___ apple.", "an", ["a"], "Use 'an' before a, e, i, o, u sounds."]],
+  pu: [
+    ["i like my dog.", "I like my dog.", "A sentence starts with a capital letter."],
+    ["the sun is hot", "The sun is hot.", "Start with a capital and end with a full stop."],
+    ["My cat is big", "My cat is big.", "A sentence ends with a full stop."],
+    ["Can you run.", "Can you run?", "A question ends with a question mark."],
+    ["We play with sam.", "We play with Sam.", "Names start with a capital letter."]],
+  st: [
+    ["Write about your favourite animal.", ["I", "like", "big", "fun"], "I like..."],
+    ["What do you like to eat?", ["yummy", "eat", "like", "food"], "I like to eat..."],
+    ["Write about a friendly dragon.", ["dragon", "big", "red", "fly"], "The dragon is..."]]
+},
+{ name: "Grade 1", target: 8,
+  sp: [
+    ["they", "A word for a group of people: '___ are my friends.'", "thay", "tehy", "thei"],
+    ["said", "'Hello,' ___ the wizard.", "sed", "siad", "sayed"],
+    ["play", "What you do with toys and games.", "plai", "pley", "pllay"],
+    ["fish", "An animal that swims.", "fich", "fesh", "fissh"],
+    ["jump", "To hop up into the air.", "jamp", "jummp", "gump"],
+    ["house", "A building you live in.", "howse", "hous", "houze"],
+    ["with", "'Come ___ me.'", "wiht", "whith", "wif"],
+    ["come", "'Please ___ here.'", "kome", "coem", "comm"]],
+  gr: [
+    ["The dogs ___ barking.", "are", ["is", "am"], "More than one dog: 'are'."],
+    ["He ___ to school every day.", "walks", ["walk", "walking"], "He, she and it add an 's': he walks."],
+    ["Yesterday I ___ a cake.", "made", ["maked", "make"], "The past of 'make' is 'made'."],
+    ["She gave it to ___.", "me", ["I", "my"], "After 'to' we say 'me'."],
+    ["There ___ a frog in the pond.", "is", ["are", "am"], "One frog: 'there is'."],
+    ["I ___ eating my lunch.", "am", ["is", "are"], "We say 'I am'."],
+    ["Two ___ ran away.", "foxes", ["foxs", "fox"], "Words ending in x add 'es'."],
+    ["I have one ___.", "book", ["books", "bookes"], "One thing does not need an 's'."]],
+  pu: [
+    ["Where is my hat.", "Where is my hat?", "A question ends with a question mark."],
+    ["i went to the park.", "I went to the park.", "The word 'I' is always a capital."],
+    ["My friend is ben.", "My friend is Ben.", "Names start with a capital letter."],
+    ["We love to swim", "We love to swim.", "A sentence ends with a full stop."],
+    ["On monday we play.", "On Monday we play.", "Days of the week start with a capital."]],
+  st: [
+    ["Write about a day at the beach.", ["sand", "swim", "sun", "water"], "At the beach I..."],
+    ["Write about a magic pet.", ["magic", "pet", "fly", "friend"], "My magic pet can..."],
+    ["What do you do at school?", ["school", "play", "friend", "learn"], "At school I..."]]
+},
+{ name: "Grade 2", target: 12,
+  sp: [
+    ["because", "'I am wet ___ it is raining.'", "becuase", "becos", "becauze"],
+    ["friend", "Someone you like to play with.", "freind", "frend", "friennd"],
+    ["would", "'I ___ like some cake, please.'", "woud", "wuld", "woudl"],
+    ["people", "Men, women and children.", "peeple", "poeple", "peopel"],
+    ["again", "One more time.", "agen", "agian", "agane"],
+    ["school", "Where you go to learn.", "skool", "scool", "shcool"],
+    ["night", "When it is dark outside.", "nite", "nihgt", "niht"],
+    ["water", "You drink it and swim in it.", "worter", "watter", "wotar"]],
+  gr: [
+    ["We ___ to the zoo last week.", "went", ["goed", "go"], "The past of 'go' is 'went'."],
+    ["She is ___ than her brother.", "taller", ["tallest", "more tall"], "Use '-er' to compare two people."],
+    ["The children ___ playing outside.", "were", ["was", "is"], "More than one child: 'were'."],
+    ["I saw ___ elephant.", "an", ["a", "and"], "Use 'an' before a vowel sound."],
+    ["He ran ___.", "quickly", ["quick", "quicker"], "Words that tell how something is done often end in '-ly'."],
+    ["That bag is ___.", "mine", ["my", "me"], "'Mine' shows it belongs to me."],
+    ["The bird ___ away when it saw the cat.", "flew", ["flyed", "fly"], "The past of 'fly' is 'flew'."],
+    ["I have three ___.", "boxes", ["boxs", "box"], "Words ending in x add 'es'."]],
+  pu: [
+    ["I like apples bananas and grapes.", "I like apples, bananas and grapes.", "Use commas between things in a list."],
+    ["What a big dragon.", "What a big dragon!", "Use an exclamation mark to show surprise."],
+    ["my birthday is in june.", "My birthday is in June.", "Months start with a capital letter."],
+    ["Do you like ice cream.", "Do you like ice cream?", "A question ends with a question mark."],
+    ["we went to sydney on friday.", "We went to Sydney on Friday.", "Places and days start with capitals."]],
+  st: [
+    ["You find a treasure chest. What is inside?", ["treasure", "gold", "open", "found"], "Inside the chest I found..."],
+    ["Write about a wizard's pet.", ["wizard", "magic", "spell", "pet"], "The wizard had a pet..."],
+    ["What is your favourite game?", ["game", "play", "fun", "win"], "My favourite game is..."]]
+},
+{ name: "Grade 3", target: 15,
+  sp: [
+    ["beautiful", "Very pretty.", "beutiful", "beautifull", "butiful"],
+    ["different", "Not the same.", "diffrent", "diferent", "differant"],
+    ["favourite", "The one you like best.", "favrite", "favourit", "faverite"],
+    ["surprise", "Something you did not expect.", "suprise", "surprize", "serprise"],
+    ["caught", "The past of 'catch'.", "cort", "cought", "caugt"],
+    ["thought", "The past of 'think'.", "thort", "thougt", "thaught"],
+    ["enough", "As much as you need.", "enuff", "enogh", "enouf"],
+    ["believe", "To think something is true.", "beleive", "belive", "beleve"]],
+  gr: [
+    ["___ going to the castle tomorrow.", "They're", ["Their", "There"], "'They're' is short for 'they are'."],
+    ["The knight lost ___ sword.", "his", ["he", "him"], "'His' shows the sword belongs to him."],
+    ["This is the ___ cake I have ever eaten.", "best", ["goodest", "better"], "Good, better, best."],
+    ["She ___ her homework before dinner.", "did", ["done", "doed"], "The past of 'do' is 'did'."],
+    ["My sister and I ___ going to the fair.", "are", ["is", "am"], "Two people: 'are'."],
+    ["I wore a coat ___ it was cold.", "because", ["so", "but"], "'Because' gives the reason."],
+    ["Which word is a noun?", "castle", ["run", "happy", "quickly"], "A noun is a person, place or thing."],
+    ["Which word is a verb?", "jump", ["green", "table", "slowly"], "A verb is a doing word."]],
+  pu: [
+    ["the dragons cave was dark.", "The dragon's cave was dark.", "An apostrophe shows the cave belongs to the dragon."],
+    ["I packed a hat sunscreen and a towel.", "I packed a hat, sunscreen and a towel.", "Use commas between things in a list."],
+    ["dont touch that.", "Don't touch that.", "'Don't' needs an apostrophe for the missing letter.", ["Don't touch that!"]],
+    ["can we go to london in july", "Can we go to London in July?", "Capitals for places and months, and a question mark."],
+    ["mr smith is my teacher.", "Mr Smith is my teacher.", "Titles and names start with capital letters."]],
+  st: [
+    ["A dragon lands in your backyard. What happens next?", ["dragon", "suddenly", "wings", "brave"], "Suddenly, a dragon..."],
+    ["Describe your perfect day.", ["morning", "favourite", "then", "finally"], "In the morning I would..."],
+    ["You discover a secret door at school.", ["secret", "door", "opened", "inside"], "Behind the bookshelf I found..."]]
+},
+{ name: "Grade 4", target: 20,
+  sp: [
+    ["although", "Even though.", "allthough", "althogh", "altho"],
+    ["probably", "Very likely.", "probly", "probaly", "propably"],
+    ["strength", "How strong something is.", "strenth", "strengh", "strentgh"],
+    ["library", "A place full of books to borrow.", "libary", "librery", "liberry"],
+    ["February", "The second month of the year.", "Febuary", "Februry", "Feburary"],
+    ["interesting", "Not boring.", "intresting", "interisting", "intersting"],
+    ["remember", "To keep something in your mind.", "rember", "remeber", "remembar"],
+    ["weight", "How heavy something is.", "wieght", "waight", "weigt"]],
+  gr: [
+    ["One of my friends ___ a pet lizard.", "has", ["have", "are having"], "'One' is singular, so use 'has'."],
+    ["She sang ___ than anyone else.", "more beautifully", ["beautifuller", "most beautiful"], "Long adverbs use 'more' to compare."],
+    ["___ book is this?", "Whose", ["Who's", "Whos"], "'Whose' asks who owns it. 'Who's' means 'who is'."],
+    ["I should ___ gone earlier.", "have", ["of", "off"], "It is 'should have', never 'should of'."],
+    ["Which word is an adjective?", "enormous", ["quickly", "castle", "whisper"], "An adjective describes a noun."],
+    ["Which word is an adverb?", "silently", ["silent", "silence", "silenced"], "An adverb tells how something is done."],
+    ["We ___ already eaten when they arrived.", "had", ["has", "was"], "'Had eaten' shows it happened earlier."],
+    ["The cat licked ___ paws.", "its", ["it's", "its'"], "'Its' shows belonging. 'It's' means 'it is'."]],
+  pu: [
+    ["Stop! shouted the guard.", "\"Stop!\" shouted the guard.", "Put speech marks around the words that are spoken."],
+    ["My brothers bike is red blue and silver.", "My brother's bike is red, blue and silver.", "Apostrophe for belonging, commas for the list."],
+    ["its raining so we cant play outside.", "It's raining so we can't play outside.", "'It's' and 'can't' need apostrophes."],
+    ["Where are you going asked Tom.", "\"Where are you going?\" asked Tom.", "Speech marks go around the question, including the question mark."],
+    ["the childrens toys were everywhere.", "The children's toys were everywhere.", "The toys belong to the children: children's."]],
+  st: [
+    ["You wake up and you can talk to animals. Tell the story.", ["whispered", "surprised", "animals", "because"], "When I woke up, my cat said..."],
+    ["Describe a castle on a stormy night.", ["thunder", "shadows", "tower", "creaked"], "Thunder shook the old castle..."],
+    ["Write about a time you were brave.", ["nervous", "brave", "finally", "proud"], "I felt nervous when..."]]
+},
+{ name: "Grade 5", target: 25,
+  sp: [
+    ["definitely", "For sure, without doubt.", "definately", "definitly", "definetly"],
+    ["separate", "To keep apart.", "seperate", "seperet", "separat"],
+    ["necessary", "Needed.", "neccessary", "necesary", "neccesary"],
+    ["embarrass", "To make someone feel awkward.", "embarass", "embaras", "emberrass"],
+    ["rhythm", "The beat in music.", "rythm", "rhythem", "rythym"],
+    ["government", "The people who run a country.", "goverment", "govenment", "governmant"],
+    ["temperature", "How hot or cold something is.", "temprature", "tempreture", "temperture"],
+    ["neighbour", "A person who lives next door.", "nieghbour", "naybour", "neighbur"]],
+  gr: [
+    ["There are ___ people here than yesterday.", "fewer", ["less", "lesser"], "Use 'fewer' for things you can count."],
+    ["The gift is for my brother and ___.", "me", ["I", "myself"], "Take away 'my brother and': the gift is for me."],
+    ["She did ___ in the test.", "well", ["good", "goodly"], "'Well' is the adverb. 'Good' is the adjective."],
+    ["Which sentence is in the past tense?", "The wizard cast a spell.", ["The wizard casts a spell.", "The wizard will cast a spell.", "The wizard is casting a spell."], "Past tense tells what already happened."],
+    ["Which word is a conjunction?", "although", ["under", "quickly", "happy"], "A conjunction joins ideas together."],
+    ["Which word is a preposition?", "beneath", ["and", "brave", "shout"], "A preposition shows where or when."],
+    ["The books ___ on the shelf since Monday.", "have been", ["has been", "is being"], "'Books' is plural, so 'have been'."],
+    ["___ too late to enter the tower.", "It's", ["Its", "Its'"], "'It's' is short for 'it is'."]],
+  pu: [
+    ["My dog who is very old sleeps all day.", "My dog, who is very old, sleeps all day.", "Put commas around extra information."],
+    ["I cant believe it said Mia.", "\"I can't believe it,\" said Mia.", "Speech marks around the speech, with a comma before the closing mark.", ["\"I can't believe it!\" said Mia."]],
+    ["Before the sun rose the knights left the castle.", "Before the sun rose, the knights left the castle.", "Use a comma after an opening clause."],
+    ["the wizards hat fell off but he didnt notice.", "The wizard's hat fell off but he didn't notice.", "Apostrophes for belonging and for missing letters."],
+    ["On tuesday dr lee visited our school.", "On Tuesday, Dr Lee visited our school.", "Capitals for days, titles and names.", ["On Tuesday Dr Lee visited our school."]]],
+  st: [
+    ["You find a map that leads to a lost city.", ["ancient", "journey", "discovered", "mysterious"], "The ancient map showed..."],
+    ["Persuade your teacher to give no homework for a week.", ["because", "firstly", "important", "believe"], "I believe that..."],
+    ["A potion goes wrong in the wizard's tower.", ["bubbling", "exploded", "suddenly", "apprentice"], "The potion began bubbling..."]]
+},
+{ name: "Grade 6", target: 30,
+  sp: [
+    ["accommodate", "To make room for someone.", "acommodate", "accomodate", "acomodate"],
+    ["conscience", "The inner voice that tells right from wrong.", "concience", "consience", "conscence"],
+    ["mischievous", "Playfully naughty.", "mischievious", "mischevous", "mischeivous"],
+    ["occasionally", "Sometimes, but not often.", "ocasionally", "occassionally", "occasionaly"],
+    ["privilege", "A special right or advantage.", "priviledge", "privelege", "privilige"],
+    ["queue", "A line of people waiting.", "que", "queu", "quewe"],
+    ["recommend", "To suggest something is good.", "reccomend", "recomend", "reccommend"],
+    ["vegetable", "A carrot or a potato is one.", "vegtable", "vegetible", "vegatable"]],
+  gr: [
+    ["Neither the king nor the queen ___ at the feast.", "was", ["were", "are"], "With 'neither ... nor', the verb matches the nearest subject."],
+    ["Which sentence uses the passive voice?", "The castle was built by giants.", ["Giants built the castle.", "Giants are building the castle.", "Giants will build the castle."], "In the passive voice, the subject has the action done to it."],
+    ["Tom is the ___ of the two brothers.", "taller", ["tallest", "most tall"], "Use '-er' when comparing two."],
+    ["The wizard, ___ staff was broken, could not cast spells.", "whose", ["who's", "which"], "'Whose' shows ownership."],
+    ["Which word is an abstract noun?", "courage", ["castle", "dragon", "sword"], "An abstract noun names an idea or feeling."],
+    ["She has ___ her name on the scroll.", "written", ["wrote", "writed"], "After 'has' use 'written'."],
+    ["I would ___ come if I had known.", "have", ["of", "had"], "It is 'would have', never 'would of'."],
+    ["Which sentence is a command?", "Close the gate.", ["The gate is closed.", "Is the gate closed?", "What a huge gate!"], "A command tells someone to do something."]],
+  pu: [
+    ["The dragons were hungry they had not eaten for days.", "The dragons were hungry; they had not eaten for days.", "A semicolon can join two closely linked sentences.", ["The dragons were hungry. They had not eaten for days."]],
+    ["Bring three things a torch a rope and a map.", "Bring three things: a torch, a rope and a map.", "A colon introduces a list."],
+    ["Who goes there called the guard.", "\"Who goes there?\" called the guard.", "The question mark goes inside the speech marks."],
+    ["The two knights horses were tired.", "The two knights' horses were tired.", "For plural owners ending in s, the apostrophe goes after the s."],
+    ["However the bridge had already collapsed.", "However, the bridge had already collapsed.", "Put a comma after 'However' at the start."]],
+  st: [
+    ["Write the opening of a story set in a haunted library.", ["silence", "flickered", "whispering", "dusty"], "The candle flickered as..."],
+    ["Should children be allowed to have phones at school? Give your opinion.", ["however", "because", "therefore", "opinion"], "In my opinion..."],
+    ["You are the first person to meet an alien. Describe the moment.", ["strange", "trembling", "curious", "glowing"], "A strange glowing shape..."]]
+},
+{ name: "Grade 7", target: 35,
+  sp: [
+    ["achievement", "Something you worked hard to do.", "acheivement", "achievment", "achivement"],
+    ["argument", "A disagreement, or a reason given.", "arguement", "argumant", "arguemint"],
+    ["conscious", "Awake and aware.", "concious", "consious", "conscous"],
+    ["exaggerate", "To make something sound bigger than it is.", "exagerate", "exaggarate", "exadgerate"],
+    ["guarantee", "A firm promise.", "garantee", "guarentee", "gaurantee"],
+    ["immediately", "Straight away.", "imediately", "immediatly", "immediatley"],
+    ["parliament", "Where a country's laws are made.", "parliment", "parlament", "parlimant"],
+    ["restaurant", "A place where you pay to eat a meal.", "restarant", "resturant", "restaraunt"]],
+  gr: [
+    ["Each of the students ___ responsible for a scroll.", "is", ["are", "were"], "'Each' is singular."],
+    ["Which sentence contains a subordinate clause?", "Although it was raining, we marched on.", ["It was raining and we marched on.", "We marched on in the rain.", "It rained all day."], "A subordinate clause cannot stand alone: 'Although it was raining'."],
+    ["The king spoke to Lena and ___.", "me", ["I", "myself"], "After 'to', use the object form: me."],
+    ["___ did you give the key to?", "Whom", ["Who's", "Whose"], "'Whom' is the object: you gave it to him."],
+    ["Which word is a synonym for 'brave'?", "courageous", ["timid", "careless", "gloomy"], "A synonym has a similar meaning."],
+    ["Which sentence uses a metaphor?", "The moon was a silver coin.", ["The moon was like a coin.", "The moon was bright.", "The moon rose slowly."], "A metaphor says one thing IS another."],
+    ["The spell did not ___ the dragon.", "affect", ["effect", "afect"], "'Affect' is usually the verb. 'Effect' is usually the noun."],
+    ["She ran ___ than her rival.", "faster", ["more faster", "fastest"], "Never use 'more' with an '-er' word."]],
+  pu: [
+    ["The potion which smelled awful turned bright green.", "The potion, which smelled awful, turned bright green.", "Commas go around a non-essential clause."],
+    ["I have one rule never wake a sleeping dragon.", "I have one rule: never wake a sleeping dragon.", "A colon introduces an explanation.", ["I have one rule - never wake a sleeping dragon."]],
+    ["If we hurry said Ana we can catch them.", "\"If we hurry,\" said Ana, \"we can catch them.\"", "When speech is split, each part needs its own speech marks."],
+    ["The storm was fierce nevertheless the ship sailed on.", "The storm was fierce; nevertheless, the ship sailed on.", "Use a semicolon before 'nevertheless' and a comma after it.", ["The storm was fierce. Nevertheless, the ship sailed on."]],
+    ["Its a shame the castle lost its flag.", "It's a shame the castle lost its flag.", "'It's' = it is. 'Its' = belonging to it."]],
+  st: [
+    ["Write a story that begins: 'The letter was never meant to be opened.'", ["envelope", "secret", "hesitated", "consequences"], "The letter was never meant to be opened."],
+    ["Argue for or against: every student should learn an instrument.", ["furthermore", "evidence", "however", "conclusion"], "There is strong evidence that..."],
+    ["Describe a marketplace in a fantasy city using all five senses.", ["aroma", "bustling", "shimmering", "echoed"], "The bustling market echoed with..."]]
+},
+{ name: "Grade 8", target: 40,
+  sp: [
+    ["committee", "A group chosen to make decisions.", "commitee", "comittee", "committe"],
+    ["correspondence", "Letters and messages.", "correspondance", "corespondence", "corrispondence"],
+    ["desperate", "Having almost no hope.", "desparate", "despirate", "desprate"],
+    ["independent", "Not relying on others.", "independant", "indipendent", "independint"],
+    ["maintenance", "Keeping something in good condition.", "maintainance", "maintenence", "maintanance"],
+    ["noticeable", "Easy to see.", "noticable", "noticeble", "notisable"],
+    ["occurrence", "Something that happens.", "occurence", "occurance", "ocurrence"],
+    ["persuade", "To convince someone.", "pursuade", "persaude", "perswade"]],
+  gr: [
+    ["Which sentence has a dangling modifier?", "Walking to school, the rain soaked my bag.", ["Walking to school, I got soaked by the rain.", "The rain soaked my bag as I walked to school.", "I walked to school in the rain."], "The rain was not walking to school!"],
+    ["The number of dragons ___ falling.", "is", ["are", "were"], "'The number' is singular."],
+    ["Which sentence uses a simile?", "Her voice was as sharp as a blade.", ["Her voice was a blade.", "Her voice cut the air.", "Her voice was sharp."], "A simile compares using 'like' or 'as'."],
+    ["If I ___ you, I would apologise.", "were", ["was", "am"], "Use 'were' for imagined situations."],
+    ["Between you and ___, the plan is risky.", "me", ["I", "myself"], "After a preposition like 'between', use 'me'."],
+    ["Which is a complex sentence?", "When the bell rang, the students left.", ["The bell rang and the students left.", "The bell rang.", "The students left quickly and quietly."], "A complex sentence has a main clause and a subordinate clause."],
+    ["She speaks more ___ than her brother.", "fluently", ["fluent", "fluenter"], "An adverb describes how she speaks."],
+    ["Which word is an antonym for 'generous'?", "stingy", ["kind", "wealthy", "gentle"], "An antonym has the opposite meaning."]],
+  pu: [
+    ["The quest required three things courage patience and luck.", "The quest required three things: courage, patience and luck.", "A colon introduces the list; commas separate the items."],
+    ["The queens crown which was stolen last year has been found.", "The queen's crown, which was stolen last year, has been found.", "Apostrophe for possession, commas around the extra clause."],
+    ["She didnt win however she was proud of her effort.", "She didn't win; however, she was proud of her effort.", "Semicolon before 'however', comma after.", ["She didn't win. However, she was proud of her effort."]],
+    ["The well known author signed twenty one books.", "The well-known author signed twenty-one books.", "Hyphenate compound adjectives before a noun, and numbers like twenty-one."],
+    ["To be honest I never trusted that wizard.", "To be honest, I never trusted that wizard.", "Use a comma after an introductory phrase."]],
+  st: [
+    ["Write a scene where two characters disagree, using dialogue.", ["replied", "insisted", "frowned", "silence"], "\"You can't be serious,\" she said..."],
+    ["Is it better to be clever or kind? Persuade your reader.", ["moreover", "although", "argue", "ultimately"], "Some people argue that..."],
+    ["Describe a city one hundred years in the future.", ["towering", "technology", "citizens", "remarkable"], "Towering above the clouds..."]]
+},
+{ name: "Grade 9", target: 45,
+  sp: [
+    ["conscientious", "Careful and hard-working.", "consciencious", "concientious", "conscientous"],
+    ["embarrassment", "A feeling of awkward shame.", "embarassment", "embarrasment", "embarresment"],
+    ["fluorescent", "Glowing brightly, like some lights.", "flourescent", "florescent", "fluorescant"],
+    ["hierarchy", "A system of ranks.", "heirarchy", "hierachy", "hierarcy"],
+    ["miscellaneous", "Of many different kinds.", "miscelaneous", "miscellanious", "misellaneous"],
+    ["perseverance", "Not giving up.", "perseverence", "perserverance", "persaverance"],
+    ["questionnaire", "A written list of questions.", "questionaire", "questionnare", "questionairre"],
+    ["surveillance", "Close watching of someone.", "surveilance", "survellance", "surveillence"]],
+  gr: [
+    ["Which sentence uses parallel structure correctly?", "She likes reading, writing and painting.", ["She likes reading, to write and painting.", "She likes to read, writing and to paint.", "She likes reading, writing and to paint."], "Items in a list should share the same form."],
+    ["Neither of the answers ___ correct.", "is", ["are", "were"], "'Neither' is singular."],
+    ["Which sentence is in the active voice?", "The knight defeated the troll.", ["The troll was defeated by the knight.", "The troll had been defeated.", "The troll is being defeated by the knight."], "In the active voice, the subject does the action."],
+    ["Had I known, I ___ have helped.", "would", ["will", "shall"], "A past condition takes 'would have'."],
+    ["Which word is a synonym for 'reluctant'?", "unwilling", ["eager", "careless", "certain"], "Reluctant means not wanting to do something."],
+    ["'The wind whispered through the trees' is an example of ___.", "personification", ["simile", "alliteration", "hyperbole"], "Personification gives human actions to non-human things."],
+    ["Honesty is an important ___.", "principle", ["principal", "princaple"], "A principle is a rule or belief. A principal leads a school."],
+    ["To ___ should I address the letter?", "whom", ["who", "whose"], "After a preposition ('to'), use 'whom'."]],
+  pu: [
+    ["The expedition failed the supplies had run out.", "The expedition failed; the supplies had run out.", "Join two related main clauses with a semicolon.", ["The expedition failed. The supplies had run out.", "The expedition failed: the supplies had run out."]],
+    ["My sister a talented archer won the tournament.", "My sister, a talented archer, won the tournament.", "Commas go around a phrase that renames the noun."],
+    ["The wizard said that the spell wasnt dangerous.", "The wizard said that the spell wasn't dangerous.", "Reported speech needs no speech marks, but 'wasn't' needs its apostrophe."],
+    ["Although the path was steep the travellers who were exhausted kept climbing.", "Although the path was steep, the travellers, who were exhausted, kept climbing.", "Comma after the opening clause, and commas around the extra clause."],
+    ["She had one goal to win.", "She had one goal: to win.", "A colon can introduce an explanation.", ["She had one goal - to win."]]],
+  st: [
+    ["Write a story in which the weather reflects a character's mood.", ["storm", "glanced", "heavy", "relief"], "The sky was as heavy as..."],
+    ["Should social media have an age limit of sixteen? Argue your position.", ["evidence", "consequently", "critics", "responsibility"], "Critics of social media argue..."],
+    ["Describe a place you know well as if seeing it for the last time.", ["familiar", "memory", "faded", "lingered"], "Everything looked familiar, yet..."]]
+},
+{ name: "Grade 10", target: 50,
+  sp: [
+    ["acquiesce", "To agree without protest.", "aquiesce", "acquiese", "acquiece"],
+    ["bureaucracy", "A system with many officials and rules.", "beaurocracy", "bureaucrasy", "burocracy"],
+    ["connoisseur", "An expert judge of fine things.", "connoiseur", "conoisseur", "connaisseur"],
+    ["entrepreneur", "A person who starts businesses.", "entrepeneur", "entreprenuer", "enterpreneur"],
+    ["idiosyncrasy", "A personal quirk.", "idiosyncracy", "ideosyncrasy", "idiosincrasy"],
+    ["liaison", "A link or go-between.", "liason", "liasion", "laison"],
+    ["manoeuvre", "A skilful movement.", "manouvre", "manoeuver", "manuevre"],
+    ["pronunciation", "The way a word is said.", "pronounciation", "pronunceation", "pronuncation"]],
+  gr: [
+    ["Which sentence contains a comma splice?", "The night was cold, the fire had died.", ["The night was cold; the fire had died.", "The night was cold because the fire had died.", "The night was cold, and the fire had died."], "A comma alone cannot join two main clauses."],
+    ["The list of ingredients ___ on the scroll.", "is", ["are", "were"], "The subject is 'list', which is singular."],
+    ["'The classroom was a zoo' is an example of ___.", "metaphor", ["simile", "onomatopoeia", "oxymoron"], "A metaphor states that one thing is another."],
+    ["Which word is a synonym for 'ambiguous'?", "unclear", ["obvious", "ambitious", "generous"], "Ambiguous means open to more than one meaning."],
+    ["She is the candidate ___ I believe will win.", "who", ["whom", "whose"], "'Who' is the subject of 'will win'."],
+    ["Which sentence uses the subjunctive mood?", "I wish I were taller.", ["I am taller.", "I was taller last year.", "I will be taller."], "The subjunctive expresses wishes and imagined situations."],
+    ["'Deafening silence' is an example of ___.", "oxymoron", ["alliteration", "simile", "personification"], "An oxymoron joins two opposite ideas."],
+    ["He was deeply ___ by the news.", "affected", ["effected", "afected"], "'Affect' is the verb meaning to influence."]],
+  pu: [
+    ["The plan was simple in theory in practice it was a disaster.", "The plan was simple in theory; in practice, it was a disaster.", "A semicolon separates the two contrasting clauses.", ["The plan was simple in theory; in practice it was a disaster.", "The plan was simple in theory. In practice, it was a disaster.", "The plan was simple in theory. In practice it was a disaster."]],
+    ["The mens and womens teams both won.", "The men's and women's teams both won.", "Irregular plurals take 's: men's, women's."],
+    ["She asked whether the gates were locked?", "She asked whether the gates were locked.", "An indirect question ends with a full stop."],
+    ["The long awaited sequel which took ten years to write was worth it.", "The long-awaited sequel, which took ten years to write, was worth it.", "Hyphenate the compound adjective and put commas around the clause."],
+    ["The witness stated I saw nothing.", "The witness stated, \"I saw nothing.\"", "Quoted words need quotation marks.", ["The witness stated \"I saw nothing.\"", "The witness stated: \"I saw nothing.\""]]],
+  st: [
+    ["Write a monologue for a villain who believes they are the hero.", ["justice", "betrayed", "deserve", "misunderstood"], "They call me a monster, but..."],
+    ["'Technology has made us less patient.' Discuss.", ["arguably", "instant", "society", "nevertheless"], "In a society of instant answers..."],
+    ["Write the final paragraph of a novel, leaving one question unanswered.", ["horizon", "silence", "remained", "perhaps"], "She looked towards the horizon..."]]
+},
+{ name: "Grade 11", target: 55,
+  sp: [
+    ["anaesthetic", "A drug that stops you feeling pain.", "anasthetic", "anaestetic", "aneasthetic"],
+    ["onomatopoeia", "A word that sounds like its meaning, such as 'buzz'.", "onomatopeia", "onomatapoeia", "onomatopoea"],
+    ["paraphernalia", "Assorted equipment.", "paraphenalia", "paraphernailia", "parafernalia"],
+    ["reconnaissance", "Scouting ahead to gather information.", "reconaissance", "reconnaisance", "reconnaissence"],
+    ["sacrilegious", "Disrespectful to something sacred.", "sacreligious", "sacriligious", "sacrilegous"],
+    ["supersede", "To take the place of.", "supercede", "superseed", "superceed"],
+    ["unnecessary", "Not needed.", "unecessary", "unneccessary", "unnecesary"],
+    ["vacuum", "A space with nothing in it.", "vaccuum", "vacum", "vaccum"]],
+  gr: [
+    ["Which sentence correctly uses 'whom'?", "The author whom we met was charming.", ["Whom is at the door?", "She is the one whom won.", "Whom wrote this?"], "'Whom' is an object: we met him."],
+    ["'I have told you a million times' is an example of ___.", "hyperbole", ["litotes", "metonymy", "irony"], "Hyperbole is deliberate exaggeration."],
+    ["Which sentence has a misplaced modifier?", "Covered in mud, Mum washed the dog.", ["Mum washed the dog, which was covered in mud.", "The dog was covered in mud, so Mum washed it.", "Mum washed the muddy dog."], "It sounds as if Mum was covered in mud."],
+    ["The committee could not decide ___ to appoint.", "whom", ["who's", "whose"], "'Whom' is the object of 'appoint'."],
+    ["Which word is closest in meaning to 'ubiquitous'?", "omnipresent", ["rare", "unique", "suspicious"], "Ubiquitous means found everywhere."],
+    ["'The pen is mightier than the sword' uses ___.", "metonymy", ["onomatopoeia", "alliteration", "simile"], "Metonymy lets a related object stand for an idea."],
+    ["Not only ___ the exam, but she also topped the class.", "did she pass", ["she passed", "she did pass"], "After 'Not only' at the start, invert the subject and verb."],
+    ["Which sentence uses the past perfect tense?", "She had finished before the bell rang.", ["She finished before the bell rang.", "She has finished.", "She was finishing."], "Past perfect = 'had' + past participle."]],
+  pu: [
+    ["The novels themes love loss and redemption are universal.", "The novel's themes - love, loss and redemption - are universal.", "Dashes (or brackets) set off the list in the middle of the sentence.", ["The novel's themes (love, loss and redemption) are universal.", "The novel's themes, love, loss and redemption, are universal."]],
+    ["The experiment failed therefore the hypothesis was rejected.", "The experiment failed; therefore, the hypothesis was rejected.", "Semicolon before 'therefore', comma after.", ["The experiment failed. Therefore, the hypothesis was rejected.", "The experiment failed; therefore the hypothesis was rejected."]],
+    ["In 1066 a year every student remembers the Normans invaded England.", "In 1066, a year every student remembers, the Normans invaded England.", "Commas (or dashes) go around the inserted phrase.", ["In 1066 - a year every student remembers - the Normans invaded England."]],
+    ["The teachers lounge is next to the principals office.", "The teachers' lounge is next to the principal's office.", "Many teachers: teachers'. One principal: principal's."],
+    ["Do you know where the manuscript is.", "Do you know where the manuscript is?", "This is a direct question, so it needs a question mark."]],
+  st: [
+    ["Write a reflective piece about a moment that changed your mind.", ["realised", "assumption", "perspective", "since"], "I had always assumed that..."],
+    ["'Success is more about effort than talent.' To what extent do you agree?", ["evidence", "conversely", "persistence", "ultimately"], "Talent may open the door, but..."],
+    ["Write a story told entirely from the perspective of an object.", ["witnessed", "silent", "owner", "years"], "For forty years I have sat on this shelf..."]]
+},
+{ name: "Grade 12", target: 60,
+  sp: [
+    ["haemorrhage", "Heavy bleeding.", "haemorrage", "haemorhage", "heamorrhage"],
+    ["mnemonic", "A trick to help you remember.", "nemonic", "mneumonic", "mnemmonic"],
+    ["obsequious", "Too eager to please.", "obsiquious", "obsequeous", "obsequius"],
+    ["pharaoh", "A ruler of ancient Egypt.", "pharoah", "pharoh", "faraoh"],
+    ["rendezvous", "An arranged meeting.", "rendevous", "rendezvouz", "rondezvous"],
+    ["silhouette", "A dark outline against a bright background.", "silouette", "silhouete", "sillhouette"],
+    ["dilemma", "A difficult choice between two options.", "dilemna", "dillemma", "dilema"],
+    ["fuchsia", "A bright purplish-pink colour.", "fuschia", "fuchia", "fushia"]],
+  gr: [
+    ["Were she to ask, I ___ help.", "would", ["will", "am going to"], "An imagined condition takes 'would'."],
+    ["'She is not unkind' is an example of ___.", "litotes", ["hyperbole", "euphemism", "paradox"], "Litotes is understatement using a negative."],
+    ["Which sentence uses semicolons correctly?", "I came; I saw; I conquered.", ["I came; and I saw.", "Because I came; I saw.", "I saw; the castle, the moat."], "Semicolons join complete main clauses."],
+    ["Which word is closest in meaning to 'ephemeral'?", "fleeting", ["eternal", "essential", "ethereal"], "Ephemeral means lasting a very short time."],
+    ["Saying 'passed away' instead of 'died' is ___.", "a euphemism", ["an oxymoron", "a pun", "an allegory"], "A euphemism is a gentler way of saying something harsh."],
+    ["Neither the students nor the teacher ___ aware of the change.", "was", ["were", "are"], "The verb agrees with the nearer subject: 'teacher'."],
+    ["Repeating a word at the start of successive clauses is called ___.", "anaphora", ["assonance", "antithesis", "allusion"], "'We shall fight... we shall fight...' is anaphora."],
+    ["Which sentence uses 'comprise' correctly?", "The team comprises eleven players.", ["The team is comprised from eleven players.", "Eleven players comprises the team.", "The team comprises of eleven players."], "The whole comprises the parts, with no 'of'."]],
+  pu: [
+    ["The policy was popular it was also in the long run unaffordable.", "The policy was popular; it was also, in the long run, unaffordable.", "Semicolon between the clauses, commas around the inserted phrase.", ["The policy was popular. It was also, in the long run, unaffordable."]],
+    ["Orwells novel 1984 remains relevant its warnings still resonate.", "Orwell's novel 1984 remains relevant; its warnings still resonate.", "Apostrophe for Orwell's; 'its' (possessive) has none.", ["Orwell's novel 1984 remains relevant. Its warnings still resonate.", "Orwell's novel 1984 remains relevant: its warnings still resonate."]],
+    ["A well written essay needs three things a thesis evidence and a conclusion.", "A well-written essay needs three things: a thesis, evidence and a conclusion.", "Hyphen in the compound adjective, colon before the list."],
+    ["Having finished the exam the students who were exhausted went home.", "Having finished the exam, the students, who were exhausted, went home.", "Comma after the participle phrase, commas around the clause."],
+    ["The seventeen year old author won a nationwide award.", "The seventeen-year-old author won a nationwide award.", "Hyphenate an age used as an adjective before a noun."]],
+  st: [
+    ["Write the opening of a story that begins at the end.", ["finally", "remembered", "before", "inevitable"], "By the time the doors closed, it was already over..."],
+    ["'We learn more from failure than from success.' Evaluate this claim.", ["arguably", "evidence", "conversely", "ultimately"], "Failure is arguably the more honest teacher..."],
+    ["Write a descriptive piece titled 'The Waiting Room'.", ["clock", "silence", "fluorescent", "stranger"], "The clock on the wall had stopped..."]]
+}];
+
+const HEROES = [
+  { id: "wizard", em: "🧙", name: "Wizard", bolt: "✨" },
+  { id: "knight", em: "🤺", name: "Knight", bolt: "🗡️" },
+  { id: "dragon", em: "🐉", name: "Dragon", bolt: "🔥" }
+];
+const MONSTERS = {
+  sp: [["🕷️", "Spelling Spider"], ["🧌", "Typo Troll"], ["🐍", "Scramble Snake"]],
+  gr: [["👻", "Grammar Ghost"], ["👹", "Grumble Ogre"], ["🧟", "Tense Zombie"]],
+  pu: [["👺", "Comma Goblin"], ["🦇", "Full-Stop Bat"], ["💀", "Apostrophe Skeleton"]],
+  st: [["🐲", "Blank-Page Wyrm"]]
+};
+const TYPE_NAME = { sp: "SPELLING", gr: "GRAMMAR", pu: "PUNCTUATION", st: "STORY WRITING" };
+const RANKS = [
+  [0, "Apprentice Scribe"], [1000, "Junior Scribe"], [3000, "Word Knight"], [6000, "Spell Weaver"],
+  [10000, "Lore Master"], [16000, "Grand Wizard"], [25000, "Legendary Author"]];
+const POWERS = [
+  { id: "hint", em: "💡", name: "Hint", desc: "Shows a clue for the question." },
+  { id: "fifty", em: "✂️", name: "50/50", desc: "Removes wrong answers on click questions." },
+  { id: "skip", em: "⏭️", name: "Skip", desc: "Skip a tricky question." },
+  { id: "heart", em: "❤️", name: "Extra Heart", desc: "Try again after a wrong answer." }
+];
+const PRICE = 30;
+const BADGES = [
+  { id: "first", em: "📜", name: "First Quest", desc: "Finish a test.", test: c => true },
+  { id: "perfect", em: "👑", name: "Perfect Scroll", desc: "Get every question right.", test: c => c.correct === c.n },
+  { id: "spell", em: "🕷️", name: "Spelling Master", desc: "All spelling right (3 or more).", test: c => c.stats.sp[1] >= 3 && c.stats.sp[0] === c.stats.sp[1] },
+  { id: "gram", em: "👻", name: "Grammar Guardian", desc: "All grammar right (3 or more).", test: c => c.stats.gr[1] >= 3 && c.stats.gr[0] === c.stats.gr[1] },
+  { id: "punc", em: "👺", name: "Punctuation Paladin", desc: "All punctuation right (3 or more).", test: c => c.stats.pu[1] >= 3 && c.stats.pu[0] === c.stats.pu[1] },
+  { id: "story", em: "🐲", name: "Storyteller", desc: "Tick every box on a story.", test: c => c.fullStory },
+  { id: "streak5", em: "🔥", name: "Hot Quill", desc: "5 right answers in a row.", test: c => c.bestStreak >= 5 },
+  { id: "streak10", em: "☄️", name: "Blazing Quill", desc: "10 right answers in a row.", test: c => c.bestStreak >= 10 },
+  { id: "speedy", em: "⏳", name: "Speedy Scribe", desc: "Score 80% or more with the timer on.", test: c => c.timerOn && c.correct / c.n >= 0.8 },
+  { id: "slayer", em: "⚔️", name: "Monster Slayer", desc: "Defeat 50 monsters in total.", test: (c, s) => s.monsters >= 50 },
+  { id: "rich", em: "💰", name: "Rich Scribe", desc: "Earn 500 coins in total.", test: (c, s) => s.coinsEarned >= 500 },
+  { id: "scholar", em: "🎓", name: "Scholar", desc: "Play 5 different grades.", test: (c, s) => s.gradesPlayed.length >= 5 }
+];
+const LINKERS = ["however", "although", "therefore", "because", "while", "since", "furthermore", "moreover", "nevertheless", "consequently", "despite", "whereas", "yet", "but"];
+
+/* ===================== SAVE ===================== */
+const KEY = "writingTestSave_v1";
+const DEFAULT = { coins: 0, xp: 0, best: {}, badges: {}, inv: { hint: 2, fifty: 2, skip: 2, heart: 2 },
+  monsters: 0, coinsEarned: 0, gradesPlayed: [], hero: "wizard", grade: 0, count: 10, timer: false, sfx: true, music: true };
+let save = load();
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && typeof s === "object") return Object.assign({}, DEFAULT, s, { inv: Object.assign({}, DEFAULT.inv, s.inv) });
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
+
+/* ===================== SOUND ===================== */
+let ac = null, musicTimer = null, musicStep = 0;
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (ac.state === "suspended") ac.resume();
+  return ac;
+}
+function tone(freq, start, dur, type, vol) {
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || "sine"; o.frequency.value = freq;
+  const t = a.currentTime + start;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+function sfx(name) {
+  if (!save.sfx) return;
+  if (name === "right") { tone(523, 0, .12, "triangle"); tone(659, .1, .12, "triangle"); tone(784, .2, .22, "triangle"); }
+  else if (name === "wrong") { tone(196, 0, .2, "sawtooth", .08); tone(147, .15, .3, "sawtooth", .08); }
+  else if (name === "click") tone(440, 0, .06, "square", .05);
+  else if (name === "power") { tone(880, 0, .08, "sine"); tone(1175, .07, .15, "sine"); }
+  else if (name === "coin") { tone(988, 0, .07, "square", .06); tone(1319, .07, .18, "square", .06); }
+  else if (name === "win") [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i * .14, .25, "triangle"));
+}
+// gentle looping fantasy tune: Dm - Bb - F - C
+const CHORDS = [[146.8, 293.7, 349.2, 440], [116.5, 293.7, 349.2, 466.2], [174.6, 261.6, 349.2, 440], [130.8, 261.6, 329.6, 392]];
+const ARP = [1, 2, 3, 2, 1, 3, 2, 3];
+function musicTick() {
+  if (!save.music || !ac || document.hidden) return;
+  const ch = CHORDS[Math.floor(musicStep / 8) % 4], s = musicStep % 8;
+  if (s === 0) tone(ch[0], 0, 1.6, "triangle", .05);
+  tone(ch[ARP[s]], 0, .5, "sine", .035);
+  if (s === 4 && Math.floor(musicStep / 8) % 2 === 1) tone(ch[3] * 2, 0, .9, "sine", .02);
+  musicStep++;
+}
+function startMusic() { if (!musicTimer && audio()) musicTimer = setInterval(musicTick, 260); }
+document.addEventListener("pointerdown", startMusic, { once: true });
+document.addEventListener("keydown", startMusic, { once: true });
+
+/* ===================== HELPERS ===================== */
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function show(id) { ["menu", "game", "results"].forEach(s => $(s).classList.toggle("hidden", s !== id)); window.scrollTo(0, 0); }
+function rankOf(xp) { let i = 0; RANKS.forEach((r, k) => { if (xp >= r[0]) i = k; }); return i; }
+// normalise a sentence so small style choices (curly quotes, Oxford comma, Mr.) still count as right
+function norm(s) {
+  return s.replace(/[“”"‘’`]/g, "'").replace(/[—–]/g, "-").replace(/\s+/g, " ").trim()
+    .replace(/\b(Mr|Mrs|Ms|Dr)\./g, "$1").replace(/, (and|but|so|or|yet) /g, " $1 ").replace(/ ?- ?/g, " - ");
+}
+function lowerFirst(s) { const i = s.search(/[A-Za-z]/); return s.slice(0, i) + s[i].toLowerCase() + s.slice(i + 1); }
+function punctChoices(bad, good) {
+  const c = [];
+  const add = v => { if (v !== good && !c.includes(v)) c.push(v); };
+  const last = good.slice(-1), body = good.slice(0, -1);
+  const extras = [];
+  if (lowerFirst(good) !== good) extras.push(lowerFirst(good));
+  if (/[.?!]/.test(last)) { extras.push(body + (last === "?" ? "." : "?")); extras.push(body); }
+  if (good.includes(",")) extras.push(good.replace(/,/g, ""));
+  if (/[a-z]'[a-z]/i.test(good)) extras.push(good.replace(/([a-z])'([a-z])/gi, "$1$2"));
+  if (good.includes(";")) extras.push(good.replace(/;/g, ","));
+  add(bad);
+  shuffle(extras).forEach(add);
+  return c.slice(0, 3);
+}
+
+/* ===================== MENU ===================== */
+function renderTop() {
+  $("coinPill").textContent = "🪙 " + save.coins;
+  $("rankPill").textContent = "🏅 " + RANKS[rankOf(save.xp)][1];
+  $("sfxBtn").textContent = save.sfx ? "🔊" : "🔇";
+  $("musBtn").textContent = save.music ? "🎵" : "🎵✖";
+}
+function rankProgress(textEl, fillEl) {
+  const r = rankOf(save.xp), next = RANKS[r + 1];
+  if (next) {
+    textEl.textContent = RANKS[r][1] + " — " + (next[0] - save.xp) + " points to " + next[1];
+    fillEl.style.width = Math.round(100 * (save.xp - RANKS[r][0]) / (next[0] - RANKS[r][0])) + "%";
+  } else { textEl.textContent = RANKS[r][1] + " — the highest rank!"; fillEl.style.width = "100%"; }
+}
+function renderMenu() {
+  renderTop();
+  const h = $("heroes"); h.textContent = "";
+  HEROES.forEach(x => {
+    const b = el("button", "btn hero-card" + (save.hero === x.id ? " sel" : ""));
+    b.append(el("span", "em", x.em), el("span", "", x.name));
+    b.setAttribute("aria-pressed", save.hero === x.id);
+    b.onclick = () => { save.hero = x.id; persist(); sfx("click"); renderMenu(); };
+    h.append(b);
+  });
+  const g = $("grades"); g.textContent = "";
+  GRADES.forEach((gr, i) => {
+    const b = el("button", "btn grade-btn" + (save.grade === i ? " sel" : ""));
+    const best = save.best[i];
+    b.append(el("span", "", gr.name), el("small", "", best ? "Best " + best.pct + "%" : ""));
+    b.setAttribute("aria-pressed", save.grade === i);
+    b.onclick = () => { save.grade = i; persist(); sfx("click"); renderMenu(); };
+    g.append(b);
+  });
+  const c = $("counts"); c.textContent = "";
+  [5, 10, 15, 20].forEach(n => {
+    const b = el("button", "btn" + (save.count === n ? " sel" : ""), String(n));
+    b.setAttribute("aria-pressed", save.count === n);
+    b.onclick = () => { save.count = n; persist(); sfx("click"); renderMenu(); };
+    c.append(b);
+  });
+  $("timerBtn").textContent = save.timer ? "⏳ Timer ON" : "🕊️ Timer OFF";
+  $("timerBtn").classList.toggle("sel", save.timer);
+  $("startBtn").textContent = "⚔️ Start " + GRADES[save.grade].name + " Quest";
+  const s = $("shop"); s.textContent = "";
+  POWERS.forEach(p => {
+    const d = el("div", "shop-item");
+    d.append(el("b", "", p.em + " " + p.name + " × " + save.inv[p.id]), el("span", "", p.desc));
+    const b = el("button", "btn", "Buy (" + PRICE + " 🪙)");
+    b.disabled = save.coins < PRICE;
+    b.onclick = () => { if (save.coins >= PRICE) { save.coins -= PRICE; save.inv[p.id]++; persist(); sfx("coin"); renderMenu(); } };
+    d.append(b); s.append(d);
+  });
+  rankProgress($("rankText"), $("rankFill"));
+  const bd = $("badges"); bd.textContent = "";
+  BADGES.forEach(b => {
+    const d = el("div", "badge" + (save.badges[b.id] ? "" : " locked"));
+    d.append(el("b", "", (save.badges[b.id] ? b.em : "🔒") + " " + b.name), el("span", "", b.desc));
+    bd.append(d);
+  });
+}
+$("timerBtn").onclick = () => { save.timer = !save.timer; persist(); sfx("click"); renderMenu(); };
+$("sfxBtn").onclick = () => { save.sfx = !save.sfx; persist(); renderTop(); sfx("click"); };
+$("musBtn").onclick = () => { save.music = !save.music; persist(); renderTop(); };
+$("resetBtn").onclick = () => {
+  if (confirm("Delete all your coins, badges and best scores?")) { save = JSON.parse(JSON.stringify(DEFAULT)); persist(); renderMenu(); }
+};
+$("startBtn").onclick = () => startGame();
+$("againBtn").onclick = () => startGame();
+$("menuBtn").onclick = () => { renderMenu(); show("menu"); };
+$("quitBtn").onclick = () => { stopTimer(); renderMenu(); show("menu"); };
+
+/* ===================== GAME ===================== */
+let S = null;
+function buildTest(gi, n) {
+  const G = GRADES[gi];
+  const nStory = n >= 15 ? 2 : 1;
+  const lists = {
+    sp: shuffle(G.sp).map(d => ({ type: "sp", d, typed: Math.random() < 0.5 })),
+    gr: shuffle(G.gr).map(d => ({ type: "gr", d, typed: false })),
+    pu: shuffle(G.pu).map(d => ({ type: "pu", d, typed: gi >= 3 && Math.random() < 0.5 }))
+  };
+  const qs = [], order = shuffle(["sp", "gr", "pu"]);
+  let k = 0;
+  while (qs.length < n - nStory) {
+    const l = lists[order[k++ % 3]];
+    if (l.length) qs.push(l.shift());
+    else if (!lists.sp.length && !lists.gr.length && !lists.pu.length) break;
+  }
+  const stories = shuffle(G.st).slice(0, nStory).map(d => ({ type: "st", d, typed: true }));
+  if (nStory === 2) qs.splice(Math.floor(qs.length / 2), 0, stories[1]);
+  qs.push(stories[0]);
+  return qs;
+}
+function startGame() {
+  sfx("click");
+  const gi = save.grade;
+  const qs = buildTest(gi, save.count);
+  S = { gi, qs, n: qs.length, i: 0, score: 0, streak: 0, bestStreak: 0, correct: 0, coins: 0, timerOn: save.timer,
+    stats: { sp: [0, 0], gr: [0, 0], pu: [0, 0], st: [0, 0] }, fullStory: false, answered: false, locked: false, heartUsed: false };
+  const hero = HEROES.find(h => h.id === save.hero) || HEROES[0];
+  $("heroEm").textContent = hero.em; $("heroName").textContent = hero.name; $("bolt").textContent = hero.bolt;
+  $("hudGrade").textContent = "🎓 " + GRADES[gi].name;
+  $("timerbar").classList.toggle("hidden", !S.timerOn);
+  show("game");
+  showQuestion();
+}
+function hud() {
+  $("hudQ").textContent = "📜 " + (S.i + 1) + " / " + S.n;
+  $("hudScore").textContent = "⭐ " + S.score;
+  $("hudStreak").textContent = "🔥 " + S.streak;
+  renderTop();
+}
+function showQuestion() {
+  const q = S.qs[S.i], d = q.d;
+  S.answered = false; S.locked = false; S.heartUsed = false; S.hintUsed = false;
+  hud();
+  const m = pick(MONSTERS[q.type]);
+  $("monEm").textContent = m[0]; $("monName").textContent = m[1];
+  const mb = $("monBox"); mb.className = "fighter"; void mb.offsetWidth; mb.classList.add("enter");
+  $("bolt").classList.remove("cast");
+  $("qtype").textContent = TYPE_NAME[q.type];
+  $("feedback").textContent = ""; $("feedback").className = "";
+  const extra = $("extra"), area = $("answerArea");
+  extra.textContent = ""; area.textContent = "";
+  let secs = 30;
+
+  if (q.type === "sp") {
+    if (q.typed) {
+      $("prompt").textContent = "The monster jumbled this word! Type it with the correct spelling.";
+      extra.append(el("div", "", "Clue: " + d[1]), el("span", "wrongword", d[2]));
+      typedBox(); secs = 40;
+    } else {
+      $("prompt").textContent = "Which spelling is correct?";
+      extra.textContent = "Clue: " + d[1];
+      const wrong = shuffle(d.slice(2)).slice(0, S.gi === 0 ? 2 : 3);
+      options(d[0], wrong);
+    }
+    q.answer = d[0]; q.tip = "";
+    q.hint = "It starts with '" + d[0][0] + "' and has " + d[0].length + " letters.";
+  } else if (q.type === "gr") {
+    $("prompt").textContent = d[0];
+    extra.textContent = d[0].includes("___") ? "Choose the word that fits the gap." : "";
+    options(d[1], d[2]);
+    q.answer = d[1]; q.tip = d[3]; q.hint = d[3];
+  } else if (q.type === "pu") {
+    q.answer = d[1]; q.tip = d[2]; q.hint = d[2];
+    if (q.typed) {
+      $("prompt").textContent = "Rewrite this sentence with the correct punctuation and capital letters.";
+      extra.append(el("span", "wrongword", d[0]));
+      typedBox(); secs = 90;
+    } else {
+      $("prompt").textContent = "Which sentence is written correctly?";
+      options(d[1], punctChoices(d[0], d[1]));
+    }
+  } else {
+    storyBox(q); secs = 240;
+  }
+  renderPowers();
+  startTimer(secs);
+}
+function options(right, wrongs) {
+  const box = el("div", "opts");
+  shuffle([right].concat(wrongs)).forEach((v, i) => {
+    const b = el("button", "btn opt", (i + 1) + ".  " + v);
+    b.dataset.v = v;
+    b.onclick = () => answer(v, b);
+    box.append(b);
+  });
+  $("answerArea").append(box);
+}
+function typedBox() {
+  const inp = el("input", "typed");
+  inp.id = "typedInput"; inp.type = "text"; inp.autocomplete = "off"; inp.spellcheck = false;
+  inp.setAttribute("autocapitalize", "off"); inp.setAttribute("autocorrect", "off");
+  inp.setAttribute("aria-label", "Type your answer");
+  const b = el("button", "btn sel", "✨ Cast answer");
+  b.id = "typedSubmit";
+  b.onclick = () => { if (inp.value.trim()) answer(inp.value); };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); b.click(); } });
+  $("answerArea").append(inp, b);
+  setTimeout(() => inp.focus(), 50);
+}
+function isRight(q, val) {
+  if (q.type === "sp") return val.trim().toLowerCase() === q.answer.toLowerCase();
+  if (q.type === "pu" && q.typed) {
+    const v = norm(val);
+    return [q.d[1]].concat(q.d[3] || []).some(a => norm(a) === v);
+  }
+  return val === q.answer;
+}
+function answer(val, btn) {
+  if (S.answered || S.locked) return;
+  const q = S.qs[S.i];
+  if (isRight(q, val)) return win(btn);
+  if (btn) btn.classList.add("wrong");
+  if (save.inv.heart > 0 && !S.heartUsed) return offerHeart(btn);
+  lose(false);
+}
+function offerHeart(btn) {
+  S.locked = true; sfx("wrong");
+  const f = $("feedback"); f.className = "feedback info"; f.textContent = "";
+  f.append(el("span", "", "Not quite! Use an Extra Heart to try again?"));
+  const row = el("div", "row");
+  const yes = el("button", "btn sel", "❤️ Try again (" + save.inv.heart + " left)");
+  const no = el("button", "btn", "Show me the answer");
+  yes.onclick = () => {
+    save.inv.heart--; persist(); S.heartUsed = true; S.locked = false; sfx("power");
+    f.textContent = "❤️ Your heart saved you. Have another go!";
+    if (btn) btn.disabled = true;
+    const inp = $("typedInput"); if (inp) { inp.select(); inp.focus(); }
+    renderPowers();
+  };
+  no.onclick = () => { S.locked = false; lose(false, true); };
+  row.append(yes, no); f.append(row);
+  renderPowers();
+  yes.focus();
+}
+function lockInputs() {
+  document.querySelectorAll("#answerArea button, #answerArea input, #answerArea textarea").forEach(e => e.disabled = true);
+  document.querySelectorAll("#answerArea .opt").forEach(b => { if (b.dataset.v === S.qs[S.i].answer) b.classList.add("right"); });
+}
+function nextButton(f) {
+  const b = el("button", "btn sel", S.i + 1 < S.n ? "Next monster ➜" : "See my results ➜");
+  b.id = "nextBtn";
+  b.onclick = next;
+  const row = el("div", "row"); row.append(b); f.append(row);
+  setTimeout(() => b.focus(), 60);
+}
+function win(btn) {
+  const q = S.qs[S.i];
+  S.answered = true; stopTimer(); lockInputs();
+  S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+  S.correct++; S.stats[q.type][0]++; S.stats[q.type][1]++;
+  let pts = 100 + Math.min(S.streak - 1, 5) * 10;
+  if (S.timerOn) pts += Math.round(50 * Math.max(0, S.tLeft) / S.tTotal);
+  const coins = S.streak >= 3 ? 15 : 10;
+  S.score += pts; S.coins += coins; save.monsters++;
+  attack(true); sfx("right");
+  const f = $("feedback"); f.className = "feedback good"; f.textContent = "";
+  f.append(el("span", "", pick(["Correct!", "Brilliant!", "Monster defeated!", "Spot on!", "Magnificent!"]) + "  +" + pts + " points, +" + coins + " 🪙"));
+  if (q.type === "pu" && q.typed) f.append(el("span", "ans", q.answer));
+  if (q.tip) f.append(el("span", "tip", q.tip));
+  nextButton(f); hud(); renderPowers();
+}
+function lose(timeout, quiet) {
+  const q = S.qs[S.i];
+  S.answered = true; stopTimer(); lockInputs();
+  S.streak = 0; S.stats[q.type][1]++;
+  attack(false); if (!quiet) sfx("wrong");
+  const f = $("feedback"); f.className = "feedback bad"; f.textContent = "";
+  f.append(el("span", "", (timeout ? "⏳ Time's up! " : "Not this time. ") + "The right answer is:"));
+  f.append(el("span", "ans", q.answer));
+  if (q.tip) f.append(el("span", "tip", q.tip));
+  nextButton(f); hud(); renderPowers();
+}
+function attack(hit) {
+  const mb = $("monBox"), hb = $("heroBox"), bolt = $("bolt");
+  mb.classList.remove("enter");
+  if (hit) {
+    hb.classList.remove("hop"); void hb.offsetWidth; hb.classList.add("hop");
+    bolt.classList.remove("cast"); void bolt.offsetWidth; bolt.classList.add("cast");
+    setTimeout(() => { mb.classList.add("defeated"); bolt.classList.remove("cast"); }, 420);
+  } else mb.classList.add("escape");
+}
+function next() {
+  if (!S.answered) return;
+  sfx("click");
+  S.i++;
+  if (S.i >= S.n) finish(); else showQuestion();
+}
+
+/* ---------- story writing ---------- */
+function storyChecks(q, text) {
+  const G = GRADES[S.gi], gi = S.gi, t = text.trim();
+  const words = (t.match(/[A-Za-z][A-Za-z'’-]*/g) || []);
+  const lower = words.map(w => w.toLowerCase().replace(/’/g, "'"));
+  const used = q.d[1].filter(b => lower.includes(b.toLowerCase()));
+  const need = gi <= 2 ? 1 : 2;
+  const sentences = (t.match(/[^.!?]+[.!?]+/g) || []).length;
+  const checks = [
+    ["Write at least " + G.target + " words (" + words.length + " so far)", words.length >= G.target],
+    ["Start with a capital letter", /^["'“‘(]?[A-Z]/.test(t)],
+    ["End with a full stop, ! or ?", /[.!?]["'”’)]?$/.test(t)],
+    ["Use " + need + " or more bonus words (" + used.length + " so far)", used.length >= need]
+  ];
+  if (gi >= 3) { const ns = gi >= 7 ? 3 : 2; checks.push(["Write at least " + ns + " sentences", sentences >= ns]); }
+  if (gi >= 5) checks.push(["Use at least one comma", t.includes(",")]);
+  if (gi >= 9) checks.push(["Use a linking word (however, although, because...)", lower.some(w => LINKERS.includes(w))]);
+  return { checks, used };
+}
+function storyBox(q) {
+  $("prompt").textContent = q.d[0];
+  const extra = $("extra"), area = $("answerArea");
+  const bonus = el("div", "bonus");
+  bonus.append(el("b", "", "Bonus words: "));
+  q.d[1].forEach(w => { const s = el("span", "", w); s.dataset.w = w; bonus.append(s); });
+  extra.append(bonus);
+  const ta = el("textarea", "story");
+  ta.id = "storyInput"; ta.placeholder = "Write your story here..."; ta.setAttribute("aria-label", "Write your story");
+  const list = el("ul", "checks"); list.id = "storyChecks";
+  const b = el("button", "btn sel", "📖 Finish my story");
+  b.onclick = () => submitStory(false);
+  const update = () => {
+    const r = storyChecks(q, ta.value);
+    list.textContent = "";
+    r.checks.forEach(c => list.append(el("li", c[1] ? "ok" : "", (c[1] ? "✅ " : "⬜ ") + c[0])));
+    bonus.querySelectorAll("span").forEach(s => s.classList.toggle("used", r.used.includes(s.dataset.w)));
+  };
+  ta.addEventListener("input", update);
+  area.append(ta, list, b);
+  update();
+  q.answer = ""; q.tip = ""; q.hint = "Try starting with: " + q.d[2];
+  setTimeout(() => ta.focus(), 50);
+}
+function submitStory(timeout) {
+  if (S.answered) return;
+  const q = S.qs[S.i], text = $("storyInput").value;
+  if (!timeout && !text.trim()) { $("storyInput").focus(); return; }
+  const r = storyChecks(q, text);
+  const passed = r.checks.filter(c => c[1]).length, total = r.checks.length, ratio = passed / total;
+  S.answered = true; stopTimer(); lockInputs();
+  const good = ratio >= 0.6;
+  S.stats.st[1]++;
+  let pts = Math.round(100 * ratio);
+  const coins = Math.round(15 * ratio);
+  if (good) {
+    S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak); S.correct++; S.stats.st[0]++; save.monsters++;
+    pts += Math.min(S.streak - 1, 5) * 10;
+  } else S.streak = 0;
+  if (passed === total) S.fullStory = true;
+  S.score += pts; S.coins += coins;
+  attack(good); sfx(good ? "right" : "wrong");
+  const f = $("feedback"); f.className = "feedback " + (good ? "good" : "bad"); f.textContent = "";
+  f.append(el("span", "", (timeout ? "⏳ Time's up! " : "") + (passed === total ? "A perfect story! " : good ? "Great writing! " : "Good try! ") +
+    "You ticked " + passed + " of " + total + " boxes.  +" + pts + " points, +" + coins + " 🪙"));
+  const missed = r.checks.filter(c => !c[1]);
+  if (missed.length) f.append(el("span", "tip", "Next time: " + missed.map(c => c[0].replace(/ \(.*\)/, "").toLowerCase()).join("; ") + "."));
+  nextButton(f); hud(); renderPowers();
+}
+
+/* ---------- power-ups ---------- */
+function renderPowers() {
+  const p = $("powers"); p.textContent = "";
+  const q = S.qs[S.i], live = !S.answered && !S.locked;
+  const mk = (pw, enabled, fn) => {
+    const b = el("button", "btn", pw.em + " " + pw.name + " × " + save.inv[pw.id]);
+    b.disabled = !enabled || save.inv[pw.id] < 1;
+    b.onclick = fn; p.append(b);
+  };
+  mk(POWERS[0], live && !S.hintUsed, () => {
+    save.inv.hint--; persist(); S.hintUsed = true; sfx("power");
+    const f = $("feedback"); f.className = "feedback info"; f.textContent = "💡 " + q.hint;
+    renderPowers();
+  });
+  const openOpts = [...document.querySelectorAll("#answerArea .opt")].filter(b => !b.classList.contains("gone") && !b.disabled && b.dataset.v !== q.answer);
+  mk(POWERS[1], live && !q.typed && openOpts.length >= 2, () => {
+    save.inv.fifty--; persist(); sfx("power");
+    shuffle(openOpts).slice(0, openOpts.length - 1).forEach(b => { b.classList.add("gone"); b.disabled = true; });
+    renderPowers();
+  });
+  mk(POWERS[2], live, () => {
+    save.inv.skip--; persist(); sfx("power");
+    S.answered = true; stopTimer(); lockInputs(); S.stats[q.type][1]++;
+    $("monBox").classList.add("escape");
+    const f = $("feedback"); f.className = "feedback info"; f.textContent = "";
+    f.append(el("span", "", "⏭️ Skipped! The monster wandered off."));
+    if (q.answer) f.append(el("span", "ans", "Answer: " + q.answer));
+    nextButton(f); renderPowers();
+  });
+  const h = el("span", "pill", "❤️ × " + save.inv.heart);
+  h.style.cssText = "background:#fff7df;color:#3a2a14;border-color:#a98a4b";
+  h.title = "Extra Hearts are offered when you get an answer wrong.";
+  p.append(h);
+}
+
+/* ---------- timer ---------- */
+function startTimer(secs) {
+  stopTimer();
+  if (!S.timerOn) return;
+  S.tTotal = secs; S.tLeft = secs;
+  $("timerbar").classList.remove("low"); $("timerFill").style.width = "100%";
+  S.tick = setInterval(() => {
+    if (S.locked) return;
+    S.tLeft -= 0.1;
+    $("timerFill").style.width = Math.max(0, 100 * S.tLeft / S.tTotal) + "%";
+    $("timerbar").classList.toggle("low", S.tLeft < S.tTotal * 0.25);
+    if (S.tLeft <= 0) { stopTimer(); if (S.qs[S.i].type === "st") submitStory(true); else lose(true); }
+  }, 100);
+}
+function stopTimer() { if (S && S.tick) { clearInterval(S.tick); S.tick = null; } }
+
+/* ---------- keyboard ---------- */
+document.addEventListener("keydown", e => {
+  if (!S || $("game").classList.contains("hidden")) return;
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea") return;
+  if (!S.answered && !S.locked && /^[1-4]$/.test(e.key)) {
+    const b = document.querySelectorAll("#answerArea .opt")[+e.key - 1];
+    if (b && !b.disabled) b.click();
+  }
+});
+
+/* ===================== RESULTS ===================== */
+function finish() {
+  stopTimer();
+  const pct = Math.round(100 * S.correct / S.n);
+  const oldRank = rankOf(save.xp);
+  save.coins += S.coins; save.coinsEarned += S.coins; save.xp += S.score;
+  if (!save.gradesPlayed.includes(S.gi)) save.gradesPlayed.push(S.gi);
+  const old = save.best[S.gi];
+  const isBest = !old || S.score > old.score;
+  if (isBest) save.best[S.gi] = { score: S.score, pct: Math.max(pct, old ? old.pct : 0) };
+  else if (pct > old.pct) old.pct = pct;
+  const fresh = BADGES.filter(b => !save.badges[b.id] && b.test(S, save));
+  fresh.forEach(b => save.badges[b.id] = true);
+  persist();
+  sfx("win");
+
+  $("resTitle").textContent = pct === 100 ? "👑 Perfect Quest!" : pct >= 70 ? "🎉 Quest Complete!" : "📜 Quest Finished";
+  $("resScore").textContent = S.score + " points";
+  $("resBest").textContent = isBest ? "⭐ New best score for " + GRADES[S.gi].name + "!" : "Best for " + GRADES[S.gi].name + ": " + save.best[S.gi].score + " points";
+  const st = $("resStats"); st.textContent = "";
+  const stat = (v, label) => { const d = el("div"); d.append(el("b", "", v), document.createTextNode(label)); st.append(d); };
+  stat(S.correct + " / " + S.n, "monsters defeated");
+  stat(pct + "%", "correct");
+  stat("+" + S.coins + " 🪙", "gold coins");
+  stat("🔥 " + S.bestStreak, "best streak");
+  [["sp", "spelling"], ["gr", "grammar"], ["pu", "punctuation"], ["st", "story"]].forEach(t => {
+    if (S.stats[t[0]][1]) stat(S.stats[t[0]][0] + " / " + S.stats[t[0]][1], t[1]);
+  });
+  const rb = $("resBadges"); rb.textContent = "";
+  fresh.forEach(b => rb.append(el("div", "newbadge", "New badge: " + b.em + " " + b.name + " — " + b.desc)));
+  if (rankOf(save.xp) > oldRank) rb.append(el("div", "newbadge", "🏅 Rank up! You are now a " + RANKS[rankOf(save.xp)][1] + "!"));
+  rankProgress($("resRank"), $("resRankFill"));
+  renderTop();
+  show("results");
+}
+
+renderMenu();
+</script>
+</body>
+</html>
