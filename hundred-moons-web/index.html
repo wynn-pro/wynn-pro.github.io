@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Hundred Moons</title>
+<style>
+  :root { --ink:#e9e2d0; --dim:#9aa39a; --gold:#e8b24a; --red:#c8402f; --panel:rgba(10,14,12,.92); --line:#3a463c; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:#05080a; color:var(--ink); font-family:Georgia,'Times New Roman',serif; overflow:hidden; user-select:none; -webkit-user-select:none; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  button { font-family:inherit; color:var(--ink); background:#1b241e; border:1px solid var(--line); border-radius:8px; padding:9px 14px; font-size:15px; cursor:pointer; }
+  button:hover:not([disabled]) { background:#27352b; }
+  button:focus-visible { outline:3px solid var(--gold); outline-offset:2px; }
+  button[disabled] { opacity:.4; cursor:default; }
+  button.sel { background:#5a3d14; border-color:var(--gold); color:#fff; }
+  button.big { font-size:20px; padding:13px 26px; background:#6b2a1c; border-color:#c96a4a; }
+  button.big:hover { background:#853524; }
+
+  /* menu */
+  #menu { position:fixed; inset:0; overflow-y:auto; background:radial-gradient(ellipse at 50% 0%, #1a2530 0%, #070b0d 65%); padding:22px 16px 40px; z-index:20; }
+  #menu .wrap { max-width:900px; margin:0 auto; }
+  #menu h1 { font-size:clamp(38px,8vw,72px); letter-spacing:.08em; margin:8px 0 0; text-align:center; color:#f3ead2; text-shadow:0 0 28px rgba(200,220,255,.35); }
+  #menu .sub { text-align:center; color:var(--dim); font-style:italic; margin:4px 0 20px; }
+  .grp { background:rgba(255,255,255,.035); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+  .grp h2 { font-size:15px; margin:0 0 8px; color:var(--gold); letter-spacing:.06em; text-transform:uppercase; }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opts button { flex:1 1 150px; text-align:left; }
+  .opts button small { display:block; color:var(--dim); font-size:12px; margin-top:2px; }
+  .opts button.sel small { color:#e9d9b0; }
+  .startrow { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:18px 0; }
+  .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+  .cols div { font-size:13.5px; line-height:1.55; color:#cfd4c8; }
+  .cols b { color:var(--ink); }
+  kbd { background:#26302a; border:1px solid var(--line); border-radius:4px; padding:0 5px; font-family:ui-monospace,Menlo,monospace; font-size:12px; }
+  #scores { font-size:14px; color:#cfd4c8; line-height:1.6; }
+
+  /* hud */
+  #hud { position:fixed; inset:0; pointer-events:none; display:none; z-index:5; }
+  #vig { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.85) 100%); opacity:.5; z-index:3; }
+  #hurt { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at center, transparent 35%, rgba(170,10,10,.8) 100%); opacity:0; z-index:4; }
+  #scare { position:fixed; inset:0; pointer-events:none; background:#000; opacity:0; z-index:6; display:flex; align-items:center; justify-content:center; gap:9vw; }
+  #scare i { width:11vw; height:5vw; border-radius:50%; background:radial-gradient(#fff 0 12%, #ff2a1a 14% 60%, transparent 70%); }
+  .tl { position:absolute; left:12px; top:12px; width:220px; }
+  .bar { height:15px; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18); border-radius:8px; margin-bottom:5px; position:relative; overflow:hidden; }
+  .bar i { position:absolute; left:0; top:0; bottom:0; width:50%; border-radius:8px; }
+  .bar span { position:absolute; left:7px; top:-1px; font-size:11px; font-family:ui-sans-serif,system-ui,sans-serif; text-shadow:0 1px 2px #000; }
+  #bHp i{background:#b8322a} #bHu i{background:#b9772a} #bSt i{background:#3f8f5a} #bFi i{background:#e0821f} #bXp i{background:#6a67c9}
+  #lvl { font-size:13px; color:var(--gold); text-shadow:0 1px 2px #000; }
+  .tc { position:absolute; left:50%; top:10px; transform:translateX(-50%); text-align:center; text-shadow:0 1px 3px #000; }
+  #moonTxt { font-size:19px; letter-spacing:.05em; }
+  #kindTxt { font-size:13px; color:#ff9a7a; min-height:16px; }
+  #clock { width:200px; height:8px; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.2); border-radius:5px; margin:4px auto; overflow:hidden; }
+  #clock i { display:block; height:100%; width:0; background:#e8c15a; }
+  #boss { display:none; width:min(440px,70vw); margin:6px auto 0; }
+  #boss .bar { height:14px; } #boss .bar i { background:#8f1f3a; }
+  .tr { position:absolute; right:12px; top:12px; text-align:right; }
+  #map { width:140px; height:140px; border-radius:50%; border:2px solid rgba(255,255,255,.25); }
+  #res { font-family:ui-sans-serif,system-ui,sans-serif; font-size:13px; line-height:1.55; text-shadow:0 1px 2px #000; margin-top:4px; }
+  #hot { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); display:flex; gap:6px; }
+  #hot div { width:62px; padding:5px 0 4px; text-align:center; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.2); border-radius:8px; font-size:11px; font-family:ui-sans-serif,system-ui,sans-serif; }
+  #hot div b { display:block; font-size:20px; }
+  #hot div.on { border-color:var(--gold); background:rgba(90,61,20,.75); }
+  #hot div.no { opacity:.3; }
+  #prompt { position:absolute; left:50%; bottom:86px; transform:translateX(-50%); background:rgba(0,0,0,.65); border:1px solid var(--line); padding:6px 14px; border-radius:8px; font-size:15px; display:none; white-space:nowrap; }
+  #status { position:absolute; left:50%; bottom:124px; transform:translateX(-50%); font-size:13px; color:#bfe0c5; text-shadow:0 1px 2px #000; white-space:nowrap; }
+  #cross { position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:rgba(255,255,255,.7); }
+  #toasts { position:absolute; left:50%; top:112px; transform:translateX(-50%); width:min(560px,90vw); text-align:center; }
+  #toasts div { display:inline-block; background:rgba(0,0,0,.7); border:1px solid var(--line); border-radius:8px; padding:6px 14px; margin:3px 0; font-size:15px; animation:fade 4s forwards; }
+  @keyframes fade { 0%{opacity:0;transform:translateY(-6px)} 8%{opacity:1;transform:none} 80%{opacity:1} 100%{opacity:0} }
+
+  /* panels */
+  #panelWrap { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:15; padding:14px; }
+  #panelWrap.on { display:flex; }
+  #panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; width:min(560px,100%); max-height:92vh; overflow-y:auto; }
+  #panel h2 { margin:0 0 4px; font-size:24px; color:#f3ead2; }
+  #panel p { color:#cfd4c8; line-height:1.5; margin:6px 0 12px; }
+  #panel .row { display:flex; gap:10px; align-items:center; border-top:1px solid rgba(255,255,255,.08); padding:8px 0; }
+  #panel .row div { flex:1; font-size:14.5px; }
+  #panel .row small { display:block; color:var(--dim); font-size:12.5px; }
+  #panel .btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  #panel .note { font-style:italic; border-left:3px solid var(--gold); padding:4px 0 4px 12px; margin:10px 0; color:#e9e2d0; }
+
+  /* touch */
+  #touch { position:fixed; inset:0; pointer-events:none; display:none; z-index:7; }
+  #touch button { position:absolute; pointer-events:auto; width:62px; height:62px; border-radius:50%; font-size:22px; padding:0; background:rgba(20,28,22,.6); border:1px solid rgba(255,255,255,.3); touch-action:none; }
+  #stick { position:absolute; width:110px; height:110px; border-radius:50%; border:2px solid rgba(255,255,255,.25); display:none; }
+  #stick i { position:absolute; left:35px; top:35px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.35); }
+  @media (max-width:640px) { .tl{width:150px} #map{width:100px;height:100px} #hot div{width:50px} #moonTxt{font-size:15px} #clock{width:130px} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="hurt"></div><div id="scare"><i></i><i></i></div>
+
+<div id="hud">
+  <div class="tl">
+    <div class="bar" id="bHp"><i></i><span>Health</span></div>
+    <div class="bar" id="bHu"><i></i><span>Hunger</span></div>
+    <div class="bar" id="bSt"><i></i><span>Stamina</span></div>
+    <div class="bar" id="bFi"><i></i><span>Campfire</span></div>
+    <div class="bar" id="bXp" style="height:9px"><i></i></div>
+    <div id="lvl">Level 1</div>
+  </div>
+  <div class="tc">
+    <div id="moonTxt">Day 1</div>
+    <div id="clock"><i></i></div>
+    <div id="kindTxt"></div>
+    <div id="boss"><div id="bossName"></div><div class="bar"><i id="bossFill"></i></div></div>
+  </div>
+  <div class="tr">
+    <canvas id="map" width="140" height="140"></canvas>
+    <div id="res"></div>
+  </div>
+  <div id="toasts"></div>
+  <div id="cross"></div>
+  <div id="status"></div>
+  <div id="prompt"></div>
+  <div id="hot"></div>
+</div>
+
+<div id="touch">
+  <div id="stick"><i></i></div>
+  <button id="tAtk" style="right:22px;bottom:96px;width:78px;height:78px">⚔️</button>
+  <button id="tUse" style="right:112px;bottom:80px">E</button>
+  <button id="tEat" style="right:112px;bottom:152px">🍖</button>
+  <button id="tRun" style="right:30px;bottom:186px">🏃</button>
+  <button id="tWep" style="right:184px;bottom:80px">🔁</button>
+  <button id="tBld" style="right:184px;bottom:152px">🔨</button>
+  <button id="tPau" style="left:50%;top:150px;margin-left:-23px;width:46px;height:46px;font-size:16px">⏸</button>
+</div>
+
+<div id="panelWrap"><div id="panel"></div></div>
+
+<div id="menu">
+  <div class="wrap">
+    <h1>HUNDRED MOONS</h1>
+    <div class="sub">A cursed forest. A fire to guard. Survive every moon.</div>
+    <div class="startrow">
+      <button class="big" id="btnNew">▶ New Game</button>
+      <button class="big" id="btnCont" style="display:none">Continue</button>
+    </div>
+    <div id="optGroups"></div>
+    <div class="grp">
+      <h2>Controls</h2>
+      <div class="cols">
+        <div><b>⌨️ Keyboard and mouse</b><br>
+          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run<br>
+          Mouse look · Click or <kbd>Space</kbd> attack / chop<br>
+          <kbd>E</kbd> use · <kbd>F</kbd> eat · <kbd>H</kbd> bandage<br>
+          <kbd>1</kbd>–<kbd>4</kbd> or <kbd>Q</kbd> weapons · <kbd>B</kbd> build · <kbd>R</kbd> rotate<br>
+          <kbd>V</kbd> change view · <kbd>J</kbd> journal · <kbd>N</kbd> skip to night<br>
+          <kbd>M</kbd> sound · <kbd>Esc</kbd> pause</div>
+        <div><b>📱 Touch screen</b><br>
+          Left side: drag to move<br>
+          Right side: drag to look around<br>
+          ⚔️ attack / chop / place · <b>E</b> use<br>
+          🍖 eat · 🏃 run on/off<br>
+          🔁 next weapon · 🔨 build · ⏸ pause</div>
+        <div><b>🎮 Game controller</b><br>
+          Left stick move · Right stick look<br>
+          RT attack · LB / LT run<br>
+          A use · X eat · RB bandage<br>
+          Y next weapon · B build · D-pad ◀▶ rotate<br>
+          Select change view · Start pause<br>
+          In menus: D-pad to move, A to choose</div>
+      </div>
+    </div>
+    <div class="grp"><h2>Best runs</h2><div id="scores">No runs yet. Go survive some moons!</div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="game.js?v=1.00.0"></script>
+</body>
+</html>
