@@ -71,17 +71,60 @@
       ? members.map(m => `<li>⭐ ${m.replace(/</g,"&lt;")}</li>`).join("")
       : "<li>No members yet — be the first!</li>";
   }
-  let episodes = JSON.parse(store.get("supreme-episodes") || "null") || [
-    { title:"The Code", desc:"The Supreme Group is formed and the secret code is chosen.", done:false },
-    { title:"New Recruits", desc:"Members join and earn their stars.", done:false },
-    { title:"The Mystery Locker", desc:"Something strange is found behind a locked door.", done:false }
+  let episodes = JSON.parse(store.get("supreme-episodes-v3") || "null") || [
+    { title:"Rise of the Supreme", desc:"Four friends find a glowing crown in an old dojo and become the Supreme ninja.", done:false },
+    { title:"The Elemental Trial", desc:"Each ninja must unlock their power: Storm, Magma, Frost and Stone.", done:false },
+    { title:"Shadow Over the City", desc:"A masked warrior called Night Fang steals the first Golden Scroll.", done:false },
+    { title:"Spinjump Training", desc:"Master Oru teaches the team the Cyclone Spin, but nobody can land it.", done:false },
+    { title:"The Lost Temple", desc:"The ninja go into the jungle to find the second Scroll before Night Fang does.", done:false },
+    { title:"Skeleton Army", desc:"Night Fang wakes an army of bone warriors from under the mountains.", done:false },
+    { title:"The Dragon Egg", desc:"Storm finds a giant egg that hatches into a baby lightning dragon called Zip.", done:false },
+    { title:"Betrayal", desc:"A new ninja joins the team, but is she secretly working for Night Fang?", done:false },
+    { title:"Battle on the Sky Ship", desc:"The team fights on board Night Fang's flying ship above the clouds.", done:false },
+    { title:"The Frozen Peak", desc:"Frost has to climb an ice mountain alone to face his fears.", done:false },
+    { title:"Snake Tribes", desc:"Four snake tribes come out of hiding and fight over the Scrolls.", done:false },
+    { title:"Magma's Secret", desc:"Magma learns his dad was a famous ninja who disappeared long ago.", done:false },
+    { title:"The Tournament of Shadows", desc:"The ninja enter a secret tournament where losing means losing your power.", done:false },
+    { title:"Zip Grows Up", desc:"Zip the dragon is now big enough to ride into battle.", done:false },
+    { title:"The Stone Golem", desc:"Stone has to stop a giant golem without breaking the city.", done:false },
+    { title:"Night Fang Unmasked", desc:"The team finally finds out who is behind the mask.", done:false },
+    { title:"The Last Scroll", desc:"Everyone races to the fire volcano to find the final Golden Scroll.", done:false },
+    { title:"The Supreme Code", desc:"The four ninja combine their powers and unlock the Supreme Code.", done:false },
+    { title:"The Great War", desc:"Skeletons, snakes and sky pirates attack the city all at once.", done:false },
+    { title:"Rise of the Crown", desc:"The final battle. The Supreme ninja save the world, but a new evil is waking up...", done:false },
+    { season:2, title:"The Waking Evil", desc:"Deep under the ocean, the ancient Void Queen opens her eyes.", done:false },
+    { season:2, title:"A New Ninja", desc:"A kid named Wren shows up with a power nobody has seen before: Light.", done:false },
+    { season:2, title:"The Void Storm", desc:"Purple storms swallow whole villages, and the ninja's powers start to fade.", done:false },
+    { season:2, title:"Underwater Dojo", desc:"The team builds bubble suits to explore the drowned city of Mareth.", done:false },
+    { season:2, title:"Zip's Family", desc:"Zip hears a call from far away and flies off to find other lightning dragons.", done:false },
+    { season:2, title:"Crown of Shadows", desc:"The Void Queen wants the Supreme crown so she can turn it dark.", done:false },
+    { season:2, title:"Night Fang Returns", desc:"Their old enemy comes back, but this time he asks the ninja for help.", done:false },
+    { season:2, title:"The Mirror Ninja", desc:"Evil copies of the four ninja attack the city.", done:false },
+    { season:2, title:"Frost and Fire", desc:"Frost and Magma have a huge fight and the team splits up.", done:false },
+    { season:2, title:"Wren's Choice", desc:"The Void Queen offers Wren unlimited power if he joins her.", done:false },
+    { season:2, title:"The Sky Pirates' Deal", desc:"The ninja have to team up with sky pirates to cross the Void Sea.", done:false },
+    { season:2, title:"Master Oru's Past", desc:"The team learns Master Oru once fought the Void Queen and lost.", done:false },
+    { season:2, title:"Mech Battle", desc:"The ninja build giant robot suits to fight the Void titans.", done:false },
+    { season:2, title:"The Broken Crown", desc:"The crown cracks in half, and the ninja lose their elements.", done:false },
+    { season:2, title:"Powerless", desc:"With no powers, the ninja must win using only teamwork and clever tricks.", done:false },
+    { season:2, title:"The Dragon Council", desc:"Zip comes back with an army of lightning dragons.", done:false },
+    { season:2, title:"Stone Stands Alone", desc:"Stone holds the city gate by himself for one long night.", done:false },
+    { season:2, title:"Into the Void", desc:"The ninja jump through the portal into the Void Queen's world.", done:false },
+    { season:2, title:"The Fifth Element", desc:"Wren's Light power fixes the crown and gives everyone a new upgraded power.", done:false },
+    { season:2, title:"Dawn of Season 3", desc:"The Void Queen is defeated, but a strange time crack opens in the sky...", done:false }
   ];
   const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
-  function saveEps(){ store.set("supreme-episodes", JSON.stringify(episodes)); }
+  function saveEps(){ store.set("supreme-episodes-v3", JSON.stringify(episodes)); }
   function renderEps(){
-    $("episodes").innerHTML = episodes.length
-      ? episodes.map((e,i) => `<li class="ep${e.done?" done":""}" data-i="${i}"><span class="del" data-del="${i}">✖</span><b>Episode ${i+1}: ${esc(e.title)}</b>${e.desc?`<small>${esc(e.desc)}</small>`:""}</li>`).join("")
-      : "<li>No episodes yet — add one!</li>";
+    if (!episodes.length) { $("episodes").innerHTML = "<li>No episodes yet — add one!</li>"; return; }
+    let html = "", season = 0, n = 0;
+    episodes.forEach((e,i) => {
+      const se = e.season || 1;
+      if (se !== season) { season = se; n = 0; html += `<h2>Season ${se}</h2>`; }
+      n++;
+      html += `<li class="ep${e.done?" done":""}" data-i="${i}"><span class="del" data-del="${i}">✖</span><b>Episode ${n}: ${esc(e.title)}</b>${e.desc?`<small>${esc(e.desc)}</small>`:""}</li>`;
+    });
+    $("episodes").innerHTML = html;
   }
   $("episodes").onclick = ev => {
     const d = ev.target.dataset.del;
@@ -91,7 +134,7 @@
   };
   $("addEp").onclick = () => {
     const t = $("epTitle").value.trim(); if (!t) return;
-    episodes.push({ title:t, desc:$("epDesc").value.trim(), done:false });
+    episodes.push({ season:Math.max(1,...episodes.map(e=>e.season||1)), title:t, desc:$("epDesc").value.trim(), done:false });
     saveEps(); renderEps(); $("epTitle").value = $("epDesc").value = "";
   };
   function open(){ renderEps(); $("lock").style.display="none"; $("inside").style.display="block"; render(); }
