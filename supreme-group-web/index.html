@@ -32,6 +32,27 @@
   .ep.done b::after { content:"  ✅"; }
   .ep .del { float:right; color:var(--bad); cursor:pointer; padding-left:8px; }
   .small-in { font-size:1rem !important; letter-spacing:0 !important; padding:10px !important; margin-top:8px; }
+
+  #tv { position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:9; padding:16px; }
+  #screen { position:relative; width:100%; max-width:720px; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:linear-gradient(#2c1a5c,#120a24); border:2px solid var(--gold); }
+  #stage { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:space-around; padding-bottom:12%; font-size:clamp(2rem,9vw,4.5rem); }
+  #caption { position:absolute; left:0; right:0; top:0; padding:14px 18px; font-size:clamp(.9rem,3.5vw,1.25rem); text-align:center; background:#0008; min-height:3em; }
+  #ground { position:absolute; left:0; right:0; bottom:0; height:12%; background:#0e0820; }
+  .actor { position:relative; z-index:1; display:inline-block; }
+  .hop { animation:hop .6s infinite alternate; }
+  .hit { animation:hit .5s infinite; }
+  .enter-l { animation:enterL 1s both; } .enter-r { animation:enterR 1s both; }
+  .spin { animation:spin 1s linear infinite; }
+  @keyframes hop { to { transform:translateY(-25%); } }
+  @keyframes hit { 50% { transform:translateX(30%) rotate(15deg); } }
+  @keyframes enterL { from { transform:translateX(-300%); } } @keyframes enterR { from { transform:translateX(300%); } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .flash { animation:flash .3s 3; } @keyframes flash { 50% { filter:brightness(3); } }
+  .title-card { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; }
+  .title-card h3 { color:var(--gold); font-size:clamp(1.4rem,6vw,2.6rem); margin:8px 0; }
+  #tvbar { display:flex; gap:8px; width:100%; max-width:720px; margin-top:12px; }
+  #tvbar button { margin:0; padding:10px; font-size:1rem; }
+  .ep .play { color:var(--gold); }
 </style>
 </head>
 <body>
@@ -55,6 +76,14 @@
     <input id="epDesc" class="small-in" type="text" placeholder="What happens? (optional)">
     <button id="addEp">Add episode</button>
     <button id="leave" style="background:#3a2a66;color:var(--text)">Lock</button>
+  </div>
+
+<div id="tv">
+    <div id="screen"><div id="ground"></div><div id="stage"></div><div id="caption"></div></div>
+    <div id="tvbar">
+      <button id="tvPrev">⏮</button><button id="tvPause">⏸</button><button id="tvNext">⏭</button>
+      <button id="tvMark">✅ Watched</button><button id="tvClose" style="background:#3a2a66;color:var(--text)">✖ Close</button>
+    </div>
   </div>
 
 <script>
@@ -142,14 +171,14 @@
       const se = e.season || 1;
       if (se !== season) { season = se; n = 0; html += `<h2>Season ${se}</h2>`; }
       n++;
-      html += `<li class="ep${e.done?" done":""}" data-i="${i}"><span class="del" data-del="${i}">✖</span><b>Episode ${n}: ${esc(e.title)}</b>${e.desc?`<small>${esc(e.desc)}</small>`:""}</li>`;
+      html += `<li class="ep${e.done?" done":""}" data-i="${i}"><span class="del" data-del="${i}">✖</span><b><span class="play">▶</span> Episode ${n}: ${esc(e.title)}</b>${e.desc?`<small>${esc(e.desc)}</small>`:""}</li>`;
     });
     $("episodes").innerHTML = html;
   }
   $("episodes").onclick = ev => {
     const d = ev.target.dataset.del;
     if (d !== undefined) { if (confirm("Delete this episode?")) episodes.splice(+d,1); }
-    else { const li = ev.target.closest(".ep"); if (!li) return; episodes[+li.dataset.i].done ^= true; }
+    else { const li = ev.target.closest(".ep"); if (!li) return; watch(+li.dataset.i); return; }
     saveEps(); renderEps();
   };
   $("addEp").onclick = () => {
@@ -175,6 +204,60 @@
     $("name").value = "";
   };
   $("leave").onclick = () => { $("inside").style.display="none"; $("lock").style.display="block"; $("code").value=""; $("msg").textContent=""; };
+
+  // ---------- Episode player ----------
+  const NINJA = { Storm:"⚡🥷", Magma:"🔥🥷", Frost:"❄️🥷", Stone:"🪨🥷", Wren:"✨🥷" };
+  const VILLAIN = { 1:["🦹","Night Fang"], 2:["👸🌑","the Void Queen"], 3:["🕰️🧙","the Clockmaker"] };
+  const PLACES = ["🏯","🌋","🏔️","🌊","🌆","🌴","☁️","🏰"];
+  let tv = { i:0, scene:0, scenes:[], timer:null, paused:false };
+
+  function heroesFor(e){
+    const all = ["Storm","Magma","Frost","Stone"].concat((e.season||1) >= 2 ? ["Wren"] : []);
+    const named = all.filter(n => e.title.includes(n) || e.desc.includes(n));
+    return named.length ? named.concat(all.filter(n=>!named.includes(n)).slice(0,1)) : all;
+  }
+  function epNumber(i){ const se = episodes[i].season||1; return episodes.slice(0,i+1).filter(e=>(e.season||1)===se).length; }
+  function buildScenes(i){
+    const e = episodes[i], se = e.season||1, [vEmoji, vName] = VILLAIN[se] || VILLAIN[1];
+    const heroes = heroesFor(e), place = PLACES[(i*3) % PLACES.length];
+    const h = (cls) => heroes.map(n => `<span class="actor ${cls}">${NINJA[n]}</span>`).join("");
+    const extra = (e.title+e.desc).includes("Zip") || (e.title+e.desc).includes("dragon") ? `<span class="actor hop">🐉</span>` : "";
+    return [
+      { cap:"", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` },
+      { cap:esc(e.desc), stage:`<span class="actor">${place}</span>${h("enter-l")}`, say:e.desc },
+      { cap:`But ${vName} is watching...`, stage:`<span class="actor">${place}</span><span class="actor enter-r">${vEmoji}</span>`, say:`But ${vName} is watching.` },
+      { cap:"Ninja, GO! 🌀", stage:`${h("spin")}${extra}<span class="actor hit">${vEmoji}</span>`, flash:true, say:"Ninja, go!" },
+      { cap:`${heroes.join(", ")} fight together as one team!`, stage:`${h("hop")}<span class="actor">💥</span><span class="actor hit">${vEmoji}</span>`, flash:true, say:`${heroes.join(", ")} fight together as one team!` },
+      { cap: i === episodes.length-1 ? "THE END... for now." : "To be continued...", title:`<div class="title-card"><h3>${i === episodes.length-1 ? "THE END?" : "To be continued..."}</h3><div>${i < episodes.length-1 ? "Next: "+esc(episodes[i+1].title) : ""}</div></div>`, say: i < episodes.length-1 ? `To be continued. Next time: ${episodes[i+1].title}.` : "The end, for now." }
+    ];
+  }
+  function speak(t){ try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); } catch {} }
+  function showScene(){
+    const sc = tv.scenes[tv.scene];
+    $("stage").innerHTML = sc.stage || ""; $("caption").textContent = ""; $("caption").style.display = sc.title ? "none" : "block";
+    $("screen").querySelectorAll(".title-card").forEach(x=>x.remove());
+    if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
+    $("caption").innerHTML = sc.cap;
+    $("screen").classList.remove("flash"); if (sc.flash) { void $("screen").offsetWidth; $("screen").classList.add("flash"); }
+    speak(sc.say); schedule();
+  }
+  function schedule(){
+    clearTimeout(tv.timer); if (tv.paused) return;
+    tv.timer = setTimeout(() => {
+      if (tv.scene < tv.scenes.length-1) { tv.scene++; showScene(); }
+      else { episodes[tv.i].done = true; saveEps(); renderEps(); if (tv.i < episodes.length-1) watch(tv.i+1); }
+    }, Math.max(3500, tv.scenes[tv.scene].say.length * 75));
+  }
+  function watch(i){
+    tv.i = i; tv.scene = 0; tv.scenes = buildScenes(i); tv.paused = false; $("tvPause").textContent = "⏸";
+    $("tv").style.display = "flex"; showScene();
+  }
+  $("tvNext").onclick = () => { if (tv.i < episodes.length-1) watch(tv.i+1); };
+  $("tvPrev").onclick = () => { if (tv.i > 0) watch(tv.i-1); };
+  $("tvPause").onclick = () => { tv.paused = !tv.paused; $("tvPause").textContent = tv.paused ? "▶" : "⏸";
+    try { tv.paused ? speechSynthesis.pause() : speechSynthesis.resume(); } catch {} schedule(); };
+  $("tvMark").onclick = () => { episodes[tv.i].done ^= true; saveEps(); renderEps(); };
+  $("tvClose").onclick = () => { clearTimeout(tv.timer); try { speechSynthesis.cancel(); } catch {} $("tv").style.display = "none"; };
 </script>
 </body>
 </html>
