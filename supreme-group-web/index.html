@@ -24,6 +24,14 @@
   #inside { display:none; }
   #inside ul { list-style:none; padding:0; text-align:left; }
   #inside li { background:#0e0820; margin:8px 0; padding:10px 14px; border-radius:10px; }
+  h2 { color:var(--gold); margin:24px 0 4px; font-size:1.3rem; text-align:left; }
+  .ep { cursor:pointer; }
+  .ep b { color:var(--gold); }
+  .ep small { display:block; color:var(--muted); margin-top:4px; }
+  .ep.done { opacity:.55; }
+  .ep.done b::after { content:"  ✅"; }
+  .ep .del { float:right; color:var(--bad); cursor:pointer; padding-left:8px; }
+  .small-in { font-size:1rem !important; letter-spacing:0 !important; padding:10px !important; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -41,6 +49,11 @@
     <ul id="members"></ul>
     <input id="name" type="text" placeholder="Your name" style="font-size:1.1rem;letter-spacing:0">
     <button id="add">Add me</button>
+    <h2>🎬 Episodes</h2>
+    <ul id="episodes"></ul>
+    <input id="epTitle" class="small-in" type="text" placeholder="Episode title">
+    <input id="epDesc" class="small-in" type="text" placeholder="What happens? (optional)">
+    <button id="addEp">Add episode</button>
     <button id="leave" style="background:#3a2a66;color:var(--text)">Lock</button>
   </div>
 
@@ -58,7 +71,30 @@
       ? members.map(m => `<li>⭐ ${m.replace(/</g,"&lt;")}</li>`).join("")
       : "<li>No members yet — be the first!</li>";
   }
-  function open(){ $("lock").style.display="none"; $("inside").style.display="block"; render(); }
+  let episodes = JSON.parse(store.get("supreme-episodes") || "null") || [
+    { title:"The Code", desc:"The Supreme Group is formed and the secret code is chosen.", done:false },
+    { title:"New Recruits", desc:"Members join and earn their stars.", done:false },
+    { title:"The Mystery Locker", desc:"Something strange is found behind a locked door.", done:false }
+  ];
+  const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  function saveEps(){ store.set("supreme-episodes", JSON.stringify(episodes)); }
+  function renderEps(){
+    $("episodes").innerHTML = episodes.length
+      ? episodes.map((e,i) => `<li class="ep${e.done?" done":""}" data-i="${i}"><span class="del" data-del="${i}">✖</span><b>Episode ${i+1}: ${esc(e.title)}</b>${e.desc?`<small>${esc(e.desc)}</small>`:""}</li>`).join("")
+      : "<li>No episodes yet — add one!</li>";
+  }
+  $("episodes").onclick = ev => {
+    const d = ev.target.dataset.del;
+    if (d !== undefined) { if (confirm("Delete this episode?")) episodes.splice(+d,1); }
+    else { const li = ev.target.closest(".ep"); if (!li) return; episodes[+li.dataset.i].done ^= true; }
+    saveEps(); renderEps();
+  };
+  $("addEp").onclick = () => {
+    const t = $("epTitle").value.trim(); if (!t) return;
+    episodes.push({ title:t, desc:$("epDesc").value.trim(), done:false });
+    saveEps(); renderEps(); $("epTitle").value = $("epDesc").value = "";
+  };
+  function open(){ renderEps(); $("lock").style.display="none"; $("inside").style.display="block"; render(); }
 
   function tryCode(){
     if ($("code").value === CODE) { open(); }
