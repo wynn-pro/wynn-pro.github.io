@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supreme Group</title>
+<style>
+  :root { --bg:#120a24; --card:#1f1440; --gold:#ffcc33; --text:#f4efff; --muted:#a99cc9; --bad:#ff5c7a; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:radial-gradient(circle at top, #2c1a5c, var(--bg)); color:var(--text);
+         font-family:system-ui, sans-serif; padding:16px; }
+  .card { background:var(--card); border:2px solid var(--gold); border-radius:20px; padding:32px 24px;
+          width:100%; max-width:380px; text-align:center; box-shadow:0 0 40px #ffcc3333; }
+  h1 { margin:0 0 4px; color:var(--gold); font-size:2.4rem; letter-spacing:4px; }
+  p { color:var(--muted); }
+  input { width:100%; font-size:2rem; text-align:center; letter-spacing:12px; padding:12px;
+          border-radius:12px; border:2px solid var(--muted); background:#0e0820; color:var(--text); }
+  button { margin-top:16px; width:100%; padding:14px; font-size:1.2rem; font-weight:700; border:none;
+           border-radius:12px; background:var(--gold); color:#1a1030; cursor:pointer; }
+  .msg { min-height:1.4em; margin-top:12px; color:var(--bad); font-weight:600; }
+  .shake { animation:shake .35s; }
+  @keyframes shake { 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  #inside { display:none; }
+  #inside ul { list-style:none; padding:0; text-align:left; }
+  #inside li { background:#0e0820; margin:8px 0; padding:10px 14px; border-radius:10px; }
+</style>
+</head>
+<body>
+  <div class="card" id="lock">
+    <h1>👑 SUPREME</h1>
+    <p>Enter the group code to join</p>
+    <input id="code" type="password" inputmode="numeric" maxlength="4" autofocus>
+    <button id="go">Join</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card" id="inside">
+    <h1>👑 SUPREME</h1>
+    <p>Welcome to the group!</p>
+    <ul id="members"></ul>
+    <input id="name" type="text" placeholder="Your name" style="font-size:1.1rem;letter-spacing:0">
+    <button id="add">Add me</button>
+    <button id="leave" style="background:#3a2a66;color:var(--text)">Lock</button>
+  </div>
+
+<script>
+  const CODE = "3149";
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch {} }
+  };
+  let members = JSON.parse(store.get("supreme-members") || "[]");
+
+  function render(){
+    $("members").innerHTML = members.length
+      ? members.map(m => `<li>⭐ ${m.replace(/</g,"&lt;")}</li>`).join("")
+      : "<li>No members yet — be the first!</li>";
+  }
+  function open(){ $("lock").style.display="none"; $("inside").style.display="block"; render(); }
+
+  function tryCode(){
+    if ($("code").value === CODE) { open(); }
+    else {
+      $("msg").textContent = "Wrong code!";
+      $("lock").classList.remove("shake"); void $("lock").offsetWidth; $("lock").classList.add("shake");
+      $("code").value = "";
+    }
+  }
+  $("go").onclick = tryCode;
+  $("code").addEventListener("keydown", e => { if (e.key === "Enter") tryCode(); });
+  $("add").onclick = () => {
+    const n = $("name").value.trim();
+    if (n && !members.includes(n)) { members.push(n); store.set("supreme-members", JSON.stringify(members)); render(); }
+    $("name").value = "";
+  };
+  $("leave").onclick = () => { $("inside").style.display="none"; $("lock").style.display="block"; $("code").value=""; $("msg").textContent=""; };
+</script>
+</body>
+</html>
