@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>99 Nights</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;overflow:hidden;background:#111;font-family:"Trebuchet MS",system-ui,sans-serif;color:#fff;user-select:none}
+  canvas{display:block}
+  .panel{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(20,10,50,.82);z-index:20;text-align:center;padding:16px}
+  .panel h1{font-size:72px;margin:0;color:#ffd84d;text-shadow:4px 4px 0 #ff5e9c,8px 8px 0 #4d7cff}
+  .panel p{max-width:620px;line-height:1.5;font-size:17px}
+  button{font:inherit;font-size:20px;padding:12px 28px;margin:6px;border:none;border-radius:14px;background:#ffd84d;color:#3a1d6e;font-weight:bold;cursor:pointer;box-shadow:0 5px 0 #c99a00}
+  button:hover{transform:translateY(-2px)}
+  button:disabled{background:#888;box-shadow:0 5px 0 #555;cursor:default}
+  .hidden{display:none!important}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #bars{position:absolute;top:14px;left:14px;width:230px}
+  .bar{height:18px;background:rgba(0,0,0,.45);border-radius:9px;margin-bottom:7px;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,.6)}
+  .bar i{display:block;height:100%;border-radius:7px}
+  .bar span{position:absolute;left:8px;top:0;font-size:12px;line-height:15px;font-weight:bold;text-shadow:1px 1px 0 #000}
+  #items{position:absolute;top:14px;right:14px;font-size:22px;background:rgba(0,0,0,.4);padding:8px 14px;border-radius:14px;text-align:right;line-height:1.4}
+  #nightBox{position:absolute;top:12px;left:50%;transform:translateX(-50%);text-align:center;font-size:26px;font-weight:bold;text-shadow:2px 2px 0 #000}
+  #clock{width:220px;height:10px;background:rgba(0,0,0,.5);border-radius:5px;margin:4px auto;overflow:hidden}
+  #clock i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ffd84d 62%,#4d5cff 62%)}
+  #bossBar{width:420px;max-width:80vw;margin:8px auto 0}
+  #bossBar .bar i{background:#5cff6a}
+  #hint{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);font-size:20px;background:rgba(0,0,0,.5);padding:6px 16px;border-radius:12px}
+  #toast{position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:34px;font-weight:bold;color:#ffd84d;text-shadow:3px 3px 0 #000;transition:opacity .5s;text-align:center}
+  #cross{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid #fff;border-radius:50%}
+  #hurt{position:fixed;inset:0;background:radial-gradient(transparent 50%,rgba(255,0,60,.6));opacity:0;transition:opacity .3s;pointer-events:none;z-index:4}
+  #fade{position:fixed;inset:0;background:#000;opacity:0;transition:opacity .8s;pointer-events:none;z-index:15}
+  #keys{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:13px;opacity:.8;white-space:nowrap}
+  .shopItem{display:flex;align-items:center;justify-content:space-between;width:460px;max-width:90vw;background:rgba(255,255,255,.1);border-radius:12px;padding:8px 14px;margin:5px}
+  .shopItem button{font-size:16px;padding:8px 16px}
+</style>
+</head>
+<body>
+<div id="hud" class="hidden">
+  <div id="bars">
+    <div class="bar"><i id="hpB" style="background:#ff5e7a"></i><span>❤️ Health</span></div>
+    <div class="bar"><i id="huB" style="background:#ffa94d"></i><span>🍗 Hunger</span></div>
+    <div class="bar"><i id="baB" style="background:#fff36b"></i><span>🔦 Battery</span></div>
+    <div class="bar"><i id="fiB" style="background:#ff7b2e"></i><span id="fiT">🔥 Campfire</span></div>
+  </div>
+  <div id="nightBox"><div id="nightT">Day 1 / 99</div><div id="clock"><i></i></div>
+    <div id="bossBar" class="hidden"><div class="bar"><i id="boB"></i><span>👑 Giant Slime King</span></div></div></div>
+  <div id="items"></div>
+  <div id="cross"></div>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="keys">WASD move · Shift run · Click swing · F flashlight · E use · Q eat · B shop · M music · Esc pause</div>
+</div>
+<div id="hurt"></div><div id="fade"></div>
+
+<div id="start" class="panel">
+  <h1>99 NIGHTS</h1>
+  <p>You're a camper lost in the Bright Forest! Chop wood to keep your <b>campfire</b> burning — critters can't get into its light.
+  Find your <b>4 lost friends</b> (look for the glowing beams), collect <b>gems</b> for the shop, and survive all 99 nights to face the <b>Giant Slime King</b>!</p>
+  <div><button id="newBtn">New Game</button><button id="contBtn" class="hidden">Continue</button></div>
+  <p style="font-size:14px;opacity:.8">WASD move · Mouse look · Click swing axe · F flashlight · E chop/pick/add wood/sleep · Q eat · B shop at camp</p>
+</div>
+<div id="pause" class="panel hidden"><h1>Paused</h1><p>Click to keep playing</p><button id="resumeBtn">Play</button></div>
+<div id="shop" class="panel hidden"><h1 style="font-size:48px">💎 Gem Shop</h1><div id="shopList"></div><button id="closeShop">Close</button></div>
+<div id="end" class="panel hidden"><h1 id="endT">YOU WIN!</h1><p id="endP"></p><button onclick="localStorage.removeItem('nights99');location.reload()">Play Again</button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const DAYLEN=150, NIGHTLEN=90, CYCLE=DAYLEN+NIGHTLEN, WORLD=115;
+const rand=(a,b)=>a+Math.random()*(b-a);
+
+// ---------- SOUND ----------
+let AC=null, musicOn=true, musicStep=0;
+function audio(){ if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)(); setInterval(music,260);} if(AC.state==='suspended')AC.resume(); }
+function tone(f,dur,type='square',vol=.12,slide=0,when=0){
+  if(!AC)return; const t=AC.currentTime+when, o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t); if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g).connect(AC.destination); o.start(t); o.stop(t+dur);
+}
+const sfx={
+  chop:()=>tone(180,.12,'square',.15,-80),
+  swing:()=>tone(500,.08,'triangle',.06,-300),
+  hit:()=>tone(300,.15,'sawtooth',.1,-200),
+  pick:()=>{tone(880,.08,'square',.08);tone(1320,.1,'square',.08,0,.07)},
+  gem:()=>{tone(1200,.08,'sine',.12);tone(1600,.08,'sine',.12,0,.06);tone(2000,.12,'sine',.1,0,.12)},
+  hurt:()=>tone(150,.25,'sawtooth',.15,-90),
+  fire:()=>tone(90,.3,'sawtooth',.08,60),
+  poof:()=>tone(600,.2,'triangle',.1,600),
+  yay:()=>[523,659,784,1046].forEach((f,i)=>tone(f,.18,'square',.1,0,i*.1)),
+  buy:()=>{tone(700,.1,'square',.1);tone(1050,.15,'square',.1,0,.1)},
+};
+const DAYSCALE=[523,587,659,784,880,1046], NIGHTSCALE=[262,294,330,392,440,523];
+function music(){
+  if(!musicOn||!AC||!game.running||game.paused)return;
+  const night=isNight(); const sc=night?NIGHTSCALE:DAYSCALE;
+  if(musicStep%2===0||!night) tone(sc[(musicStep*3+(musicStep>>3))%sc.length],.22,night?'triangle':'square',night?.05:.035);
+  if(musicStep%4===0) tone(sc[0]/(night?2:4),.4,'triangle',.07);
+  musicStep++;
+}
+
+// ---------- THREE SETUP ----------
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,400); camera.rotation.order='YXZ'; scene.add(camera);
+scene.fog=new THREE.Fog(0x8fd8ff,30,150);
+const hemi=new THREE.HemisphereLight(0xffffff,0x5a8f3c,1); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff6dd,.8); sun.position.set(50,100,30); scene.add(sun);
+const DAYC=new THREE.Color(0x8fd8ff), NIGHTC=new THREE.Color(0x232a66), SKY=new THREE.Color(0x8fd8ff);
+scene.background=SKY;
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const M={}; function mat(c,e=0){const k=c+'_'+e; return M[k]||(M[k]=new THREE.MeshLambertMaterial({color:c,emissive:e}));}
+function mesh(g,m,x=0,y=0,z=0,p){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);(p||scene).add(o);return o;}
+
+// ground + flowers
+const ground=mesh(new THREE.CircleGeometry(140,48),mat(0x6fd25a)); ground.rotation.x=-Math.PI/2;
+const flowerG=new THREE.SphereGeometry(.18,6,4);
+for(let i=0;i<260;i++){const a=rand(0,6.28),r=rand(8,WORLD);mesh(flowerG,mat([0xff6bcb,0xffe14d,0xffffff,0x6bc1ff][i%4],0x222222),Math.cos(a)*r,.15,Math.sin(a)*r);}
+// stars
+const starG=new THREE.BufferGeometry(), sp=[]; for(let i=0;i<500;i++){const a=rand(0,6.28),b=rand(.15,1.4);sp.push(Math.cos(a)*Math.cos(b)*300,Math.sin(b)*300,Math.sin(a)*Math.cos(b)*300);}
+starG.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+const starM=new THREE.PointsMaterial({color:0xffffff,size:1.6,transparent:true,opacity:0,fog:false}); scene.add(new THREE.Points(starG,starM));
+
+// campfire
+const fireGroup=new THREE.Group(); scene.add(fireGroup);
+const logG=new THREE.CylinderGeometry(.2,.2,2,6);
+for(let i=0;i<4;i++){const l=mesh(logG,mat(0x7a4a22),0,.25,0,fireGroup);l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/4;}
+for(let i=0;i<10;i++){const a=i/10*6.28;mesh(new THREE.DodecahedronGeometry(.35),mat(0x9a9aa8),Math.cos(a)*1.4,.2,Math.sin(a)*1.4,fireGroup);}
+const flame=mesh(new THREE.ConeGeometry(.7,1.8,8),new THREE.MeshBasicMaterial({color:0xff8a1f}),0,1.1,0,fireGroup);
+const flame2=mesh(new THREE.ConeGeometry(.4,1.2,8),new THREE.MeshBasicMaterial({color:0xffe14d}),0,.9,0,fireGroup);
+const fireLight=new THREE.PointLight(0xffa040,2,25,1.5); fireLight.position.y=2; scene.add(fireLight);
+const ring=mesh(new THREE.RingGeometry(.97,1,64),new THREE.MeshBasicMaterial({color:0xffd84d,transparent:true,opacity:.5,side:THREE.DoubleSide}),0,.05,0);
+ring.rotation.x=-Math.PI/2;
+// tent + shop chest
+const tent=mesh(new THREE.ConeGeometry(2.2,2.8,4),mat(0xff5e9c),6,1.4,-4); tent.rotation.y=Math.PI/4;
+const TENT={x:6,z:-4}, SHOP={x:-6,z:-3};
+mesh(new THREE.BoxGeometry(1.6,1,1.1),mat(0xb5651d),SHOP.x,.5,SHOP.z); mesh(new THREE.BoxGeometry(1.7,.25,1.2),mat(0xffd84d,0x553300),SHOP.x,1.1,SHOP.z);
+const shopGem=mesh(new THREE.OctahedronGeometry(.35),mat(0x4dfff3,0x1a7a7a),SHOP.x,1.7,SHOP.z);
+
+// trees
+const trunkG=new THREE.CylinderGeometry(.4,.55,3,7), coneG=new THREE.ConeGeometry(2.3,4.5,8), ballG=new THREE.SphereGeometry(2.2,9,7);
+const leafCols=[0x2ecc71,0x3fd16a,0x7bd84a,0xff9ff3,0xffb142,0x48dbfb];
+const trees=[];
+for(let i=0;i<200&&trees.length<170;i++){
+  const a=rand(0,6.28),r=rand(15,WORLD),x=Math.cos(a)*r,z=Math.sin(a)*r;
+  if(trees.some(t=>Math.hypot(t.x-x,t.z-z)<3.5))continue;
+  const g=new THREE.Group(); g.position.set(x,0,z); scene.add(g);
+  mesh(trunkG,mat(0x8b5a2b),0,1.5,0,g);
+  const leaf=Math.random()<.5?coneG:ballG; mesh(leaf,mat(leafCols[i%leafCols.length]),0,leaf===coneG?5:4.6,0,g);
+  const s=rand(.8,1.3); g.scale.set(s,s,s);
+  trees.push({g,x,z,hp:3,alive:true,shake:0});
+}
+// bushes
+const bushes=[], berryG=new THREE.SphereGeometry(.16,6,4);
+for(let i=0;i<30;i++){
+  const a=rand(0,6.28),r=rand(10,WORLD-5),x=Math.cos(a)*r,z=Math.sin(a)*r;
+  const g=new THREE.Group(); g.position.set(x,0,z); scene.add(g);
+  mesh(new THREE.SphereGeometry(.9,8,6),mat(0x1f9e4a),0,.6,0,g);
+  const berries=new THREE.Group(); g.add(berries);
+  for(let j=0;j<7;j++){const b=rand(0,6.28),h=rand(.3,1.1);mesh(berryG,mat(0xff2e5e,0x550011),Math.cos(b)*.85,h,Math.sin(b)*.85,berries);}
+  bushes.push({g,x,z,berries,full:true});
+}
+// gems
+const gems=[], gemG=new THREE.OctahedronGeometry(.35);
+function spawnGem(x,z){ if(x===undefined){const a=rand(0,6.28),r=rand(12,WORLD);x=Math.cos(a)*r;z=Math.sin(a)*r;}
+  const m=mesh(gemG,mat([0x4dfff3,0xff6bf0,0xb07bff][gems.length%3],0x335566),x,.8,z); gems.push({m,x,z}); }
+
+// friends
+const FRIENDS=[
+  {name:'Pip', col:0xff9f1a, bonus:'+2 wood every morning'},
+  {name:'Juno',col:0x9b59ff, bonus:'+2 gems every morning'},
+  {name:'Max', col:0x2e86ff, bonus:'+2 food every morning'},
+  {name:'Lulu',col:0xff4fa0, bonus:'heals you faster at camp'},
+];
+const kidBody=new THREE.CylinderGeometry(.35,.45,1.1,8), kidHead=new THREE.SphereGeometry(.38,10,8);
+FRIENDS.forEach((f,i)=>{
+  const a=i*Math.PI/2+rand(.3,1.2), r=rand(70,100);
+  f.home={x:Math.cos(a)*r,z:Math.sin(a)*r};
+  const g=new THREE.Group(); scene.add(g);
+  mesh(kidBody,mat(f.col),0,.55,0,g); f.head=mesh(kidHead,mat(0xffd2a6),0,1.45,0,g);
+  f.beam=mesh(new THREE.CylinderGeometry(.5,.5,60,8,1,true),new THREE.MeshBasicMaterial({color:f.col,transparent:true,opacity:.25,depthWrite:false,fog:false}),0,30,0,g);
+  f.g=g;
+});
+
+// held tool + flashlight
+const hand=new THREE.Group(); camera.add(hand); hand.position.set(.45,-.4,-.8);
+mesh(new THREE.BoxGeometry(.07,.7,.07),mat(0x8b5a2b),0,0,0,hand);
+const axeHead=mesh(new THREE.BoxGeometry(.3,.2,.06),mat(0xc0c8d0),.12,.3,0,hand);
+const swordBlade=mesh(new THREE.BoxGeometry(.09,.9,.04),mat(0xdff6ff,0x335566),0,.65,0,hand); swordBlade.visible=false;
+const torch=new THREE.Group(); camera.add(torch); torch.position.set(-.4,-.4,-.7);
+mesh(new THREE.CylinderGeometry(.06,.08,.4,8),mat(0xffd84d),0,0,0,torch).rotation.x=Math.PI/2;
+const flashL=new THREE.SpotLight(0xfff6c0,0,30,.35,.5,1); camera.add(flashL);
+const flashT=new THREE.Object3D(); camera.add(flashT); flashT.position.set(0,0,-5); flashL.target=flashT;
+
+// ---------- GAME STATE ----------
+const game={running:false,paused:false,shop:false};
+let S;
+function fresh(){return{night:1,time:0,hp:100,hunger:100,battery:100,wood:3,food:2,gems:0,fuel:80,fireLvl:1,fireXP:0,sword:false,lamp:0,boots:false,friends:[false,false,false,false],won:false};}
+const player={x:0,z:6,yaw:0,pitch:0};
+let critters=[], swingT=0, flashOn=false, spawnT=3, bossSpawned=false, boss=null;
+
+function isNight(){return S&&S.time>=DAYLEN;}
+function fireR(){return S.fuel>0?5+S.fireLvl*1.6:0;}
+function maxFuel(){return 100+S.fireLvl*20;}
+function save(){try{localStorage.setItem('nights99',JSON.stringify(S))}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem('nights99'))}catch(e){return null}}
+
+function applyWorld(){
+  FRIENDS.forEach((f,i)=>{
+    if(S.friends[i]){const a=i/4*6.28+.4;f.g.position.set(Math.cos(a)*3,0,Math.sin(a)*3);f.beam.visible=false;}
+    else{f.g.position.set(f.home.x,0,f.home.z);f.beam.visible=true;}
+  });
+  axeHead.visible=!S.sword; swordBlade.visible=S.sword;
+}
+
+// ---------- UI ----------
+let toastTimer=0;
+function toast(t,sec=2.6){$('toast').innerHTML=t;$('toast').style.opacity=1;toastTimer=sec;}
+function hurtFlash(){$('hurt').style.opacity=1;setTimeout(()=>$('hurt').style.opacity=0,200);}
+
+function startGame(data){
+  audio(); S=Object.assign(fresh(),data||{}); game.running=true;
+  for(let i=0;i<20;i++)spawnGem();
+  applyWorld(); player.x=0;player.z=6;
+  $('start').classList.add('hidden');$('hud').classList.remove('hidden');
+  renderer.domElement.requestPointerLock();
+  toast(data?`Welcome back! Day ${S.night}`:'Day 1 — Gather wood before dark! 🌲');
+}
+$('newBtn').onclick=()=>startGame(null);
+const saved=load(); if(saved&&!saved.won){$('contBtn').classList.remove('hidden');$('contBtn').textContent=`Continue (Day ${saved.night})`;$('contBtn').onclick=()=>startGame(saved);}
+$('resumeBtn').onclick=()=>{audio();renderer.domElement.requestPointerLock();};
+
+document.addEventListener('pointerlockchange',()=>{
+  const locked=document.pointerLockElement===renderer.domElement;
+  if(!game.running)return;
+  game.paused=!locked;
+  $('pause').classList.toggle('hidden',locked||game.shop);
+});
+renderer.domElement.addEventListener('click',()=>{if(game.running&&!game.shop&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock();});
+document.addEventListener('mousemove',e=>{
+  if(document.pointerLockElement!==renderer.domElement)return;
+  player.yaw-=e.movementX*.0025; player.pitch=Math.max(-1.3,Math.min(1.3,player.pitch-e.movementY*.0025));
+});
+const keys={};
+addEventListener('keydown',e=>{
+  keys[e.code]=true; if(!game.running||game.paused||e.repeat)return;
+  if(e.code==='KeyE')interact();
+  if(e.code==='KeyQ')eat();
+  if(e.code==='KeyF'){flashOn=!flashOn;tone(flashOn?900:500,.05,'square',.06);}
+  if(e.code==='KeyB')openShop();
+  if(e.code==='KeyM'){musicOn=!musicOn;toast(musicOn?'🎵 Music on':'🔇 Music off',1.2);}
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('mousedown',e=>{if(game.running&&!game.paused&&e.button===0)swing();});
+
+// ---------- SHOP ----------
+const SHOPITEMS=[
+  {id:'sword',name:'⚔️ Sparkle Sword',desc:'Hit critters twice as hard',cost:12,ok:()=>!S.sword,buy:()=>{S.sword=true;applyWorld();}},
+  {id:'lamp',name:'🔦 Lantern Upgrade',desc:'Longer, stronger flashlight beam',cost:8,ok:()=>S.lamp<3,buy:()=>S.lamp++},
+  {id:'boots',name:'👟 Zoom Boots',desc:'Run faster',cost:10,ok:()=>!S.boots,buy:()=>S.boots=true},
+  {id:'fire',name:'🔥 Fire Crystal',desc:'Campfire grows one level',cost:6,ok:()=>S.fireLvl<8,buy:()=>{S.fireLvl++;S.fuel=maxFuel();}},
+  {id:'heal',name:'❤️ Heart Potion',desc:'Full health',cost:4,ok:()=>true,buy:()=>S.hp=100},
+  {id:'snack',name:'🍎 Snack Pack',desc:'+3 food',cost:3,ok:()=>true,buy:()=>S.food+=3},
+  {id:'wood',name:'🪵 Wood Bundle',desc:'+6 wood',cost:3,ok:()=>true,buy:()=>S.wood+=6},
+];
+function openShop(){
+  if(Math.hypot(player.x-SHOP.x,player.z-SHOP.z)>4){toast('Go to the shop chest at camp! 💎',1.5);return;}
+  game.shop=true; game.paused=true; document.exitPointerLock(); renderShop(); $('shop').classList.remove('hidden');
+}
+function renderShop(){
+  $('shopList').innerHTML=`<p>You have 💎 ${S.gems}</p>`+SHOPITEMS.map((it,i)=>`<div class="shopItem"><div style="text-align:left"><b>${it.name}</b><br><small>${it.desc}${it.id==='lamp'?` (level ${S.lamp}/3)`:''}</small></div>
+   <button data-i="${i}" ${(!it.ok()||S.gems<it.cost)?'disabled':''}>${it.ok()?'💎 '+it.cost:'Owned'}</button></div>`).join('');
+  $('shopList').querySelectorAll('button').forEach(b=>b.onclick=()=>{const it=SHOPITEMS[b.dataset.i];if(S.gems>=it.cost&&it.ok()){S.gems-=it.cost;it.buy();sfx.buy();save();renderShop();}});
+}
+$('closeShop').onclick=()=>{game.shop=false;$('shop').classList.add('hidden');renderer.domElement.requestPointerLock();};
+
+// ---------- ACTIONS ----------
+function forward(){return{x:-Math.sin(player.yaw),z:-Math.cos(player.yaw)};}
+function inFront(list,reach,rad=()=>0){
+  const f=forward(); let best=null,bd=1e9;
+  for(const o of list){const dx=o.x-player.x,dz=o.z-player.z,d=Math.hypot(dx,dz)||.01;
+    if(d-rad(o)<reach&&d<bd&&(d<1.5||(dx*f.x+dz*f.z)/d>.5)){best=o;bd=d;}}
+  return best;
+}
+const aliveTrees=()=>trees.filter(t=>t.alive);
+function swing(){
+  if(swingT>0)return; swingT=.35; sfx.swing();
+  const c=inFront(critters,2.6,o=>o.r);
+  if(c){hitCritter(c,S.sword?40:20);return;}
+  const t=inFront(aliveTrees(),3.2);
+  if(t){sfx.chop();t.hp--;t.shake=.3;if(t.hp<=0){t.alive=false;t.g.visible=false;S.wood+=3;toast('+3 🪵 wood!',1);}}
+}
+function hitCritter(c,dmg){
+  c.hp-=dmg; sfx.hit(); c.flash=.15;
+  const dx=c.x-player.x,dz=c.z-player.z,d=Math.hypot(dx,dz)||1;
+  if(c.type!=='king'){c.x+=dx/d*1.5;c.z+=dz/d*1.5;}
+  if(c.hp<=0)killCritter(c);
+}
+function killCritter(c){
+  if(!critters.includes(c))return;
+  scene.remove(c.mesh); critters=critters.filter(o=>o!==c); sfx.poof();
+  if(c.type==='king'){boss=null;win();return;}
+  if(Math.random()<.55)spawnGem(c.x,c.z);
+}
+function nearFire(){return Math.hypot(player.x,player.z)<4.5;}
+function interact(){
+  for(let i=0;i<4;i++){const f=FRIENDS[i];
+    if(!S.friends[i]&&Math.hypot(player.x-f.home.x,player.z-f.home.z)<3){
+      S.friends[i]=true;applyWorld();sfx.yay();
+      const n=S.friends.filter(Boolean).length;
+      toast(`You found ${f.name}! (${n}/4)<br><small>${f.name} runs back to camp — ${f.bonus}</small>`,4);save();return;}
+  }
+  const b=bushes.find(b=>b.full&&Math.hypot(player.x-b.x,player.z-b.z)<2.2);
+  if(b){b.full=false;b.berries.visible=false;S.food+=2;sfx.pick();toast('+2 🍓 food',1);return;}
+  if(Math.hypot(player.x-TENT.x,player.z-TENT.z)<3.5){sleep();return;}
+  if(nearFire()){
+    if(S.wood<=0){toast('No wood! Chop trees 🌲',1.5);return;}
+    S.wood--;S.fuel=Math.min(maxFuel(),S.fuel+14);S.fireXP++;sfx.fire();
+    if(S.fireXP>=S.fireLvl*6&&S.fireLvl<8){S.fireXP=0;S.fireLvl++;S.fuel=maxFuel();sfx.yay();toast(`🔥 Campfire grew to level ${S.fireLvl}!`);}
+    return;
+  }
+  if(inFront(aliveTrees(),3.2))swing();
+}
+function eat(){
+  if(S.food<=0){toast('No food! Find berry bushes 🍓',1.5);return;}
+  if(S.hunger>95){toast('Not hungry yet!',1);return;}
+  S.food--;S.hunger=Math.min(100,S.hunger+30);S.hp=Math.min(100,S.hp+5);sfx.pick();
+}
+function sleep(){
+  if(S.night>=99){toast('No sleeping tonight — the King is coming! 👑');return;}
+  if(S.time<DAYLEN-30){toast('Too early to sleep! Come back in the evening 🌅',2);return;}
+  if(S.fuel<=0){toast('Light the campfire first so camp is safe! 🔥',2);return;}
+  $('fade').style.opacity=1; game.paused=true;
+  setTimeout(()=>{S.hunger=Math.max(0,S.hunger-15);morning(true);game.paused=document.pointerLockElement!==renderer.domElement;$('fade').style.opacity=0;},900);
+}
+function morning(slept){
+  S.night++; S.time=0;
+  critters.forEach(c=>scene.remove(c.mesh)); critters=[];
+  trees.forEach(t=>{if(!t.alive&&Math.random()<.6){t.alive=true;t.hp=3;t.g.visible=true;}});
+  bushes.forEach(b=>{b.full=true;b.berries.visible=true;});
+  for(let i=0;i<4;i++)spawnGem();
+  if(S.friends[0])S.wood+=2; if(S.friends[1])S.gems+=2; if(S.friends[2])S.food+=2;
+  if(slept)S.hp=Math.min(100,S.hp+30);
+  S.fuel=Math.max(S.fuel,10);
+  save();
+  toast(S.night===99?'☀️ Day 99... tonight the Giant Slime King comes! 👑':`☀️ Day ${S.night}${slept?' — good sleep! 💤':''}`,3);
+}
+function faint(){
+  S.hp=60;S.hunger=Math.max(S.hunger,50);S.gems=Math.floor(S.gems/2);player.x=0;player.z=5;
+  toast('😵 You fainted! Your friends carried you to camp.<br><small>(lost half your gems)</small>',3.5);
+}
+function win(){
+  S.won=true;save();game.running=false;document.exitPointerLock();sfx.yay();setTimeout(sfx.yay,500);
+  $('endP').innerHTML=`You survived all 99 nights and beat the Giant Slime King!<br>Friends rescued: ${S.friends.filter(Boolean).length}/4 · Gems: 💎 ${S.gems}`;
+  $('end').classList.remove('hidden');$('hud').classList.add('hidden');$('pause').classList.add('hidden');
+}
+
+// ---------- CRITTERS ----------
+const eyeG=new THREE.SphereGeometry(.11,6,4), eyeM=mat(0xffffff,0xffffff), pupilG=new THREE.SphereGeometry(.05,4,3);
+function eyes(g,y,z,s=1){[-1,1].forEach(k=>{mesh(eyeG,eyeM,.17*k*s,y,z,g).scale.setScalar(s);mesh(pupilG,mat(0x000000),.17*k*s,y,z+.09*s,g).scale.setScalar(s);});}
+function makeCritter(type,x,z){
+  const g=new THREE.Group(); scene.add(g); let c;
+  const hpScale=1+S.night*.025;
+  if(type==='slime'){const col=[0x5cff6a,0x4dd8ff,0xffe14d][Math.floor(rand(0,3))];
+    mesh(new THREE.SphereGeometry(.7,10,8),mat(col,0x113311),0,.5,0,g).scale.y=.75; eyes(g,.7,.55);
+    c={hp:30*hpScale,speed:2.6,dmg:8,r:.7};}
+  else if(type==='bunny'){mesh(new THREE.SphereGeometry(.5,8,6),mat(0x5b3a9e,0x1a0a33),0,.5,0,g);
+    [-1,1].forEach(k=>{const e=mesh(new THREE.CylinderGeometry(.08,.12,.7,6),mat(0x5b3a9e,0x1a0a33),.2*k,1.15,0,g);e.rotation.z=-k*.2;});
+    eyes(g,.65,.42); c={hp:20*hpScale,speed:4.6,dmg:6,r:.5};}
+  else if(type==='wolf'){mesh(new THREE.BoxGeometry(.8,.7,1.5),mat(0x8a8fa8,0x111122),0,.75,0,g);
+    mesh(new THREE.BoxGeometry(.6,.55,.6),mat(0x8a8fa8,0x111122),0,1.1,.9,g);
+    [-1,1].forEach(k=>mesh(new THREE.ConeGeometry(.12,.3,4),mat(0x6a6f88),.2*k,1.5,.85,g)); eyes(g,1.2,1.21);
+    c={hp:55*hpScale,speed:3.6,dmg:14,r:.9};}
+  else{ // king
+    mesh(new THREE.SphereGeometry(3,16,12),mat(0x3cff5a,0x115511),0,2.4,0,g).scale.y=.8;
+    mesh(new THREE.CylinderGeometry(1.1,1.3,.8,8,1,true),mat(0xffd84d,0x664400),0,5,0,g);
+    for(let i=0;i<5;i++)mesh(new THREE.ConeGeometry(.25,.6,4),mat(0xffd84d,0x664400),Math.cos(i*1.26)*1.15,5.6,Math.sin(i*1.26)*1.15,g);
+    eyes(g,3.2,2.5,3); c={hp:900,speed:2.2,dmg:20,r:3,spawnT:5};}
+  Object.assign(c,{type,mesh:g,x,z,maxHp:c.hp,cd:0,scared:0,flash:0,ph:rand(0,6)});
+  critters.push(c); return c;
+}
+function spawnCritter(){
+  const a=rand(0,6.28),r=rand(28,42); let x=player.x+Math.cos(a)*r,z=player.z+Math.sin(a)*r;
+  const d=Math.hypot(x,z); if(d>WORLD){x*=WORLD/d;z*=WORLD/d;}
+  const n=S.night, roll=Math.random();
+  const type=n<4?'slime':roll<.45?'slime':(roll<.75||n<12)?'bunny':'wolf';
+  makeCritter(type,x,z);
+}
+
+// ---------- LOOP ----------
+const clock=new THREE.Clock(); let T=0;
+function update(dt){
+  T+=dt;
+  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').style.opacity=0;}
+  // time
+  const wasNight=isNight();
+  S.time+=dt;
+  if(S.night>=99&&S.time>=CYCLE-1)S.time=CYCLE-1; // night 99 lasts until the King is beaten
+  if(S.time>=CYCLE)morning(false);
+  const t=S.time; const nf=t<DAYLEN-12?0:t<DAYLEN?(t-DAYLEN+12)/12:t<CYCLE-10?1:(CYCLE-t)/10;
+  SKY.copy(DAYC).lerp(NIGHTC,nf); scene.fog.color.copy(SKY);
+  scene.fog.far=150-70*nf; hemi.intensity=1-.6*nf; sun.intensity=.8*(1-nf); starM.opacity=nf;
+  if(isNight()&&!wasNight)toast(S.night>=99?'🌙 NIGHT 99 — Here comes the KING! 👑':`🌙 Night ${S.night} — stay near the fire!`);
+
+  // player move
+  const f=forward(), rt={x:-f.z,z:f.x};
+  let mx=0,mz=0;
+  if(keys.KeyW||keys.ArrowUp){mx+=f.x;mz+=f.z;} if(keys.KeyS||keys.ArrowDown){mx-=f.x;mz-=f.z;}
+  if(keys.KeyD||keys.ArrowRight){mx+=rt.x;mz+=rt.z;} if(keys.KeyA||keys.ArrowLeft){mx-=rt.x;mz-=rt.z;}
+  const ml=Math.hypot(mx,mz);
+  const sp=(keys.ShiftLeft||keys.ShiftRight?9:5.5)*(S.boots?1.35:1)*(S.hunger<=0?.7:1);
+  if(ml){player.x+=mx/ml*sp*dt;player.z+=mz/ml*sp*dt;}
+  for(const tr of trees){if(!tr.alive)continue;const dx=player.x-tr.x,dz=player.z-tr.z,d=Math.hypot(dx,dz);if(d<1.1&&d>0){player.x=tr.x+dx/d*1.1;player.z=tr.z+dz/d*1.1;}}
+  let pd=Math.hypot(player.x,player.z);
+  if(pd<1.6){const d=pd||1;player.x=player.x/d*1.6;player.z=(pd?player.z/d:1)*1.6;}
+  pd=Math.hypot(player.x,player.z); if(pd>WORLD){player.x*=WORLD/pd;player.z*=WORLD/pd;}
+  const bob=ml?Math.sin(T*(sp>6?14:10))*.06:0;
+  camera.position.set(player.x,1.7+bob,player.z); camera.rotation.set(player.pitch,player.yaw,0);
+
+  // stats
+  S.hunger=Math.max(0,S.hunger-dt*.45);
+  if(S.hunger<=0)S.hp-=dt*1.5;
+  const R=fireR(), lit=R>0, inCamp=lit&&pd<R;
+  if(inCamp&&S.hunger>25)S.hp=Math.min(100,S.hp+dt*(S.friends[3]?6:3));
+  if(flashOn&&S.battery>0)S.battery=Math.max(0,S.battery-dt*(5-S.lamp));
+  else if(inCamp)S.battery=Math.min(100,S.battery+dt*12);
+  if(S.battery<=0&&flashOn){flashOn=false;toast('🔦 Battery empty! Recharge at the fire',1.5);}
+  S.fuel=Math.max(0,S.fuel-dt*(isNight()?.8:.25));
+  if(S.hp<=0)faint();
+
+  // fire visuals
+  flame.visible=flame2.visible=lit;
+  const fs=.6+S.fireLvl*.15; flame.scale.set(fs,fs*(1+Math.sin(T*12)*.12),fs); flame2.scale.set(fs,fs*(1+Math.cos(T*15)*.15),fs);
+  fireLight.intensity=lit?(1.2+S.fireLvl*.25)*(1+Math.sin(T*20)*.05):0; fireLight.distance=R*2.4+6;
+  ring.visible=lit; if(lit)ring.scale.set(R,R,R); ring.material.opacity=.25+nf*.4;
+  shopGem.rotation.y+=dt*2;
+
+  // flashlight
+  const range=16+S.lamp*6;
+  flashL.intensity=flashOn?2.5+S.lamp:0; flashL.distance=range+6;
+
+  // tool swing
+  if(swingT>0)swingT-=dt; const sw=swingT>0?Math.sin((.35-swingT)/.35*Math.PI):0;
+  hand.rotation.set(-sw*1.4,0,-sw*.4);
+
+  for(const tr of trees)if(tr.shake>0){tr.shake-=dt;tr.g.rotation.z=tr.shake>0?Math.sin(T*50)*.08:0;}
+  for(let i=gems.length-1;i>=0;i--){const g=gems[i];g.m.rotation.y+=dt*2;g.m.position.y=.8+Math.sin(T*3+i)*.15;
+    if(Math.hypot(g.x-player.x,g.z-player.z)<1.4){scene.remove(g.m);gems.splice(i,1);S.gems++;sfx.gem();}}
+  FRIENDS.forEach((fr,i)=>{fr.head.position.y=1.45+Math.abs(Math.sin(T*3+i))*.08;});
+
+  // spawning
+  if(isNight()){
+    spawnT-=dt;
+    const maxC=Math.min(28,4+Math.floor(S.night/3));
+    if(spawnT<=0){spawnT=Math.max(1.2,5-S.night*.04);if(critters.filter(c=>c.type!=='king').length<maxC)spawnCritter();}
+    if(S.night>=99&&!bossSpawned){bossSpawned=true;boss=makeCritter('king',player.x+f.x*40,player.z+f.z*40);sfx.hurt();}
+  }
+  // critters
+  for(const c of [...critters]){
+    const dx=player.x-c.x,dz=player.z-c.z,d=Math.hypot(dx,dz)||1;
+    const dir=c.scared>0?-1:1; if(c.scared>0)c.scared-=dt;
+    const spd=c.speed*(c.scared>0?1.3:1);
+    if(d>c.r+.6||dir<0){c.x+=dx/d*spd*dt*dir;c.z+=dz/d*spd*dt*dir;}
+    const fd=Math.hypot(c.x,c.z)||.01;
+    if(lit&&fd<R+c.r){c.x*=(R+c.r)/fd;c.z*=(R+c.r)/fd;}
+    c.cd-=dt;
+    if(d<c.r+.9&&c.cd<=0){c.cd=1.1;S.hp-=c.dmg;sfx.hurt();hurtFlash();}
+    if(flashOn&&d<range+c.r){const dot=(-dx*f.x-dz*f.z)/d;
+      if(dot>.93||(d<c.r+1.5&&dot>.5)){c.hp-=dt*(10+S.lamp*6)*(c.type==='king'?.5:1);if(c.type!=='king')c.scared=.8;c.flash=.05;if(c.hp<=0){killCritter(c);continue;}}}
+    if(c.type==='king'){c.spawnT-=dt;if(c.spawnT<=0){c.spawnT=6;makeCritter('slime',c.x+rand(-3,3),c.z+rand(-3,3));}}
+    const y=c.type==='slime'?Math.abs(Math.sin(T*6+c.ph))*.6:c.type==='bunny'?Math.abs(Math.sin(T*9+c.ph))*.4:c.type==='king'?Math.abs(Math.sin(T*2))*.8:0;
+    c.mesh.position.set(c.x,y,c.z);
+    c.mesh.rotation.y=Math.atan2(dx,dz)+(dir<0?Math.PI:0);
+    if(c.flash>0){c.flash-=dt;c.mesh.scale.setScalar(1.15);}else c.mesh.scale.setScalar(1);
+  }
+}
+
+function hud(){
+  $('hpB').style.width=Math.max(0,S.hp)+'%'; $('huB').style.width=S.hunger+'%'; $('baB').style.width=S.battery+'%';
+  $('fiB').style.width=(S.fuel/maxFuel()*100)+'%'; $('fiT').textContent=`🔥 Campfire Lv ${S.fireLvl}`;
+  $('nightT').textContent=(isNight()?'🌙 Night ':'☀️ Day ')+S.night+' / 99';
+  $('clock').firstElementChild.style.clipPath=`inset(0 ${100-S.time/CYCLE*100}% 0 0)`;
+  $('items').innerHTML=`🪵 ${S.wood}<br>🍓 ${S.food}<br>💎 ${S.gems}<br>👫 ${S.friends.filter(Boolean).length}/4`+(S.sword?'<br>⚔️':'')+(S.boots?' 👟':'');
+  $('bossBar').classList.toggle('hidden',!boss);
+  if(boss)$('boB').style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
+  let h='';
+  const fr=FRIENDS.findIndex((f,i)=>!S.friends[i]&&Math.hypot(player.x-f.home.x,player.z-f.home.z)<3);
+  if(fr>=0)h=`E — Rescue ${FRIENDS[fr].name}!`;
+  else if(bushes.some(b=>b.full&&Math.hypot(player.x-b.x,player.z-b.z)<2.2))h='E — Pick berries';
+  else if(Math.hypot(player.x-TENT.x,player.z-TENT.z)<3.5)h='E — Sleep in tent (skip to morning)';
+  else if(Math.hypot(player.x-SHOP.x,player.z-SHOP.z)<4)h='B — Open gem shop';
+  else if(nearFire())h=`E — Add wood to fire (${S.wood} left)`;
+  else if(inFront(aliveTrees(),3.2))h='Click — Chop tree';
+  $('hint').textContent=h; $('hint').style.display=h?'block':'none';
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.05,clock.getDelta());
+  if(game.running&&!game.paused){update(dt);hud();}
+  else if(!game.running&&$('end').classList.contains('hidden')){T+=dt;camera.position.set(Math.sin(T*.05)*20,6,Math.cos(T*.05)*20);camera.lookAt(0,2,0);}
+  renderer.render(scene,camera);
+}
+S=fresh(); loop();
+</script>
+</body>
+</html>

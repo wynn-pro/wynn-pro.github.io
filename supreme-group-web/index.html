@@ -56,7 +56,16 @@
   .ep .play { color:var(--gold); }
   #stage { display:block; padding:0; } #stage canvas { width:100%; height:100%; display:block; }
   #ground { display:none; }
-  .title-card { background:#0007; z-index:2; } #caption { z-index:2; }
+  #screen { box-shadow:0 0 60px #ffcc3344; }
+  #screen::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+    background:radial-gradient(ellipse at center, transparent 55%, #000a 100%); }
+  #caption { z-index:2; top:auto; bottom:0; background:linear-gradient(transparent,#000c); padding:28px 20px 16px;
+    font-weight:600; text-shadow:0 2px 6px #000; animation:fadeUp .6s both; }
+  .title-card { z-index:2; background:radial-gradient(ellipse at center,#120a2499,#000c); animation:fadeIn .8s both; }
+  .title-card h3 { text-shadow:0 0 20px #ffcc3399, 0 3px 0 #7a4b00; letter-spacing:2px; animation:zoomIn 1.2s both; }
+  .title-card div { color:#e8dcff; letter-spacing:3px; text-transform:uppercase; font-size:clamp(.7rem,2.5vw,.95rem); }
+  @keyframes fadeIn { from { opacity:0; } } @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } }
+  @keyframes zoomIn { from { opacity:0; transform:scale(.7); } }
 </style>
 </head>
 <body>
@@ -220,12 +229,24 @@
     { sky:0x14142e, ground:0x333344, props:"city" },   { sky:0x3f7d58, ground:0x2f6b2a, props:"jungle" },
     { sky:0x9ad0ff, ground:0xffffff, props:"clouds" }, { sky:0x2b2340, ground:0x4a4a4a, props:"castle" } ];
   let tv = { i:0, scene:0, scenes:[], timer:null, paused:false };
-  let R=null, scene3, cam, clock, world, heroes3=[], villain3=null, dragon3=null, sparks=[], mode="title", modeT=0, shake=0, landed=false;
+  let hemi, sun, rim, sky=null; let R=null, scene3, cam, clock, world, heroes3=[], villain3=null, dragon3=null, sparks=[], mode="title", modeT=0, shake=0, landed=false;
 
-  const mats = {};
+  const mats = {}; let toonRamp = null;
+  function ramp(){ if (toonRamp) return toonRamp;
+    const d = new Uint8Array([90,90,90, 170,170,170, 255,255,255]);
+    toonRamp = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); toonRamp.minFilter = toonRamp.magFilter = THREE.NearestFilter; toonRamp.needsUpdate = true; return toonRamp; }
   const mat = (c, glow) => mats[c+"|"+!!glow] || (mats[c+"|"+!!glow] = glow
       ? new THREE.MeshBasicMaterial({ color:c })
-      : new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.7 }));
+      : new THREE.MeshToonMaterial({ color:c, gradientMap:ramp() }));
+  const outlineMat = () => mats.outline || (mats.outline = new THREE.MeshBasicMaterial({ color:0x0a0614, side:THREE.BackSide }));
+  function outline(g, w=.045){
+    const list = []; g.traverse(o => { if (o.isMesh && !(o.material.isMeshBasicMaterial)) list.push(o); });
+    list.forEach(o => { o.castShadow = true; const ol = new THREE.Mesh(o.geometry, outlineMat());
+      o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius || 1; ol.scale.setScalar(1 + w / r); o.add(ol); });
+    return g;
+  }
+  function aura(g, c){ const m = new THREE.Mesh(new THREE.RingGeometry(.35,.75,32), new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false }));
+    m.rotation.x = -Math.PI/2; m.position.y = .03; g.add(m); g.userData.aura = m; }
   function mesh(geo, c, x=0, y=0, z=0, glow){ const m = new THREE.Mesh(geo, mat(c, glow)); m.position.set(x,y,z); return m; }
   function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
 
@@ -241,10 +262,13 @@
     const limb = (x, y, h, w) => { const piv = new THREE.Group(); piv.position.set(x,y,0);
       piv.add(mesh(new THREE.BoxGeometry(w,h,w), c, 0,-h/2,0)); g.add(piv); return piv; };
     g.userData = { legL:limb(-.18,.72,.7,.24), legR:limb(.18,.72,.7,.24), armL:limb(-.47,1.4,.65,.18), armR:limb(.47,1.4,.65,.18) };
-    return g;
+    const scarf = new THREE.Group(); scarf.position.set(0,1.78,-.3);
+    [-.08,.08].forEach(x => scarf.add(mesh(new THREE.BoxGeometry(.1,.04,.6), eyes === 0xffffff ? c : 0x111111, x,0,-.3)));
+    g.add(scarf); g.userData.scarf = scarf;
+    return outline(g);
   }
   function makeVillain(v){
-    const g = makeNinja(v.color, v.eyes); g.scale.setScalar(1.55);
+    const g = makeNinja(v.color, v.eyes); g.scale.setScalar(1.55); aura(g, v.eyes);
     if (v.top === "horns") [-1,1].forEach(s => { const h = mesh(new THREE.ConeGeometry(.08,.4,6), 0xaa0000, s*.22,2.1,0); h.rotation.z = -s*.4; g.add(h); });
     if (v.top === "crown") for (let k=0;k<5;k++){ const a=k/5*Math.PI*2; g.add(mesh(new THREE.ConeGeometry(.07,.3,5), 0xd06bff, Math.cos(a)*.25,2.15,Math.sin(a)*.25, true)); }
     if (v.top === "hat") { g.add(mesh(new THREE.CylinderGeometry(.42,.42,.05,16), 0x222222, 0,2.05,0)); g.add(mesh(new THREE.CylinderGeometry(.25,.25,.45,16), 0x222222, 0,2.3,0));
@@ -258,11 +282,11 @@
     g.add(mesh(new THREE.SphereGeometry(.06,6,6), 0x00e0ff, -.15,.2,.7, true)); g.add(mesh(new THREE.SphereGeometry(.06,6,6), 0x00e0ff, .15,.2,.7, true));
     const wing = s => { const piv = new THREE.Group(); piv.position.set(s*.25,.15,-.4); piv.add(mesh(new THREE.BoxGeometry(1.4,.04,.7), 0x3fa9ff, s*.7,0,0)); g.add(piv); return piv; };
     g.userData = { wL:wing(-1), wR:wing(1) };
-    return g;
+    return outline(g, .03);
   }
   function buildSet(set, seed){
     const g = new THREE.Group(), r = rng(seed+7);
-    const ground = mesh(new THREE.CircleGeometry(40,32), set.ground, 0,0,0); ground.rotation.x = -Math.PI/2; g.add(ground);
+    const ground = mesh(new THREE.CircleGeometry(60,48), set.ground, 0,0,0); ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; g.add(ground);
     const spot = () => { let x, z; do { x = (r()-.5)*40; z = -4 - r()*22; } while (Math.abs(x) < 3 && z > -7); return [x, z]; };
     for (let k=0;k<14;k++){
       const [x,z] = spot(), s = .7 + r()*1.3;
@@ -275,16 +299,45 @@
       if (set.props==="clouds"){ g.add(mesh(new THREE.SphereGeometry(1.5*s,10,8),0xffffff,x,r()*5,z)); }
       if (set.props==="castle"){ if(k<4){ const bx=k*5-7.5; g.add(mesh(new THREE.BoxGeometry(3,5,3),0x6d6d7a,bx,2.5,-14)); g.add(mesh(new THREE.ConeGeometry(2.2,2.5,4),0x3a2a66,bx,6.25,-14)); } else g.add(mesh(new THREE.DodecahedronGeometry(.5*s),0x55555f,x,.3,z)); }
     }
+    g.traverse(o => { if (o.isMesh && o !== ground) { o.castShadow = true; o.receiveShadow = true; } });
     return g;
+  }
+  const PARTICLES = { dojo:[0xffa8d8,"fall"], volcano:[0xff7a1a,"rise"], peaks:[0xffffff,"fall"], ocean:[0xbff6ff,"rise"],
+                      city:[0xffe066,"float"], jungle:[0xc8ff5a,"float"], clouds:[0xffffff,"float"], castle:[0xb48cff,"float"] };
+  function skyDome(top, bottom, night){
+    const geo = new THREE.SphereGeometry(90, 32, 16);
+    const m = new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, fog:false,
+      uniforms:{ top:{ value:top }, bottom:{ value:bottom } },
+      vertexShader:"varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }",
+      fragmentShader:"uniform vec3 top; uniform vec3 bottom; varying vec3 p; void main(){ float h = clamp(p.y*1.4+.15,0.,1.); gl_FragColor = vec4(mix(bottom, top, pow(h,.8)),1.); }" });
+    const g = new THREE.Group(); g.add(new THREE.Mesh(geo, m));
+    if (night){ const n = 400, pos = new Float32Array(n*3);
+      for (let k=0;k<n;k++){ const a = Math.random()*Math.PI*2, e = .15 + Math.random()*1.2; pos.set([Math.cos(a)*Math.cos(e)*85, Math.sin(e)*85, Math.sin(a)*Math.cos(e)*85], k*3); }
+      const sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.BufferAttribute(pos,3));
+      g.add(new THREE.Points(sg, new THREE.PointsMaterial({ color:0xffffff, size:.5, fog:false }))); }
+    return g;
+  }
+  let ambient = null;
+  function makeParticles(kind){
+    const [c, how] = PARTICLES[kind], n = 160, pos = new Float32Array(n*3);
+    for (let k=0;k<n;k++) pos.set([(Math.random()-.5)*30, Math.random()*10, -Math.random()*20+5], k*3);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos,3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color:c, size:.14, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false }));
+    pts.userData.how = how; return pts;
   }
 
   function initThree(){
     if (R) return true; if (!window.THREE) return false;
     R = new THREE.WebGLRenderer({ antialias:true }); R.setPixelRatio(Math.min(devicePixelRatio, 2));
+    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+    R.outputEncoding = THREE.sRGBEncoding; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.15;
     $("stage").appendChild(R.domElement);
     scene3 = new THREE.Scene(); cam = new THREE.PerspectiveCamera(50, 16/9, .1, 200);
-    scene3.add(new THREE.HemisphereLight(0xffffff, 0x443366, .85));
-    const sun = new THREE.DirectionalLight(0xffffff, .8); sun.position.set(5,10,6); scene3.add(sun);
+    hemi = new THREE.HemisphereLight(0xffffff, 0x443366, .7); scene3.add(hemi);
+    sun = new THREE.DirectionalLight(0xfff1d6, 1.1); sun.position.set(6,12,8); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera, { left:-14, right:14, top:14, bottom:-6, near:1, far:40 }); sun.shadow.bias = -.0005;
+    scene3.add(sun);
+    rim = new THREE.DirectionalLight(0xff66cc, .8); rim.position.set(-6,5,-10); scene3.add(rim);
     clock = new THREE.Clock(); R.setAnimationLoop(tick); return true;
   }
   function setupWorld(i, heroNames, se, dragon){
@@ -293,9 +346,15 @@
     const set = SETS[(i*3) % SETS.length], sky = new THREE.Color(set.sky);
     if (se === 2) sky.lerp(new THREE.Color(0x2a0a3a), .45);
     if (se === 3) sky.lerp(new THREE.Color(0x3a2a0a), .3);
-    scene3.background = sky; scene3.fog = new THREE.Fog(sky, 18, 45);
+    const night = ["dojo","volcano","city","castle"].includes(set.props) || se >= 2;
+    const top = sky.clone().multiplyScalar(night ? .35 : .8), horizon = sky.clone().lerp(new THREE.Color(night ? 0xff7a59 : 0xffffff), night ? .35 : .45);
+    world.add(skyDome(top, horizon, night));
+    scene3.background = horizon; scene3.fog = new THREE.Fog(horizon, 20, 70);
+    hemi.color.copy(horizon).lerp(new THREE.Color(0xffffff), .5); hemi.groundColor.set(set.ground).multiplyScalar(.5);
+    rim.color.set(se === 2 ? 0xc06bff : se === 3 ? 0xffc46b : 0xff66cc);
     world.add(buildSet(set, i+1));
-    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); world.add(h); return h; });
+    ambient = makeParticles(set.props); world.add(ambient);
+    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); aura(h, HERO_COLOR[n]); world.add(h); return h; });
     villain3 = makeVillain(VILLAINS[se] || VILLAINS[1]); world.add(villain3);
     dragon3 = dragon ? makeDragon() : null; if (dragon3) world.add(dragon3);
     sparks = [];
@@ -337,6 +396,14 @@
     if (dragon3){ dragon3.visible = mode === "fight" || mode === "team" || mode === "end";
       const a = T*.9; dragon3.position.set(Math.cos(a)*7, 4.5 + Math.sin(T*2)*.6, Math.sin(a)*4 - 2); dragon3.rotation.y = -a;
       dragon3.userData.wL.rotation.z = Math.sin(T*9)*.6; dragon3.userData.wR.rotation.z = -Math.sin(T*9)*.6; }
+    if (ambient){ const a = ambient.geometry.attributes.position, how = ambient.userData.how;
+      for (let k=0;k<a.count;k++){ let y = a.getY(k), x = a.getX(k);
+        y += (how === "fall" ? -.8 : how === "rise" ? .9 : Math.sin(T+k)*.3) * dt; x += Math.sin(T*.7 + k)*.3*dt;
+        if (y < 0) y = 10; if (y > 10) y = 0; a.setXY(k, x, y); }
+      a.needsUpdate = true; }
+    heroes3.concat(villain3 ? [villain3] : []).forEach((h, k) => { const u = h.userData;
+      if (u.scarf) u.scarf.rotation.x = .25 + Math.sin(T*8 + k)*.15;
+      if (u.aura){ u.aura.material.opacity = .35 + Math.sin(T*4 + k)*.2; u.aura.scale.setScalar(1 + Math.sin(T*4 + k)*.08); } });
     sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; d.v.y -= 9*dt; m.position.addScaledVector(d.v, dt); m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
     const look = new THREE.Vector3(0, 1.2, 0);
     if (mode === "title"){ cam.position.set(Math.sin(T*.3)*10, 3, Math.cos(T*.3)*10); }
