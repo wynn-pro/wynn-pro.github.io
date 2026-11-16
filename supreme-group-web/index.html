@@ -91,6 +91,7 @@
     <p>Enter the group code to join</p>
     <input id="code" type="password" inputmode="numeric" maxlength="4" autofocus>
     <button id="go">Join</button>
+    <button id="faceBtn" style="display:none;background:#2a7a5a;color:#fff">🙂 Unlock with Face ID</button>
     <div class="msg" id="msg"></div>
   </div>
 
@@ -105,6 +106,7 @@
     <input id="epTitle" class="small-in" type="text" placeholder="Episode title">
     <input id="epDesc" class="small-in" type="text" placeholder="What happens? (optional)">
     <button id="addEp">Add episode</button>
+    <button id="faceSetup" style="display:none;background:#2a7a5a;color:#fff">🙂 Set up Face ID</button>
     <button id="leave" style="background:#3a2a66;color:var(--text)">Lock</button>
   </div>
 
@@ -216,7 +218,36 @@
     episodes.push({ season:Math.max(1,...episodes.map(e=>e.season||1)), title:t, desc:$("epDesc").value.trim(), done:false });
     saveEps(); renderEps(); $("epTitle").value = $("epDesc").value = "";
   };
-  function open(){ renderEps(); $("lock").style.display="none"; $("inside").style.display="block"; render(); }
+  function open(){ renderEps(); $("lock").style.display="none"; $("inside").style.display="block"; render(); showFaceSetup(); }
+
+  // Face ID: uses the device's built-in unlock (Face ID / Touch ID / Windows Hello) via WebAuthn.
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const rnd = () => crypto.getRandomValues(new Uint8Array(32));
+  let faceOK = false;
+  async function checkFace(){
+    try { faceOK = !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { faceOK = false; }
+    $("faceBtn").style.display = faceOK && store.get("supreme-face") ? "block" : "none";
+  }
+  function showFaceSetup(){ $("faceSetup").style.display = faceOK && !store.get("supreme-face") ? "block" : "none"; }
+  $("faceSetup").onclick = async () => {
+    try {
+      const c = await navigator.credentials.create({ publicKey: {
+        challenge: rnd(), rp: { name: "Supreme Group" },
+        user: { id: rnd().slice(0,16), name: "supreme", displayName: "Supreme member" },
+        pubKeyCredParams: [{ type:"public-key", alg:-7 }, { type:"public-key", alg:-257 }],
+        authenticatorSelection: { authenticatorAttachment:"platform", userVerification:"required" }, timeout: 60000 } });
+      store.set("supreme-face", b64(c.rawId)); showFaceSetup(); checkFace(); alert("Face ID is set up! 🙂");
+    } catch { alert("Face ID setup was cancelled."); }
+  };
+  $("faceBtn").onclick = async () => {
+    try {
+      await navigator.credentials.get({ publicKey: { challenge: rnd(), userVerification:"required", timeout: 60000,
+        allowCredentials: [{ type:"public-key", id: unb64(store.get("supreme-face")) }] } });
+      open();
+    } catch { $("msg").textContent = "Face ID didn't work. Use the code."; }
+  };
+  checkFace();
 
   function tryCode(){
     if ($("code").value === CODE) { open(); }
