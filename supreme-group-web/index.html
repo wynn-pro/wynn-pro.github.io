@@ -225,6 +225,12 @@
   const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
   const rnd = () => crypto.getRandomValues(new Uint8Array(32));
   let faceOK = false;
+  const ua = navigator.userAgent, touchScreen = navigator.maxTouchPoints > 1;
+  const BIO = /iPhone|iPad/.test(ua) || (/Mac/.test(ua) && touchScreen) ? "Face ID"
+            : /Mac/.test(ua) ? "Touch ID" : /Windows/.test(ua) ? "Windows Hello" : "Face ID / Touch ID";
+  const ICON = BIO === "Touch ID" ? "👆" : "🙂";
+  $("faceBtn").textContent = `${ICON} Unlock with ${BIO}`;
+  $("faceSetup").textContent = `${ICON} Set up ${BIO}`;
   async function checkFace(){
     try { faceOK = !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { faceOK = false; }
     $("faceBtn").style.display = faceOK && store.get("supreme-face") ? "block" : "none";
@@ -237,15 +243,15 @@
         user: { id: rnd().slice(0,16), name: "supreme", displayName: "Supreme member" },
         pubKeyCredParams: [{ type:"public-key", alg:-7 }, { type:"public-key", alg:-257 }],
         authenticatorSelection: { authenticatorAttachment:"platform", userVerification:"required" }, timeout: 60000 } });
-      store.set("supreme-face", b64(c.rawId)); showFaceSetup(); checkFace(); alert("Face ID is set up! 🙂");
-    } catch { alert("Face ID setup was cancelled."); }
+      store.set("supreme-face", b64(c.rawId)); showFaceSetup(); checkFace(); alert(`${BIO} is set up! ${ICON}`);
+    } catch { alert(`${BIO} setup was cancelled.`); }
   };
   $("faceBtn").onclick = async () => {
     try {
       await navigator.credentials.get({ publicKey: { challenge: rnd(), userVerification:"required", timeout: 60000,
         allowCredentials: [{ type:"public-key", id: unb64(store.get("supreme-face")) }] } });
       open();
-    } catch { $("msg").textContent = "Face ID didn't work. Use the code."; }
+    } catch { $("msg").textContent = `${BIO} didn't work. Use the code.`; }
   };
   checkFace();
 
