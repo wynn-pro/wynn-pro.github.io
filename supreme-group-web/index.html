@@ -270,10 +270,10 @@
   function makeNinja(c, eyes=0xffffff, kind=""){
     const g = new THREE.Group();
     const torso = mesh(new THREE.CylinderGeometry(.3,.26,.8,20), c, 0,1.08,0); torso.scale.z = .75; g.add(torso);
-    g.add(mesh(new THREE.SphereGeometry(.3,20,12,0,Math.PI*2,0,Math.PI/2), c, 0,1.46,0)).scale.z = .75;
+    { const chest = mesh(new THREE.SphereGeometry(.3,20,12,0,Math.PI*2,0,Math.PI/2), c, 0,1.46,0); chest.scale.z = .75; g.add(chest); }
     const belt = mesh(new THREE.TorusGeometry(.27,.05,8,24), 0x222222, 0,.76,0); belt.rotation.x = Math.PI/2; belt.scale.y = .75; g.add(belt);
     g.add(mesh(new THREE.SphereGeometry(.38,28,20), c, 0,1.82,0));
-    const slot = mesh(new THREE.SphereGeometry(.385,28,10,-.9,1.8,1.25,.5), 0xf2c9a0, 0,1.82,0); slot.rotation.y = Math.PI/2*0; g.add(slot);
+    const slot = mesh(new THREE.SphereGeometry(.385,28,10,Math.PI/2-.9,1.8,1.3,.45), 0xf2c9a0, 0,1.82,0); g.add(slot);
     [-1,1].forEach(sx => {
       const white = mesh(new THREE.SphereGeometry(.085,16,12), eyes === 0xffffff ? 0xffffff : eyes, sx*.13,1.85,.31, eyes !== 0xffffff); white.scale.z = .6; g.add(white);
       if (eyes === 0xffffff){ g.add(mesh(new THREE.SphereGeometry(.045,12,10), 0x1a1030, sx*.12,1.85,.37));
