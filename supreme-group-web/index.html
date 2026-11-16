@@ -245,6 +245,12 @@
       o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius || 1; ol.scale.setScalar(1 + w / r); o.add(ol); });
     return g;
   }
+  function tornado(g, c){
+    const t = new THREE.Group();
+    for (let k=0;k<3;k++){ const m = new THREE.Mesh(new THREE.ConeGeometry(.9+k*.25, 2.6, 24, 1, true),
+        new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:.35-k*.08, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide, wireframe:k===1 }));
+      m.rotation.x = Math.PI; m.position.y = 1.3; t.add(m); }
+    t.visible = false; g.add(t); g.userData.tornado = t; }
   function aura(g, c){ const m = new THREE.Mesh(new THREE.RingGeometry(.35,.75,32), new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false }));
     m.rotation.x = -Math.PI/2; m.position.y = .03; g.add(m); g.userData.aura = m; }
   function mesh(geo, c, x=0, y=0, z=0, glow){ const m = new THREE.Mesh(geo, mat(c, glow)); m.position.set(x,y,z); return m; }
@@ -262,6 +268,13 @@
     const limb = (x, y, h, w) => { const piv = new THREE.Group(); piv.position.set(x,y,0);
       piv.add(mesh(new THREE.BoxGeometry(w,h,w), c, 0,-h/2,0)); g.add(piv); return piv; };
     g.userData = { legL:limb(-.18,.72,.7,.24), legR:limb(.18,.72,.7,.24), armL:limb(-.47,1.4,.65,.18), armR:limb(.47,1.4,.65,.18) };
+    if (eyes === 0xffffff){
+      [-1,1].forEach(sx => { const pad = mesh(new THREE.BoxGeometry(.32,.12,.5), 0x2a2a35, sx*.45,1.5,0); pad.rotation.z = sx*-.25; g.add(pad);
+        g.add(mesh(new THREE.BoxGeometry(.34,.04,.52), 0xffcc33, sx*.45,1.57,0)); });
+      const emblem = mesh(new THREE.OctahedronGeometry(.13), 0xffcc33, 0,1.2,.25, true); emblem.scale.z = .3; g.add(emblem);
+      g.add(mesh(new THREE.BoxGeometry(.62,.08,.04), 0xffcc33, 0,2.0,.18));
+      g.add(mesh(new THREE.BoxGeometry(.2,.12,.12), c, 0,1.98,-.3));
+    }
     const scarf = new THREE.Group(); scarf.position.set(0,1.78,-.3);
     [-.08,.08].forEach(x => scarf.add(mesh(new THREE.BoxGeometry(.1,.04,.6), eyes === 0xffffff ? c : 0x111111, x,0,-.3)));
     g.add(scarf); g.userData.scarf = scarf;
@@ -354,7 +367,7 @@
     rim.color.set(se === 2 ? 0xc06bff : se === 3 ? 0xffc46b : 0xff66cc);
     world.add(buildSet(set, i+1));
     ambient = makeParticles(set.props); world.add(ambient);
-    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); aura(h, HERO_COLOR[n]); world.add(h); return h; });
+    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); aura(h, HERO_COLOR[n]); tornado(h, HERO_COLOR[n]); world.add(h); return h; });
     villain3 = makeVillain(VILLAINS[se] || VILLAINS[1]); world.add(villain3);
     dragon3 = dragon ? makeDragon() : null; if (dragon3) world.add(dragon3);
     sparks = [];
@@ -382,6 +395,8 @@
       else if (mode === "title" || mode === "end"){ y = Math.abs(Math.sin(T*2 + k))*.08; }
       hh.position.set(x, y, 0);
       hh.rotation.y = spin ? T*14 : ry;
+      const tor = u.tornado; tor.visible = spin || (mode === "team" && Math.sin(T*2 + k) > .3);
+      if (tor.visible) tor.children.forEach((c2, j) => { c2.rotation.y = T*(10 + j*4); c2.scale.y = .9 + Math.sin(T*20 + j)*.1; });
       const sw = Math.sin(T*12)*.8*walk;
       u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw; u.armR.rotation.x = sw;
       u.armR.rotation.z = mode === "team" || mode === "end" ? 2.6 + Math.sin(T*8)*.3 : 0;
