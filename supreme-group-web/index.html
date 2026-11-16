@@ -71,7 +71,7 @@
       ? members.map(m => `<li>⭐ ${m.replace(/</g,"&lt;")}</li>`).join("")
       : "<li>No members yet — be the first!</li>";
   }
-  let episodes = JSON.parse(store.get("supreme-episodes-v3") || "null") || [
+  let episodes = JSON.parse(store.get("supreme-episodes-v4") || "null") || [
     { title:"Rise of the Supreme", desc:"Four friends find a glowing crown in an old dojo and become the Supreme ninja.", done:false },
     { title:"The Elemental Trial", desc:"Each ninja must unlock their power: Storm, Magma, Frost and Stone.", done:false },
     { title:"Shadow Over the City", desc:"A masked warrior called Night Fang steals the first Golden Scroll.", done:false },
@@ -111,10 +111,30 @@
     { season:2, title:"Stone Stands Alone", desc:"Stone holds the city gate by himself for one long night.", done:false },
     { season:2, title:"Into the Void", desc:"The ninja jump through the portal into the Void Queen's world.", done:false },
     { season:2, title:"The Fifth Element", desc:"Wren's Light power fixes the crown and gives everyone a new upgraded power.", done:false },
-    { season:2, title:"Dawn of Season 3", desc:"The Void Queen is defeated, but a strange time crack opens in the sky...", done:false }
+    { season:2, title:"Dawn of Season 3", desc:"The Void Queen is defeated, but a strange time crack opens in the sky...", done:false },
+    { season:3, title:"Cracks in Time", desc:"The time crack spits out a dinosaur, a knight and a robot into the city.", done:false },
+    { season:3, title:"The Clockmaker", desc:"A villain called the Clockmaker wants to rewind the world to before the ninja existed.", done:false },
+    { season:3, title:"Back to the Dojo", desc:"The ninja fall into the past and meet a young Master Oru.", done:false },
+    { season:3, title:"Future Ninja", desc:"Storm is pulled 100 years into the future and sees a ruined city.", done:false },
+    { season:3, title:"The Time Blades", desc:"Four ancient blades can control time. The race to find them begins.", done:false },
+    { season:3, title:"Frozen in a Second", desc:"The Clockmaker freezes everyone except Frost and Wren.", done:false },
+    { season:3, title:"Dino Valley", desc:"The team rides dinosaurs to grab the first Time Blade.", done:false },
+    { season:3, title:"Old Magma", desc:"Magma meets his older self, who warns him about a terrible choice.", done:false },
+    { season:3, title:"The Clock Tower", desc:"The ninja break into the Clockmaker's giant tower in the middle of time.", done:false },
+    { season:3, title:"Zip vs. the Iron Dragon", desc:"Zip battles a robot dragon built from the future.", done:false },
+    { season:3, title:"Night Fang's Sacrifice", desc:"Night Fang gives up his freedom so the ninja can escape.", done:false },
+    { season:3, title:"Loop", desc:"Stone keeps reliving the same day and has to find a way to break the loop.", done:false },
+    { season:3, title:"The Missing Ninja", desc:"Wren disappears from every photo. Someone has erased him from history.", done:false },
+    { season:3, title:"Pirates of Yesterday", desc:"The sky pirates help the team sail through the River of Time.", done:false },
+    { season:3, title:"The Clockmaker's Story", desc:"The ninja learn why the Clockmaker turned evil, and feel sorry for him.", done:false },
+    { season:3, title:"All Four Blades", desc:"The team finally holds every Time Blade, but using them could break the world.", done:false },
+    { season:3, title:"Two Teams", desc:"The present ninja and future ninja must fight side by side.", done:false },
+    { season:3, title:"Midnight", desc:"The Clockmaker sets every clock to midnight. The world starts to stop.", done:false },
+    { season:3, title:"Time Spin", desc:"The ninja combine the Cyclone Spin with time power to fix history.", done:false },
+    { season:3, title:"The Return of the Crown", desc:"Time is fixed, Night Fang is saved, but a giant shadow appears on the moon...", done:false }
   ];
   const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
-  function saveEps(){ store.set("supreme-episodes-v3", JSON.stringify(episodes)); }
+  function saveEps(){ store.set("supreme-episodes-v4", JSON.stringify(episodes)); }
   function renderEps(){
     if (!episodes.length) { $("episodes").innerHTML = "<li>No episodes yet — add one!</li>"; return; }
     let html = "", season = 0, n = 0;
