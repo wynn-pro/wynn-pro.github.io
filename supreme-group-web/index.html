@@ -77,6 +77,12 @@
   @keyframes slideIn { from { transform:skewX(-12deg) translateX(-120%); } }
   @keyframes slam { 0% { transform:scale(3); opacity:0; } 60% { transform:scale(.92); opacity:1; } }
   #tvSkip { display:none; position:absolute; right:12px; top:12px; z-index:3; width:auto; margin:0; padding:8px 14px; font-size:.9rem; background:#000a; color:#fff; border:1px solid #fff6; }
+  #bubble { position:absolute; z-index:3; display:none; max-width:46%; transform:translate(-50%,-100%); background:#fff; color:#1a1030;
+    padding:8px 12px; border-radius:16px; font-weight:700; font-size:clamp(.75rem,2.6vw,1.05rem); line-height:1.25; box-shadow:0 4px 12px #0006; pointer-events:none; }
+  #bubble::after { content:""; position:absolute; left:50%; bottom:-10px; margin-left:-8px; border:10px solid transparent; border-top-color:#fff; border-bottom:0; }
+  #bubble small { display:block; font-size:.7em; letter-spacing:2px; text-transform:uppercase; color:var(--sc,#7a4bd6); }
+  #bubble.pop { animation:pop .3s cubic-bezier(.2,1.8,.4,1) both; }
+  @keyframes pop { from { transform:translate(-50%,-100%) scale(.3); opacity:0; } }
 </style>
 </head>
 <body>
@@ -103,7 +109,7 @@
   </div>
 
 <div id="tv">
-    <div id="screen"><div id="ground"></div><div id="stage"></div><div id="caption"></div><button id="tvSkip">Skip intro ⏭</button></div>
+    <div id="screen"><div id="ground"></div><div id="stage"></div><div id="caption"></div><div id="bubble"></div><button id="tvSkip">Skip intro ⏭</button></div>
     <div id="tvbar">
       <button id="tvPrev">⏮</button><button id="tvPause">⏸</button><button id="tvNext">⏭</button>
       <button id="tvMark">✅ Watched</button><button id="tvClose" style="background:#3a2a66;color:var(--text)">✖ Close</button>
@@ -482,6 +488,11 @@
     const hits = [];
     sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; if (!d.bolt) d.v.y -= 9*dt; else if (d.life <= 0) { hits.push([m.position.clone(), d.c]); shake = Math.max(shake, .12); } m.position.addScaledVector(d.v, dt); if (!d.bolt) m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
     hits.forEach(([q, c]) => spark(q.x, q.y, q.z, c));
+    const cur = tv.scenes[tv.scene], bub = $("bubble");
+    let speakerObj = null;
+    if (cur && cur.line) speakerObj = cur.speaker === "villain" ? (villain3 && villain3.visible ? villain3 : null) : heroes3[cur.focus];
+    if (speakerObj && talking){ const sy = 1 + Math.abs(Math.sin(T*16))*.05; speakerObj.scale.y = (speakerObj.userData.baseY || (speakerObj.userData.baseY = speakerObj.scale.y)) * sy; }
+    else heroes3.concat(villain3 ? [villain3] : []).forEach(o => { if (o.userData.baseY) o.scale.y = o.userData.baseY; });
     const look = new THREE.Vector3(0, 1.2, 0);
     if (mode === "introOpen"){ const p = ease(Math.min(1, t/1.6)); cam.position.set(0, 14 - p*11, 18 - p*8); look.set(0, 4 - p*3, 0); }
     else if (mode === "introHero"){ const p = ease(Math.min(1, t/.5)); cam.position.set(1.2 - p*.4, 1.4, 9 - p*5.6); look.set(.3, 1.3, 0); }
@@ -500,6 +511,11 @@
     else { cam.position.set(0, 2.5 + t*1.2, 9 + t*1.5); }
     if (shake > .01){ cam.position.x += (Math.random()-.5)*shake; cam.position.y += (Math.random()-.5)*shake; shake *= .88; }
     cam.lookAt(look);
+    if (bub.style.display === "block"){
+      if (speakerObj && speakerObj.visible){ cam.updateMatrixWorld(); const p = speakerObj.position.clone(); p.y += 2.5 * (speakerObj.userData.baseY || speakerObj.scale.y); p.project(cam);
+        const W = $("screen").clientWidth, H = $("screen").clientHeight;
+        bub.style.left = Math.min(W*.8, Math.max(W*.2, (p.x*.5+.5)*W)) + "px"; bub.style.top = Math.max(H*.28, (-p.y*.5+.5)*H) + "px"; }
+      else { bub.style.left = "50%"; bub.style.top = "30%"; } }
     R.render(scene3, cam);
   }
 
@@ -511,10 +527,38 @@
     return named.length ? named.concat(all.filter(n => !named.includes(n)).slice(0,1)) : all;
   }
   function epNumber(i){ const se = episodes[i].season||1; return episodes.slice(0,i+1).filter(e => (e.season||1) === se).length; }
+  const LINES = {
+    enter:{ Storm:["Let's go, team! Move fast!","Stay close and stay sharp."], Magma:["I'm fired up! Let's do this!","Nobody gets left behind."], Frost:["Stay calm. Watch everything.","Something feels wrong here."], Stone:["I hope there are snacks at the end of this.","Slow and steady wins."], Wren:["Wait for me, guys!","This is so cool!"] },
+    solo:{ Storm:["I can feel the lightning in my hands.","This is my moment."], Magma:["Dad... I'll find you.","I'm not afraid of anything!"], Frost:["Breathe in. Breathe out. Focus.","I can do this on my own."], Stone:["I'm not moving. Not one step.","Rocks don't give up. Neither do I."], Wren:["I'm small, but I'm not weak!","My light will show the way."] },
+    power:{ Storm:["Lightning, answer me!","Feel the storm!"], Magma:["Burn bright!","Fire, rise up!"], Frost:["Freeze!","Ice, obey me!"], Stone:["Earth, shake!","Ground power!"], Wren:["Light it up!","Shine!"] },
+    sad:{ Storm:["How did we lose?","I should have been faster."], Magma:["This is all my fault.","I just want my dad back."], Frost:["We need a new plan.","Don't give up yet."], Stone:["We'll get back up. We always do.","I need a hug. And a sandwich."], Wren:["Are we going to be okay?","I'm scared, guys."] },
+    chase:{ Storm:["Faster! Don't let them get away!","Jump!"], Magma:["Out of my way!","Keep running!"], Frost:["Left! Go left!","Watch your step."], Stone:["I'm not built for running!","Wait up!"], Wren:["Woohoo! This is fun!","I can see them ahead!"] },
+    fight:{ Storm:["Ninja, go!","Hi-yah!"], Magma:["Take that!","You want some fire?"], Frost:["Too slow.","Cool it!"], Stone:["Rock solid!","Bonk!"], Wren:["Hi-yah! Did you see that?","Light speed!"] },
+    blast:{ Storm:["Everyone, together! Now!","Full power!"], Magma:["Maximum heat!","Everything we've got!"], Frost:["Aim true. Fire!","Now!"], Stone:["Here comes the big one!","Let's rock!"], Wren:["Shining blast!","Together!"] },
+    win:{ Storm:["We did it!","Supreme ninja for the win!"], Magma:["Yeah! Who's next?","That's how it's done!"], Frost:["Nicely done, team.","Cool."], Stone:["Victory snacks, anyone?","Rock on!"], Wren:["We won! We won!","Best team ever!"] },
+    team:{ Storm:["Together, we're unstoppable.","That's teamwork!"], Magma:["I've got your back.","We're a family."], Frost:["Good work, everyone.","Stronger together."], Stone:["Group hug!","I love this team."], Wren:["Supreme ninja, forever!","Thanks for believing in me."] },
+    dragon:{ Storm:["Zip! Over here, buddy!","Let's fly, Zip!"], Magma:["Whoa, look at that dragon!","Zip, you're awesome!"], Frost:["Incredible.","Zip, take us up!"], Stone:["Please don't drop me, Zip.","That's one big lizard."], Wren:["A dragon! A real dragon!","Can I ride him next?"] } };
+  const VLINES = {
+    1:{ villain:["The Scrolls belong to me!","You cannot stop the shadow."], fight:["Is that all you've got?"], blast:["No! Impossible!"], win:["This isn't over, ninja!"] },
+    2:{ villain:["The Void will swallow everything.","Your light is fading, little ninja."], fight:["Bow to the Void Queen!"], blast:["Aaagh! That light!"], win:["The Void... always... returns..."] },
+    3:{ villain:["Tick tock, ninja. Your time is up.","I will rewind the world!"], fight:["I've seen every move you'll make!"], blast:["My gears! My beautiful gears!"], win:["I only wanted... more time..."] } };
+  const VOICES = { Storm:[1.15,1.1], Magma:[.8,1.15], Frost:[1,.9], Stone:[.55,.85], Wren:[1.7,1.15], villain1:[.3,.85], villain2:[1.25,.8], villain3:[.6,.75] };
   function buildScenes(i){
+    const b = buildScenesRaw(i), v = VILLAINS[b.se] || VILLAINS[1], hn = b.heroes.length;
+    b.list.forEach((sc, j) => {
+      if (sc.focus === undefined || sc.focus < 0) sc.focus = (i + j) % hn;
+      if (!LINES[sc.mode] && sc.mode !== "villain") return;
+      const villainTalks = sc.mode === "villain" || ((VLINES[b.se] || VLINES[1])[sc.mode] && (i + j) % 3 === 0);
+      const pick = arr => arr[(i*7 + j) % arr.length];
+      if (villainTalks){ sc.speaker = "villain"; sc.who = v.name.replace(/^the /, "The "); sc.voice = "villain" + b.se; sc.line = pick((VLINES[b.se] || VLINES[1])[sc.mode]); }
+      else { const n = b.heroes[sc.focus]; sc.speaker = "hero"; sc.who = n; sc.voice = n; sc.line = pick(LINES[sc.mode][n]); }
+    });
+    return b;
+  }
+  function buildScenesRaw(i){
     const e = episodes[i], se = e.season||1, v = VILLAINS[se] || VILLAINS[1], heroes = heroesFor(e);
     const last = i === episodes.length-1, script = SCRIPTS[e.title];
-    const focusOf = t => Math.max(0, heroes.findIndex(n => t.includes(n)));
+    const focusOf = t => heroes.findIndex(n => t.includes(n));
     const titleSc = { mode:"title", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` };
     const endSc = { mode:"end", title:`<div class="title-card"><h3>${last ? "THE END?" : "To be continued..."}</h3><div>${last ? "" : "Next: "+esc(episodes[i+1].title)}</div></div>`, say: last ? "The end, for now." : `To be continued. Next time: ${episodes[i+1].title}.` };
     if (script) return { heroes, se, dragon: script.some(b => b[0] === "dragon") || /Zip|dragon/i.test(e.title+e.desc), list:
@@ -561,7 +605,22 @@
       kick(end); hit(end, .7, 1.4, 800); [45,57,64,69,72].forEach(m => tone(f(m), end, 1.5, "sawtooth", .09));
     } catch {}
   }
-  function speak(t){ try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); } catch {} }
+  let talking = false;
+  function voiceList(){ try { const v = speechSynthesis.getVoices().filter(x => /^en/i.test(x.lang)); return v.length ? v : speechSynthesis.getVoices(); } catch { return []; } }
+  function speak(t, sc){
+    try { speechSynthesis.cancel(); talking = false;
+      if (t){ const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); }
+      if (sc && sc.line){ const u = new SpeechSynthesisUtterance(sc.line), [pitch, rate] = VOICES[sc.voice] || [1,1], vs = voiceList();
+        u.pitch = pitch; u.rate = rate; if (vs.length) u.voice = vs[Object.keys(VOICES).indexOf(sc.voice) % vs.length];
+        u.onstart = () => { talking = true; showBubble(sc); }; u.onend = () => { talking = false; };
+        speechSynthesis.speak(u); }
+    } catch {}
+    if (sc && sc.line) setTimeout(() => { if (tv.scenes[tv.scene] === sc) showBubble(sc); }, Math.min(2500, (t || "").length * 70));
+  }
+  function showBubble(sc){ const b = $("bubble"); if (b.dataset.for === sc.line + tv.scene) return; b.dataset.for = sc.line + tv.scene;
+    const col = sc.speaker === "villain" ? "#c02040" : "#" + HERO_COLOR[sc.who].toString(16).padStart(6, "0");
+    b.style.setProperty("--sc", col); b.innerHTML = `<small>${esc(sc.who)}</small>${esc(sc.line)}`; b.style.display = "block";
+    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
   function showScene(){
     const sc = tv.scenes[tv.scene];
     $("tvSkip").style.display = sc.intro ? "block" : "none";
@@ -573,7 +632,8 @@
     if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
     $("caption").style.display = sc.cap ? "block" : "none"; $("caption").innerHTML = sc.cap || "";
     if (!R) $("caption").style.display = "block";
-    if (sc.say) speak(sc.say); else try { speechSynthesis.cancel(); } catch {}
+    $("bubble").style.display = "none"; $("bubble").dataset.for = ""; talking = false;
+    if (sc.say || sc.line) speak(sc.say, sc); else try { speechSynthesis.cancel(); } catch {}
     schedule();
   }
   function schedule(){
@@ -581,7 +641,7 @@
     tv.timer = setTimeout(() => {
       if (tv.scene < tv.scenes.length-1) { tv.scene++; showScene(); }
       else { episodes[tv.i].done = true; saveEps(); renderEps(); if (tv.i < episodes.length-1) watch(tv.i+1); }
-    }, tv.scenes[tv.scene].dur || Math.max(mode === "fight" ? 6000 : 4000, tv.scenes[tv.scene].say.length * 75));
+    }, tv.scenes[tv.scene].dur || Math.max(mode === "fight" ? 6000 : 4000, ((tv.scenes[tv.scene].say || "") + (tv.scenes[tv.scene].line || "")).length * 80 + 800));
   }
   let introWorld = false;
   function watch(i, withIntro){
@@ -599,7 +659,7 @@
   $("tvPause").onclick = () => { tv.paused = !tv.paused; $("tvPause").textContent = tv.paused ? "▶" : "⏸";
     try { tv.paused ? speechSynthesis.pause() : speechSynthesis.resume(); } catch {} schedule(); };
   $("tvMark").onclick = () => { episodes[tv.i].done ^= true; saveEps(); renderEps(); };
-  $("tvClose").onclick = () => { clearTimeout(tv.timer); stopMusic(); try { speechSynthesis.cancel(); } catch {} $("tv").style.display = "none"; };
+  $("tvClose").onclick = () => { clearTimeout(tv.timer); stopMusic(); $("bubble").style.display = "none"; try { speechSynthesis.cancel(); } catch {} $("tv").style.display = "none"; };
 </script>
 </body>
 </html>
