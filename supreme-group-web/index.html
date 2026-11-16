@@ -66,6 +66,17 @@
   .title-card div { color:#e8dcff; letter-spacing:3px; text-transform:uppercase; font-size:clamp(.7rem,2.5vw,.95rem); }
   @keyframes fadeIn { from { opacity:0; } } @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } }
   @keyframes zoomIn { from { opacity:0; transform:scale(.7); } }
+  .intro-name { position:absolute; left:6%; bottom:12%; z-index:2; padding:10px 22px 10px 16px; transform:skewX(-12deg);
+    background:linear-gradient(90deg, var(--hc), transparent); border-left:6px solid #fff; animation:slideIn .35s cubic-bezier(.2,1.6,.4,1) both; }
+  .intro-name b { display:block; font-size:clamp(1.6rem,7vw,3.2rem); letter-spacing:4px; color:#fff; text-shadow:0 3px 0 #0008; font-style:italic; }
+  .intro-name span { letter-spacing:3px; text-transform:uppercase; font-size:clamp(.7rem,2.4vw,1rem); color:#fff; }
+  .logo { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .logo b { font-size:clamp(2.4rem,11vw,5.5rem); font-style:italic; letter-spacing:4px; color:var(--gold); line-height:.95;
+    text-shadow:0 0 30px #ffcc33aa, 0 5px 0 #7a4b00, 0 9px 12px #000; animation:slam .6s cubic-bezier(.2,1.8,.4,1) both; }
+  .logo span { color:#fff; letter-spacing:8px; font-size:clamp(.8rem,3vw,1.2rem); animation:fadeIn .5s .5s both; }
+  @keyframes slideIn { from { transform:skewX(-12deg) translateX(-120%); } }
+  @keyframes slam { 0% { transform:scale(3); opacity:0; } 60% { transform:scale(.92); opacity:1; } }
+  #tvSkip { display:none; position:absolute; right:12px; top:12px; z-index:3; width:auto; margin:0; padding:8px 14px; font-size:.9rem; background:#000a; color:#fff; border:1px solid #fff6; }
 </style>
 </head>
 <body>
@@ -92,7 +103,7 @@
   </div>
 
 <div id="tv">
-    <div id="screen"><div id="ground"></div><div id="stage"></div><div id="caption"></div></div>
+    <div id="screen"><div id="ground"></div><div id="stage"></div><div id="caption"></div><button id="tvSkip">Skip intro ⏭</button></div>
     <div id="tvbar">
       <button id="tvPrev">⏮</button><button id="tvPause">⏸</button><button id="tvNext">⏭</button>
       <button id="tvMark">✅ Watched</button><button id="tvClose" style="background:#3a2a66;color:var(--text)">✖ Close</button>
@@ -191,7 +202,7 @@
   $("episodes").onclick = ev => {
     const d = ev.target.dataset.del;
     if (d !== undefined) { if (confirm("Delete this episode?")) episodes.splice(+d,1); }
-    else { const li = ev.target.closest(".ep"); if (!li) return; watch(+li.dataset.i); return; }
+    else { const li = ev.target.closest(".ep"); if (!li) return; watch(+li.dataset.i, true); return; }
     saveEps(); renderEps();
   };
   $("addEp").onclick = () => {
@@ -401,7 +412,11 @@
     heroes3.forEach((hh, k) => {
       const home = -1.4*(n-1) + k*1.4 - 1, u = hh.userData, me = k === focus; let x = home, y = 0, ry = 0, walk = 0, spin = false, lean = 0, armUp = 0;
       hh.visible = true;
-      if (mode === "enter"){ const p = Math.min(1, Math.max(0, t - k*.15)/1.6); x = -16 + (home+16)*ease(p); ry = p < 1 ? Math.PI/2 : 0; walk = p < 1 ? 1 : 0; }
+      if (mode === "introOpen"){ x = home; ry = Math.PI; hh.visible = t > .9; spin = t > .9; y = 0; }
+      else if (mode === "introHero"){ hh.visible = me; x = 0; spin = t < .45; ry = Math.sin(T*1.5)*.25; armUp = t > .45 ? 1 : 0; y = t < .45 ? (1 - t/.45)*3 : 0;
+        if (me && t > .45 && !u.landedIntro){ u.landedIntro = true; spark(0, .3, 0, HERO_COLOR[u.name]); shake = .5; } }
+      else if (mode === "introLogo"){ x = home; armUp = 2; y = Math.abs(Math.sin(T*4 + k))*.3; spin = t < .5; }
+      else if (mode === "enter"){ const p = Math.min(1, Math.max(0, t - k*.15)/1.6); x = -16 + (home+16)*ease(p); ry = p < 1 ? Math.PI/2 : 0; walk = p < 1 ? 1 : 0; }
       else if (mode === "villain") ry = Math.PI/2*.7;
       else if (mode === "fight"){ const p = (t*.7 + k/n) % 1, a = Math.sin(p*Math.PI);
         x = home + (vx-1.3-home)*a; y = a*2.2; ry = Math.PI/2; spin = y > .4; walk = .5;
@@ -419,7 +434,8 @@
       else if (mode === "title" || mode === "end"){ y = Math.abs(Math.sin(T*2 + k))*.08; armUp = mode === "end" ? 2 : 0; }
       hh.position.set(x, y, 0);
       hh.rotation.set(lean, spin ? T*14 : ry, 0);
-      const tor = u.tornado; tor.visible = spin || ((mode === "team" || mode === "win") && Math.sin(T*2 + k) > .3) || (mode === "power" && me);
+      if (mode !== "introHero") u.landedIntro = false;
+      const tor = u.tornado; tor.visible = spin || (mode === "introHero" && me) || ((mode === "team" || mode === "win") && Math.sin(T*2 + k) > .3) || (mode === "power" && me);
       if (tor.visible) tor.children.forEach((c2, j) => { c2.rotation.y = T*(10 + j*4); c2.scale.y = .9 + Math.sin(T*20 + j)*.1; });
       u.aura.visible = mode !== "sad";
       const sw = Math.sin(T*12)*.8*walk;
@@ -435,7 +451,7 @@
       if (mode === "win"){ const p = Math.min(1, t/1.2); x = vx + p*3; rz = -p*1.45; }
       villain3.position.set(x, y, 0); villain3.rotation.set(0, -Math.PI/2*.8, rz);
       const vu = villain3.userData, a = mode === "villain" ? Math.sin(T*3)*.5 : Math.sin(T*10)*.6; vu.armL.rotation.x = a; vu.armR.rotation.x = -a; }
-    if (dragon3){ dragon3.visible = ["fight","win","end","dragon","chase"].includes(mode);
+    if (dragon3){ dragon3.visible = ["fight","win","end","dragon","chase","introOpen","introLogo"].includes(mode);
       if (mode === "dragon"){ const p = Math.min(1, t/2); dragon3.position.set(8 - p*8, 2.5 + Math.sin(T*2)*.4, 1.5 - p*1.5); dragon3.rotation.y = -Math.PI/2 + p*Math.PI/2.5; }
       else { const a = T*.9; dragon3.position.set(Math.cos(a)*7, 4.5 + Math.sin(T*2)*.6, Math.sin(a)*4 - 2); dragon3.rotation.y = -a; }
       dragon3.userData.wL.rotation.z = Math.sin(T*9)*.6; dragon3.userData.wR.rotation.z = -Math.sin(T*9)*.6; }
@@ -452,7 +468,10 @@
     sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; if (!d.bolt) d.v.y -= 9*dt; else if (d.life <= 0) { hits.push([m.position.clone(), d.c]); shake = Math.max(shake, .12); } m.position.addScaledVector(d.v, dt); if (!d.bolt) m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
     hits.forEach(([q, c]) => spark(q.x, q.y, q.z, c));
     const look = new THREE.Vector3(0, 1.2, 0);
-    if (mode === "title"){ cam.position.set(Math.sin(T*.3)*10, 3, Math.cos(T*.3)*10); }
+    if (mode === "introOpen"){ const p = ease(Math.min(1, t/1.6)); cam.position.set(0, 14 - p*11, 18 - p*8); look.set(0, 4 - p*3, 0); }
+    else if (mode === "introHero"){ const p = ease(Math.min(1, t/.5)); cam.position.set(1.2 - p*.4, 1.4, 9 - p*5.6); look.set(.3, 1.3, 0); }
+    else if (mode === "introLogo"){ const p = ease(Math.min(1, t/1.5)); cam.position.set(0, 1 + p*1.2, 4 + p*6); look.set(0, 1.6 + p*.6, 0); }
+    else if (mode === "title"){ cam.position.set(Math.sin(T*.3)*10, 3, Math.cos(T*.3)*10); }
     else if (mode === "enter"){ cam.position.set(-3 + t*.6, 2.2, 8.5); }
     else if (mode === "villain"){ cam.position.set(1, 1.6, 7.5); look.set(3.5, 2, 0); }
     else if (mode === "fight"){ const a = T*.35; cam.position.set(1 + Math.sin(a)*8, 2.8, Math.cos(a)*8); look.set(1, 1.5, 0); }
@@ -493,36 +512,79 @@
       { mode:"win", cap:`${heroes.join(", ")} fight together as one team!`, say:`${heroes.join(", ")} fight together as one team!` },
       { mode:"end", title:`<div class="title-card"><h3>${last ? "THE END?" : "To be continued..."}</h3><div>${last ? "" : "Next: "+esc(episodes[i+1].title)}</div></div>`, say: last ? "The end, for now." : `To be continued. Next time: ${episodes[i+1].title}.` } ]};
   }
+  const TITLES = { Storm:"Master of Lightning", Magma:"Master of Fire", Frost:"Master of Ice", Stone:"Master of Earth", Wren:"Master of Light" };
+  const rosterFor = se => ["Storm","Magma","Frost","Stone"].concat(se >= 2 ? ["Wren"] : []);
+  function introScenes(se){
+    const r = rosterFor(se), hex = c => "#" + c.toString(16).padStart(6, "0");
+    return [{ mode:"introOpen", dur:1600, intro:true }]
+      .concat(r.map((n, k) => ({ mode:"introHero", focus:k, dur:1150, intro:true,
+        title:`<div class="intro-name" style="--hc:${hex(HERO_COLOR[n])}"><b>${n.toUpperCase()}</b><span>${TITLES[n]}</span></div>` })))
+      .concat([{ mode:"introLogo", dur:3400, intro:true, title:`<div class="logo"><b>SUPREME<br>NINJA</b><span>Season ${se}</span></div>` }]);
+  }
+  let actx = null, music = null;
+  function stopMusic(){ if (music){ try { music.gain.setTargetAtTime(0, actx.currentTime, .15); const m = music; setTimeout(() => m.disconnect(), 600); } catch {} music = null; } }
+  function playIntroMusic(sec){
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume();
+      stopMusic(); const out = actx.createGain(); out.gain.value = .32; out.connect(actx.destination); music = out;
+      const t0 = actx.currentTime + .05, step = 60/140/2, f = m => 440*Math.pow(2, (m-69)/12);
+      const noise = actx.createBuffer(1, actx.sampleRate*.3, actx.sampleRate); const nd = noise.getChannelData(0); for (let k=0;k<nd.length;k++) nd[k] = Math.random()*2-1;
+      const env = (node, t, v, d) => { node.gain.setValueAtTime(v, t); node.gain.exponentialRampToValueAtTime(.001, t + d); };
+      const tone = (freq, t, d, type, v) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = freq; env(g, t, v, d); o.connect(g).connect(out); o.start(t); o.stop(t + d + .05); };
+      const kick = t => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(40, t + .15); env(g, t, 1, .25); o.connect(g).connect(out); o.start(t); o.stop(t + .3); };
+      const hit = (t, v, d, hp) => { const b = actx.createBufferSource(), fl = actx.createBiquadFilter(), g = actx.createGain(); b.buffer = noise; fl.type = "highpass"; fl.frequency.value = hp; env(g, t, v, d); b.connect(fl).connect(g).connect(out); b.start(t); b.stop(t + d + .05); };
+      const bass = [45,45,57,45, 48,48,60,48, 43,43,55,43, 50,50,52,53], lead = [69,72,76,74, 72,69,67,69, 64,67,69,72, 74,76,79,81];
+      const n = Math.floor((sec - 1.2) / step);
+      for (let k=0;k<n;k++){ const t = t0 + k*step;
+        if (k % 4 === 0 || (k > 32 && k % 2 === 0)) kick(t);
+        if (k % 8 === 4) hit(t, .5, .18, 1500);
+        hit(t, .08, .04, 7000);
+        tone(f(bass[k % 16] - 12), t, step*.9, "sawtooth", .22);
+        if (k % 2 === 0 && k >= 8) tone(f(lead[(k/2) % 16]), t, step*1.6, "square", .07);
+        if (k % 16 === 0) [57,60,64].forEach(m => tone(f(m), t, step*3, "sawtooth", .06)); }
+      const end = t0 + n*step;
+      kick(end); hit(end, .7, 1.4, 800); [45,57,64,69,72].forEach(m => tone(f(m), end, 1.5, "sawtooth", .09));
+    } catch {}
+  }
   function speak(t){ try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); } catch {} }
   function showScene(){
     const sc = tv.scenes[tv.scene];
+    $("tvSkip").style.display = sc.intro ? "block" : "none";
+    if (sc.rebuild && R){ const b = tv.build; setupWorld(tv.i, b.heroes, b.se, b.dragon); }
+    if (!sc.intro) stopMusic();
+    if (sc.intro && R && !introWorld) { introWorld = true; setupWorld(tv.i, rosterFor(tv.build.se), tv.build.se, true); }
     mode = sc.mode; modeT = 0; landed = false; focus = sc.focus || 0; shotT = 0;
     $("screen").querySelectorAll(".title-card").forEach(x => x.remove());
     if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
     $("caption").style.display = sc.cap ? "block" : "none"; $("caption").innerHTML = sc.cap || "";
     if (!R) $("caption").style.display = "block";
-    speak(sc.say); schedule();
+    if (sc.say) speak(sc.say); else try { speechSynthesis.cancel(); } catch {}
+    schedule();
   }
   function schedule(){
     clearTimeout(tv.timer); if (tv.paused) return;
     tv.timer = setTimeout(() => {
       if (tv.scene < tv.scenes.length-1) { tv.scene++; showScene(); }
       else { episodes[tv.i].done = true; saveEps(); renderEps(); if (tv.i < episodes.length-1) watch(tv.i+1); }
-    }, Math.max(mode === "fight" ? 6000 : 4000, tv.scenes[tv.scene].say.length * 75));
+    }, tv.scenes[tv.scene].dur || Math.max(mode === "fight" ? 6000 : 4000, tv.scenes[tv.scene].say.length * 75));
   }
-  function watch(i){
+  let introWorld = false;
+  function watch(i, withIntro){
     $("tv").style.display = "flex";
-    const b = buildScenes(i);
-    tv.i = i; tv.scene = 0; tv.scenes = b.list; tv.paused = false; $("tvPause").textContent = "⏸";
-    if (initThree()) setupWorld(i, b.heroes, b.se, b.dragon);
+    const b = buildScenes(i); tv.build = b; introWorld = false;
+    tv.i = i; tv.scene = 0; tv.paused = false; $("tvPause").textContent = "⏸";
+    tv.scenes = withIntro ? introScenes(b.se).concat([Object.assign({ rebuild:true }, b.list[0])], b.list.slice(1)) : b.list;
+    if (initThree() && !withIntro) setupWorld(i, b.heroes, b.se, b.dragon);
+    if (withIntro) playIntroMusic(tv.scenes.filter(x => x.intro).reduce((a, x) => a + x.dur, 0) / 1000);
     showScene();
   }
+  $("tvSkip").onclick = () => { const k = tv.scenes.findIndex(x => !x.intro); if (k > 0){ tv.scene = k; showScene(); } };
   $("tvNext").onclick = () => { if (tv.i < episodes.length-1) watch(tv.i+1); };
   $("tvPrev").onclick = () => { if (tv.i > 0) watch(tv.i-1); };
   $("tvPause").onclick = () => { tv.paused = !tv.paused; $("tvPause").textContent = tv.paused ? "▶" : "⏸";
     try { tv.paused ? speechSynthesis.pause() : speechSynthesis.resume(); } catch {} schedule(); };
   $("tvMark").onclick = () => { episodes[tv.i].done ^= true; saveEps(); renderEps(); };
-  $("tvClose").onclick = () => { clearTimeout(tv.timer); try { speechSynthesis.cancel(); } catch {} $("tv").style.display = "none"; };
+  $("tvClose").onclick = () => { clearTimeout(tv.timer); stopMusic(); try { speechSynthesis.cancel(); } catch {} $("tv").style.display = "none"; };
 </script>
 </body>
 </html>
