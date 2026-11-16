@@ -229,7 +229,7 @@
     { sky:0x14142e, ground:0x333344, props:"city" },   { sky:0x3f7d58, ground:0x2f6b2a, props:"jungle" },
     { sky:0x9ad0ff, ground:0xffffff, props:"clouds" }, { sky:0x2b2340, ground:0x4a4a4a, props:"castle" } ];
   let tv = { i:0, scene:0, scenes:[], timer:null, paused:false };
-  let hemi, sun, rim, sky=null; let R=null, scene3, cam, clock, world, heroes3=[], villain3=null, dragon3=null, sparks=[], mode="title", modeT=0, shake=0, landed=false;
+  let focus = 0, shotT = 0, setGroup = null; let hemi, sun, rim, sky=null; let R=null, scene3, cam, clock, world, heroes3=[], villain3=null, dragon3=null, sparks=[], mode="title", modeT=0, shake=0, landed=false;
 
   const mats = {}; let toonRamp = null;
   function ramp(){ if (toonRamp) return toonRamp;
@@ -256,7 +256,7 @@
   function mesh(geo, c, x=0, y=0, z=0, glow){ const m = new THREE.Mesh(geo, mat(c, glow)); m.position.set(x,y,z); return m; }
   function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
 
-  function makeNinja(c, eyes=0xffffff){
+  function makeNinja(c, eyes=0xffffff, kind=""){
     const g = new THREE.Group();
     g.add(mesh(new THREE.BoxGeometry(.7,.8,.45), c, 0,1.05,0));
     g.add(mesh(new THREE.BoxGeometry(.72,.12,.47), 0x222222, 0,.78,0));
@@ -275,6 +275,17 @@
       g.add(mesh(new THREE.BoxGeometry(.62,.08,.04), 0xffcc33, 0,2.0,.18));
       g.add(mesh(new THREE.BoxGeometry(.2,.12,.12), c, 0,1.98,-.3));
     }
+    const U = g.userData, hand = (piv, m) => { m.position.y -= .65; piv.add(m); };
+    if (kind === "Storm"){ [-.15,0,.15].forEach((x,j) => { const sp = mesh(new THREE.ConeGeometry(.08,.35,5), c, x,2.12,-.05); sp.rotation.z = -x*2; g.add(sp); });
+      hand(U.armR, mesh(new THREE.BoxGeometry(.06,.9,.04), 0xfff27a, 0,-.35,.1, true)); hand(U.armL, mesh(new THREE.BoxGeometry(.06,.9,.04), 0xfff27a, 0,-.35,.1, true)); }
+    if (kind === "Magma"){ g.scale.set(1.15,1,1.15); const hm = new THREE.Group(); hm.add(mesh(new THREE.CylinderGeometry(.04,.04,1,6), 0x5a3a1a, 0,-.3,0));
+      hm.add(mesh(new THREE.BoxGeometry(.45,.28,.28), 0xff3d00, 0,-.8,0, true)); hand(U.armR, hm); }
+    if (kind === "Frost"){ g.scale.set(.92,1.12,.92); const bow = mesh(new THREE.TorusGeometry(.5,.03,6,16,Math.PI), 0xbff6ff, 0,-.1,.15, true); bow.rotation.z = Math.PI/2; hand(U.armL, bow);
+      [-1,1].forEach(sx => { const ic = mesh(new THREE.ConeGeometry(.07,.35,5), 0xbff6ff, sx*.45,1.75,0, true); g.add(ic); }); }
+    if (kind === "Stone"){ g.scale.set(1.28,.95,1.2); const sh = mesh(new THREE.CylinderGeometry(.42,.42,.08,12), 0x6b5a48, 0,-.1,.18); sh.rotation.x = Math.PI/2; hand(U.armL, sh);
+      hand(U.armL, mesh(new THREE.SphereGeometry(.1,8,8), 0xffcc33, 0,-.1,.24)); }
+    if (kind === "Wren"){ g.scale.setScalar(.82); hand(U.armR, mesh(new THREE.CylinderGeometry(.035,.035,1.6,6), 0xe8d5a0, 0,-.1,.1));
+      hand(U.armR, mesh(new THREE.SphereGeometry(.16,10,10), 0xfff8c0, 0,.75,.1, true)); }
     const scarf = new THREE.Group(); scarf.position.set(0,1.78,-.3);
     [-.08,.08].forEach(x => scarf.add(mesh(new THREE.BoxGeometry(.1,.04,.6), eyes === 0xffffff ? c : 0x111111, x,0,-.3)));
     g.add(scarf); g.userData.scarf = scarf;
@@ -365,9 +376,9 @@
     scene3.background = horizon; scene3.fog = new THREE.Fog(horizon, 20, 70);
     hemi.color.copy(horizon).lerp(new THREE.Color(0xffffff), .5); hemi.groundColor.set(set.ground).multiplyScalar(.5);
     rim.color.set(se === 2 ? 0xc06bff : se === 3 ? 0xffc46b : 0xff66cc);
-    world.add(buildSet(set, i+1));
+    setGroup = buildSet(set, i+1); world.add(setGroup);
     ambient = makeParticles(set.props); world.add(ambient);
-    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); aura(h, HERO_COLOR[n]); tornado(h, HERO_COLOR[n]); world.add(h); return h; });
+    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n], 0xffffff, n); h.userData.name = n; aura(h, HERO_COLOR[n]); tornado(h, HERO_COLOR[n]); world.add(h); return h; });
     villain3 = makeVillain(VILLAINS[se] || VILLAINS[1]); world.add(villain3);
     dragon3 = dragon ? makeDragon() : null; if (dragon3) world.add(dragon3);
     sparks = [];
@@ -377,6 +388,9 @@
       m.userData = { v:new THREE.Vector3((Math.random()-.5)*6, Math.random()*5, (Math.random()-.5)*6), life:.7 };
       world.add(m); sparks.push(m); }
   }
+  function shoot(from, to, c){
+    const m = mesh(new THREE.SphereGeometry(.18,8,8), c, from.x, from.y, from.z, true);
+    m.userData = { v:to.clone().sub(from).normalize().multiplyScalar(14), life:to.distanceTo(from)/14, bolt:true, c }; world.add(m); sparks.push(m); }
   const ease = p => 1 - Math.pow(1-p, 3);
   function tick(){
     if (!R || $("tv").style.display !== "flex" || !world) return;
@@ -385,32 +399,47 @@
     if (R.domElement.width !== Math.floor(w*R.getPixelRatio())) { R.setSize(w, h, false); cam.aspect = w/h; cam.updateProjectionMatrix(); }
     const n = heroes3.length, vx = 4.5;
     heroes3.forEach((hh, k) => {
-      const home = -1.4*(n-1) + k*1.4 - 1, u = hh.userData; let x = home, y = 0, ry = 0, walk = 0, spin = false;
+      const home = -1.4*(n-1) + k*1.4 - 1, u = hh.userData, me = k === focus; let x = home, y = 0, ry = 0, walk = 0, spin = false, lean = 0, armUp = 0;
+      hh.visible = true;
       if (mode === "enter"){ const p = Math.min(1, Math.max(0, t - k*.15)/1.6); x = -16 + (home+16)*ease(p); ry = p < 1 ? Math.PI/2 : 0; walk = p < 1 ? 1 : 0; }
       else if (mode === "villain") ry = Math.PI/2*.7;
       else if (mode === "fight"){ const p = (t*.7 + k/n) % 1, a = Math.sin(p*Math.PI);
         x = home + (vx-1.3-home)*a; y = a*2.2; ry = Math.PI/2; spin = y > .4; walk = .5;
-        if (p > .48 && p < .52 && !u.hitNow){ u.hitNow = true; spark(vx-.8, 1.6+Math.random(), 0, HERO_COLOR[Object.keys(HERO_COLOR)[k%5]]); shake = .25; } if (p > .6) u.hitNow = false; }
-      else if (mode === "team"){ y = Math.abs(Math.sin(T*5 + k*.3))*.8; }
-      else if (mode === "title" || mode === "end"){ y = Math.abs(Math.sin(T*2 + k))*.08; }
+        if (p > .48 && p < .52 && !u.hitNow){ u.hitNow = true; spark(vx-.8, 1.6+Math.random(), 0, HERO_COLOR[u.name]); shake = .25; } if (p > .6) u.hitNow = false; }
+      else if (mode === "power" || mode === "blast"){ ry = Math.PI/2; armUp = 1;
+        if (mode === "power" && me){ x = 0; y = Math.min(1, t)*.6; armUp = 2; ry = 0; }
+        if (mode === "blast" || me){ u.shot = (u.shot || 0) - dt; if (u.shot <= 0){ u.shot = mode === "blast" ? .5 + k*.07 : .25;
+          const from = hh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), to = mode === "blast" ? new THREE.Vector3(vx, 1.8, 0) : new THREE.Vector3((Math.random()-.5)*6, 9, -3);
+          shoot(from, to, HERO_COLOR[u.name]); } } }
+      else if (mode === "chase"){ x = home + Math.sin(T*1.3 + k)*.4; ry = Math.PI/2; walk = 1.6; y = Math.abs(Math.sin(T*8 + k))*.25; }
+      else if (mode === "sad"){ lean = .35; x = home*.8; ry = (k - (n-1)/2)*.15; }
+      else if (mode === "solo"){ hh.visible = me; x = 0; ry = Math.sin(T*.8)*.4; armUp = Math.sin(T*2) > .6 ? 2 : 0; y = Math.abs(Math.sin(T*1.5))*.1; }
+      else if (mode === "dragon"){ ry = .4; armUp = 2; y = Math.abs(Math.sin(T*5 + k))*.3; }
+      else if (mode === "team" || mode === "win"){ y = Math.abs(Math.sin(T*5 + k*.3))*.8; armUp = 2; }
+      else if (mode === "title" || mode === "end"){ y = Math.abs(Math.sin(T*2 + k))*.08; armUp = mode === "end" ? 2 : 0; }
       hh.position.set(x, y, 0);
-      hh.rotation.y = spin ? T*14 : ry;
-      const tor = u.tornado; tor.visible = spin || (mode === "team" && Math.sin(T*2 + k) > .3);
+      hh.rotation.set(lean, spin ? T*14 : ry, 0);
+      const tor = u.tornado; tor.visible = spin || ((mode === "team" || mode === "win") && Math.sin(T*2 + k) > .3) || (mode === "power" && me);
       if (tor.visible) tor.children.forEach((c2, j) => { c2.rotation.y = T*(10 + j*4); c2.scale.y = .9 + Math.sin(T*20 + j)*.1; });
+      u.aura.visible = mode !== "sad";
       const sw = Math.sin(T*12)*.8*walk;
       u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw; u.armR.rotation.x = sw;
-      u.armR.rotation.z = mode === "team" || mode === "end" ? 2.6 + Math.sin(T*8)*.3 : 0;
+      if (armUp === 1){ u.armR.rotation.x = -1.5; u.armL.rotation.x = -1.4; }
+      u.armR.rotation.z = armUp === 2 ? 2.6 + Math.sin(T*8)*.3 : 0;
+      if (mode === "sad"){ u.armL.rotation.x = u.armR.rotation.x = .15; }
     });
-    const vOn = mode === "villain" || mode === "fight" || mode === "team"; villain3.visible = vOn;
+    const vOn = ["villain","fight","win","blast"].includes(mode); villain3.visible = vOn;
     if (vOn){ let y = 0, x = vx, rz = 0;
       if (mode === "villain"){ y = Math.max(0, 12 - t*16); if (y === 0 && !landed){ landed = true; shake = .8; spark(vx, .2, 0, 0x888888); } }
-      if (mode === "fight") x = vx + Math.sin(T*25)*.06;
-      if (mode === "team"){ const p = Math.min(1, t/1.2); x = vx + p*3; rz = -p*1.45; }
+      if (mode === "fight" || mode === "blast") x = vx + Math.sin(T*25)*.06 + (mode === "blast" ? Math.min(t, 3)*.4 : 0);
+      if (mode === "win"){ const p = Math.min(1, t/1.2); x = vx + p*3; rz = -p*1.45; }
       villain3.position.set(x, y, 0); villain3.rotation.set(0, -Math.PI/2*.8, rz);
       const vu = villain3.userData, a = mode === "villain" ? Math.sin(T*3)*.5 : Math.sin(T*10)*.6; vu.armL.rotation.x = a; vu.armR.rotation.x = -a; }
-    if (dragon3){ dragon3.visible = mode === "fight" || mode === "team" || mode === "end";
-      const a = T*.9; dragon3.position.set(Math.cos(a)*7, 4.5 + Math.sin(T*2)*.6, Math.sin(a)*4 - 2); dragon3.rotation.y = -a;
+    if (dragon3){ dragon3.visible = ["fight","win","end","dragon","chase"].includes(mode);
+      if (mode === "dragon"){ const p = Math.min(1, t/2); dragon3.position.set(8 - p*8, 2.5 + Math.sin(T*2)*.4, 1.5 - p*1.5); dragon3.rotation.y = -Math.PI/2 + p*Math.PI/2.5; }
+      else { const a = T*.9; dragon3.position.set(Math.cos(a)*7, 4.5 + Math.sin(T*2)*.6, Math.sin(a)*4 - 2); dragon3.rotation.y = -a; }
       dragon3.userData.wL.rotation.z = Math.sin(T*9)*.6; dragon3.userData.wR.rotation.z = -Math.sin(T*9)*.6; }
+    if (setGroup) setGroup.position.x = mode === "chase" ? -((T*6) % 20) : 0;
     if (ambient){ const a = ambient.geometry.attributes.position, how = ambient.userData.how;
       for (let k=0;k<a.count;k++){ let y = a.getY(k), x = a.getX(k);
         y += (how === "fall" ? -.8 : how === "rise" ? .9 : Math.sin(T+k)*.3) * dt; x += Math.sin(T*.7 + k)*.3*dt;
@@ -419,40 +448,55 @@
     heroes3.concat(villain3 ? [villain3] : []).forEach((h, k) => { const u = h.userData;
       if (u.scarf) u.scarf.rotation.x = .25 + Math.sin(T*8 + k)*.15;
       if (u.aura){ u.aura.material.opacity = .35 + Math.sin(T*4 + k)*.2; u.aura.scale.setScalar(1 + Math.sin(T*4 + k)*.08); } });
-    sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; d.v.y -= 9*dt; m.position.addScaledVector(d.v, dt); m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
+    const hits = [];
+    sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; if (!d.bolt) d.v.y -= 9*dt; else if (d.life <= 0) { hits.push([m.position.clone(), d.c]); shake = Math.max(shake, .12); } m.position.addScaledVector(d.v, dt); if (!d.bolt) m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
+    hits.forEach(([q, c]) => spark(q.x, q.y, q.z, c));
     const look = new THREE.Vector3(0, 1.2, 0);
     if (mode === "title"){ cam.position.set(Math.sin(T*.3)*10, 3, Math.cos(T*.3)*10); }
     else if (mode === "enter"){ cam.position.set(-3 + t*.6, 2.2, 8.5); }
     else if (mode === "villain"){ cam.position.set(1, 1.6, 7.5); look.set(3.5, 2, 0); }
     else if (mode === "fight"){ const a = T*.35; cam.position.set(1 + Math.sin(a)*8, 2.8, Math.cos(a)*8); look.set(1, 1.5, 0); }
-    else if (mode === "team"){ cam.position.set(-1, 1.8, 7); look.set(-1, 1.3, 0); }
+    else if (mode === "team" || mode === "win"){ cam.position.set(-1, 1.8, 7); look.set(-1, 1.3, 0); }
+    else if (mode === "power"){ const a = T*.5; cam.position.set(Math.sin(a)*6, 1.5 + t*.3, Math.cos(a)*6); look.set(0, 2 + t*.3, 0); }
+    else if (mode === "blast"){ cam.position.set(-6, 2.2, 5); look.set(2, 1.6, 0); }
+    else if (mode === "chase"){ cam.position.set(2, 1.6 + Math.sin(T*8)*.05, 6.5); look.set(-1, 1.2, 0); }
+    else if (mode === "sad"){ cam.position.set(0, 4.5 - t*.2, 7 - t*.3); look.set(0, .8, 0); }
+    else if (mode === "solo"){ const a = T*.4; cam.position.set(Math.sin(a)*3.5, 1.9, Math.cos(a)*3.5); look.set(0, 1.4, 0); }
+    else if (mode === "dragon"){ cam.position.set(-2, 1.2, 7); look.set(1, 2.5, 0); }
     else { cam.position.set(0, 2.5 + t*1.2, 9 + t*1.5); }
     if (shake > .01){ cam.position.x += (Math.random()-.5)*shake; cam.position.y += (Math.random()-.5)*shake; shake *= .88; }
     cam.lookAt(look);
     R.render(scene3, cam);
   }
 
+  const SCRIPTS = {"Rise of the Supreme": [["enter", "Four friends sneak into an old dojo on the hill."], ["solo", "Storm finds a glowing golden crown under the floor."], ["power", "The crown wakes up four elemental powers!"], ["team", "The Supreme ninja are born!"]], "The Elemental Trial": [["enter", "Master Oru sets four trials, one for each ninja."], ["power", "Storm calls lightning. Magma melts a rock wall."], ["sad", "Frost and Stone can't unlock their powers yet..."], ["power", "Then they stop trying so hard, and the power flows!"]], "Shadow Over the City": [["chase", "The ninja race across the rooftops at night."], ["villain", "A masked warrior grabs the first Golden Scroll."], ["fight", "The ninja attack, but he is too fast."], ["sad", "Night Fang escapes into the shadows."]], "Spinjump Training": [["enter", "Master Oru shows them the Cyclone Spin."], ["sad", "Everyone falls over. Again. And again."], ["solo", "Stone keeps practising all night."], ["team", "At sunrise, all four ninja spin like tornados!"]], "The Lost Temple": [["chase", "The ninja hike deep into the jungle."], ["solo", "Frost cracks the temple's ice-lock puzzle."], ["villain", "Night Fang is already waiting inside!"], ["blast", "The ninja blast him away and grab the second Scroll!"]], "Skeleton Army": [["villain", "Night Fang opens a crypt under the mountains."], ["fight", "Hundreds of bone warriors march out!"], ["blast", "Magma melts a path through the army."], ["win", "The skeletons crumble to dust."]], "The Dragon Egg": [["solo", "Storm finds a huge egg buzzing with lightning."], ["power", "Crack! Zap! It hatches!"], ["dragon", "Meet Zip, the baby lightning dragon!"], ["team", "Zip has picked Storm as his best friend."]], "Betrayal": [["enter", "A mysterious ninja named Kira asks to join the team."], ["solo", "Frost sees her sneaking out at night..."], ["villain", "She hands a map to Night Fang!"], ["sad", "The team feels tricked. Who can they trust?"]], "Battle on the Sky Ship": [["chase", "The ninja grapple onto Night Fang's flying ship."], ["fight", "Swords clash high above the clouds."], ["dragon", "Zip swoops in to catch a falling Stone!"], ["win", "The ship crashes into the sea, but Night Fang gets away."]], "The Frozen Peak": [["solo", "Frost climbs the ice mountain alone."], ["sad", "A blizzard hides the path. He is scared."], ["power", "Frost stops fighting the storm and controls it!"], ["team", "He comes back with a brand new ice power."]], "Snake Tribes": [["enter", "Four snake tribes slither out of hiding."], ["fight", "They fight each other over the Scrolls."], ["blast", "The ninja stop the battle before the city burns."], ["team", "The snakes agree to a truce... for now."]], "Magma's Secret": [["solo", "Magma finds an old ninja mask in the attic."], ["sad", "It belonged to his dad, who vanished long ago."], ["power", "Magma's fire burns hotter than ever."], ["team", "He promises to find out the truth."]], "The Tournament of Shadows": [["enter", "The ninja enter a secret tournament."], ["fight", "Round one: ninja versus mystery warriors!"], ["solo", "Stone wins the final round by never giving up."], ["win", "The tournament master was a spy for Night Fang!"]], "Zip Grows Up": [["dragon", "Zip is now big enough to ride!"], ["chase", "Storm and Zip race through the canyon."], ["power", "Zip breathes lightning for the first time."], ["team", "The team has a dragon in battle now!"]], "The Stone Golem": [["villain", "Night Fang wakes a giant stone golem."], ["solo", "Stone faces it alone so the city stays safe."], ["power", "He makes the ground shake and the golem falls!"], ["team", "The whole city cheers for Stone."]], "Night Fang Unmasked": [["chase", "The ninja trap Night Fang on a bridge."], ["fight", "The final fight with the masked warrior!"], ["villain", "His mask falls off... it's Magma's lost dad!"], ["sad", "He was under a dark spell all along."]], "The Last Scroll": [["chase", "Everyone races to the fire volcano."], ["villain", "The spell grows stronger. Night Fang fights again."], ["blast", "The ninja fight their way through the lava."], ["solo", "Magma grabs the last Golden Scroll!"]], "The Supreme Code": [["power", "The four Scrolls glow together."], ["team", "The ninja join hands and read the Supreme Code."], ["power", "Their powers become ten times stronger!"], ["solo", "Magma uses the light to break his dad's spell."]], "The Great War": [["villain", "Skeletons, snakes and sky pirates attack all at once."], ["fight", "The ninja fight on every street."], ["dragon", "Zip leads the charge from the sky!"], ["blast", "The Supreme ninja push the army back."]], "Rise of the Crown": [["villain", "The dark spell rises up as a giant shadow."], ["blast", "All four elements blast together!"], ["win", "The shadow shatters. The world is saved!"], ["sad", "But deep under the ocean, something opens its eyes..."]], "The Waking Evil": [["villain", "Deep under the ocean, the Void Queen wakes up."], ["power", "She sends a purple storm into the sky."], ["enter", "The ninja see the strange clouds coming."], ["sad", "Their powers flicker. Something is wrong."]], "A New Ninja": [["enter", "A kid named Wren shows up at the dojo."], ["solo", "Wren glows with a power nobody has seen: Light!"], ["fight", "The team tests him in a training battle."], ["team", "Wren becomes the fifth Supreme ninja!"]], "The Void Storm": [["villain", "Purple storms swallow whole villages."], ["sad", "The ninja's powers start to fade."], ["power", "Wren's light pushes the storm back... just a bit."], ["team", "Now they know: Light hurts the Void."]], "Underwater Dojo": [["enter", "The team builds bubble suits."], ["chase", "They dive down to the drowned city of Mareth."], ["solo", "Frost freezes a path through the dark water."], ["villain", "Giant eyes open in the deep..."]], "Zip's Family": [["dragon", "Zip hears a call from far away."], ["sad", "He flies off without saying goodbye."], ["chase", "Storm follows him across the mountains."], ["dragon", "Zip finds a whole family of lightning dragons!"]], "Crown of Shadows": [["villain", "The Void Queen wants the Supreme crown."], ["fight", "Her shadow soldiers attack the dojo."], ["blast", "The ninja protect the crown with everything they have."], ["sad", "She escapes with one of its gems."]], "Night Fang Returns": [["enter", "A cloaked figure comes to the dojo."], ["solo", "It's Night Fang, Magma's dad. He wants to help."], ["sad", "Nobody trusts him yet."], ["team", "He shows them the Void Queen's secret."]], "The Mirror Ninja": [["villain", "The Void Queen makes evil copies of the ninja."], ["fight", "Ninja versus mirror ninja!"], ["solo", "Wren notices the copies have no shadows."], ["blast", "Light makes the copies vanish!"]], "Frost and Fire": [["enter", "Frost and Magma argue about a plan."], ["fight", "The argument turns into a real fight."], ["sad", "The team splits up."], ["solo", "Wren brings them back together."]], "Wren's Choice": [["villain", "The Void Queen visits Wren in a dream."], ["solo", "She offers Wren unlimited power."], ["sad", "Wren is tempted..."], ["power", "He says NO, and his light shines brighter!"]], "The Sky Pirates' Deal": [["chase", "The ninja need to cross the Void Sea."], ["enter", "The sky pirates agree to help, for a price."], ["fight", "Void monsters attack the pirate ship!"], ["team", "Pirates and ninja win together."]], "Master Oru's Past": [["enter", "Master Oru tells an old story."], ["villain", "Long ago, he fought the Void Queen and lost."], ["sad", "That is why he never uses his power."], ["team", "The ninja promise to finish what he started."]], "Mech Battle": [["villain", "The Void Queen sends giant Void titans."], ["enter", "The ninja build giant robot suits!"], ["fight", "Mech versus titan in the middle of the city!"], ["win", "Stone's mech lands the final punch!"]], "The Broken Crown": [["villain", "The Void Queen strikes the crown."], ["power", "CRACK! It splits in half!"], ["sad", "The ninja lose all their elements."], ["sad", "The Void spreads across the sky."]], "Powerless": [["sad", "No powers. No crown. Just five friends."], ["chase", "They sneak into the Void fortress using clever tricks."], ["fight", "They fight with nothing but their training!"], ["team", "They steal back half of the crown."]], "The Dragon Council": [["dragon", "Zip returns with an army of lightning dragons!"], ["chase", "The dragons fly the ninja across the sky."], ["power", "The dragons share some of their power."], ["team", "The ninja feel their sparks coming back."]], "Stone Stands Alone": [["villain", "The Void army marches on the city gate."], ["solo", "Stone holds the gate by himself all night."], ["fight", "He never steps back, not once."], ["team", "At sunrise, his friends arrive!"]], "Into the Void": [["enter", "The ninja jump through the purple portal."], ["chase", "They run through a world with no colours."], ["villain", "The Void Queen waits on her throne."], ["fight", "The final battle begins!"]], "The Fifth Element": [["sad", "The Void Queen is winning."], ["solo", "Wren puts the broken crown together..."], ["power", "LIGHT! The crown is whole again!"], ["blast", "Every ninja gets an upgraded power!"]], "Dawn of Season 3": [["blast", "All five elements hit the Void Queen at once."], ["win", "The Void Queen is defeated!"], ["team", "Colour returns to the world."], ["villain", "But a strange crack opens in the sky..."]], "Cracks in Time": [["enter", "The time crack spits strange things into the city."], ["chase", "A dinosaur runs through the market!"], ["fight", "A knight and a robot battle in the park!"], ["team", "The ninja send them all back... for now."]], "The Clockmaker": [["villain", "A man with a clock on his chest appears."], ["solo", "He says the world was better before the ninja."], ["blast", "He freezes the ninja in time!"], ["sad", "They wake up and a whole week has gone by..."]], "Back to the Dojo": [["chase", "The ninja fall into the past!"], ["enter", "They meet a young Master Oru."], ["fight", "He thinks they are spies and attacks!"], ["team", "Now young Oru is on their side."]], "Future Ninja": [["solo", "Storm is pulled 100 years into the future."], ["sad", "The city is in ruins. The ninja are gone."], ["dragon", "An old, grey Zip still remembers him!"], ["power", "Storm races back to stop it from happening."]], "The Time Blades": [["enter", "Master Oru tells them about four Time Blades."], ["villain", "The Clockmaker wants them too."], ["chase", "The race begins!"], ["team", "Each ninja chooses a blade to hunt."]], "Frozen in a Second": [["villain", "The Clockmaker stops time across the world."], ["sad", "Everyone is frozen... except Frost and Wren."], ["solo", "Frost's ice power keeps him moving."], ["power", "Wren's light starts the clocks again!"]], "Dino Valley": [["chase", "The ninja travel to the time of dinosaurs!"], ["dragon", "They ride flying dinos across a valley."], ["fight", "The Clockmaker's robots attack."], ["solo", "Stone grabs the first Time Blade!"]], "Old Magma": [["solo", "Magma meets his older self."], ["sad", "Old Magma warns him about a terrible choice."], ["power", "Magma's fire burns blue with worry."], ["team", "The team promises to face it together."]], "The Clock Tower": [["chase", "The ninja climb the giant clock tower."], ["fight", "Gears and pendulums try to crush them!"], ["villain", "The Clockmaker waits at the top."], ["blast", "They grab the second Time Blade and jump!"]], "Zip vs. the Iron Dragon": [["villain", "The Clockmaker builds a robot dragon."], ["dragon", "Zip flies out to face it!"], ["fight", "Lightning versus iron in the sky!"], ["win", "Zip wins, and earns a scar of honour."]], "Night Fang's Sacrifice": [["villain", "The Clockmaker traps the ninja in a time cage."], ["enter", "Night Fang takes their place."], ["sad", "He is frozen in time to save them."], ["solo", "Magma swears he'll bring his dad back."]], "Loop": [["solo", "Stone wakes up. Same day. Again."], ["sad", "And again. And again."], ["power", "He notices one tiny thing that changes each time..."], ["team", "He breaks the loop and saves the team!"]], "The Missing Ninja": [["enter", "Wren disappears from every photo."], ["sad", "Nobody remembers him except Frost."], ["chase", "Frost goes back in time to find out why."], ["solo", "Wren is back! The Clockmaker had erased him."]], "Pirates of Yesterday": [["enter", "The sky pirates return to help."], ["chase", "They sail down the River of Time."], ["fight", "Time storms try to sink the ship!"], ["team", "They find the third Time Blade on an island."]], "The Clockmaker's Story": [["villain", "The ninja finally find the Clockmaker alone."], ["sad", "Long ago, he lost his family in a battle."], ["solo", "He wants to rewind time to save them."], ["sad", "The ninja feel sorry for him."]], "All Four Blades": [["power", "The team finally holds every Time Blade."], ["sad", "But using them could break the world."], ["villain", "The Clockmaker attacks to take them!"], ["fight", "The blades clash with the Clockmaker's gears!"]], "Two Teams": [["enter", "The future ninja come through a portal!"], ["team", "Two teams of Supreme ninja, side by side."], ["fight", "They fight the Clockmaker's army together."], ["blast", "Past and future attack as one!"]], "Midnight": [["villain", "The Clockmaker sets every clock to midnight."], ["sad", "The world starts to stop moving."], ["chase", "The ninja race to the centre of time."], ["solo", "Wren's light is the only thing still moving."]], "Time Spin": [["power", "The ninja combine the Cyclone Spin with time power."], ["fight", "A giant time tornado!"], ["blast", "History starts fixing itself!"], ["win", "The Clockmaker is beaten!"]], "The Return of the Crown": [["team", "Time is fixed. Night Fang is free!"], ["enter", "The Clockmaker gets a second chance."], ["team", "The ninja celebrate at the dojo."], ["villain", "But a giant shadow appears on the moon..."]]};
   function heroesFor(e){
     const all = ["Storm","Magma","Frost","Stone"].concat((e.season||1) >= 2 ? ["Wren"] : []);
-    const named = all.filter(n => e.title.includes(n) || e.desc.includes(n));
+    const txt = e.title + e.desc + (SCRIPTS[e.title] || []).map(b => b[1]).join(" ");
+    const named = all.filter(n => txt.includes(n));
     return named.length ? named.concat(all.filter(n => !named.includes(n)).slice(0,1)) : all;
   }
   function epNumber(i){ const se = episodes[i].season||1; return episodes.slice(0,i+1).filter(e => (e.season||1) === se).length; }
   function buildScenes(i){
     const e = episodes[i], se = e.season||1, v = VILLAINS[se] || VILLAINS[1], heroes = heroesFor(e);
-    const last = i === episodes.length-1;
+    const last = i === episodes.length-1, script = SCRIPTS[e.title];
+    const focusOf = t => Math.max(0, heroes.findIndex(n => t.includes(n)));
+    const titleSc = { mode:"title", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` };
+    const endSc = { mode:"end", title:`<div class="title-card"><h3>${last ? "THE END?" : "To be continued..."}</h3><div>${last ? "" : "Next: "+esc(episodes[i+1].title)}</div></div>`, say: last ? "The end, for now." : `To be continued. Next time: ${episodes[i+1].title}.` };
+    if (script) return { heroes, se, dragon: script.some(b => b[0] === "dragon") || /Zip|dragon/i.test(e.title+e.desc), list:
+      [titleSc].concat(script.map(([m, t]) => ({ mode:m, cap:esc(t), say:t, focus:focusOf(t) })), [endSc]) };
     return { heroes, se, dragon:/Zip|dragon/i.test(e.title+e.desc), list:[
       { mode:"title", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` },
       { mode:"enter", cap:esc(e.desc), say:e.desc },
       { mode:"villain", cap:`But ${v.name} is watching...`, say:`But ${v.name} is watching.` },
       { mode:"fight", cap:"Ninja, GO! 🌀", say:"Ninja, go!" },
-      { mode:"team", cap:`${heroes.join(", ")} fight together as one team!`, say:`${heroes.join(", ")} fight together as one team!` },
+      { mode:"win", cap:`${heroes.join(", ")} fight together as one team!`, say:`${heroes.join(", ")} fight together as one team!` },
       { mode:"end", title:`<div class="title-card"><h3>${last ? "THE END?" : "To be continued..."}</h3><div>${last ? "" : "Next: "+esc(episodes[i+1].title)}</div></div>`, say: last ? "The end, for now." : `To be continued. Next time: ${episodes[i+1].title}.` } ]};
   }
   function speak(t){ try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); } catch {} }
   function showScene(){
     const sc = tv.scenes[tv.scene];
-    mode = sc.mode; modeT = 0; landed = false;
+    mode = sc.mode; modeT = 0; landed = false; focus = sc.focus || 0; shotT = 0;
     $("screen").querySelectorAll(".title-card").forEach(x => x.remove());
     if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
     $("caption").style.display = sc.cap ? "block" : "none"; $("caption").innerHTML = sc.cap || "";
