@@ -578,7 +578,7 @@
     return [{ mode:"introOpen", dur:1600, intro:true }]
       .concat(r.map((n, k) => ({ mode:"introHero", focus:k, dur:1150, intro:true,
         title:`<div class="intro-name" style="--hc:${hex(HERO_COLOR[n])}"><b>${n.toUpperCase()}</b><span>${TITLES[n]}</span></div>` })))
-      .concat([{ mode:"introLogo", dur:3400, intro:true, title:`<div class="logo"><b>SUPREME<br>NINJA</b><span>Season ${se}</span></div>` }]);
+      .concat([{ mode:"introLogo", dur:3400, intro:true, title:`<div class="logo"><span>Season ${se}</span></div>` }]);
   }
   let actx = null, music = null;
   function stopMusic(){ if (music){ try { music.gain.setTargetAtTime(0, actx.currentTime, .15); const m = music; setTimeout(() => m.disconnect(), 600); } catch {} music = null; } }
