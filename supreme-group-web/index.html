@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Supreme Group</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
   :root { --bg:#120a24; --card:#1f1440; --gold:#ffcc33; --text:#f4efff; --muted:#a99cc9; --bad:#ff5c7a; }
   * { box-sizing:border-box; }
@@ -53,6 +54,9 @@
   #tvbar { display:flex; gap:8px; width:100%; max-width:720px; margin-top:12px; }
   #tvbar button { margin:0; padding:10px; font-size:1rem; }
   .ep .play { color:var(--gold); }
+  #stage { display:block; padding:0; } #stage canvas { width:100%; height:100%; display:block; }
+  #ground { display:none; }
+  .title-card { background:#0007; z-index:2; } #caption { z-index:2; }
 </style>
 </head>
 <body>
@@ -205,40 +209,172 @@
   };
   $("leave").onclick = () => { $("inside").style.display="none"; $("lock").style.display="block"; $("code").value=""; $("msg").textContent=""; };
 
-  // ---------- Episode player ----------
-  const NINJA = { Storm:"⚡🥷", Magma:"🔥🥷", Frost:"❄️🥷", Stone:"🪨🥷", Wren:"✨🥷" };
-  const VILLAIN = { 1:["🦹","Night Fang"], 2:["👸🌑","the Void Queen"], 3:["🕰️🧙","the Clockmaker"] };
-  const PLACES = ["🏯","🌋","🏔️","🌊","🌆","🌴","☁️","🏰"];
+  // ---------- 3D Episode player ----------
+  const HERO_COLOR = { Storm:0x3fa9ff, Magma:0xff5a1f, Frost:0xcff4ff, Stone:0x8d7b68, Wren:0xfff27a };
+  const VILLAINS = { 1:{ name:"Night Fang", color:0x1b1b1b, eyes:0xff2020, top:"horns" },
+                     2:{ name:"the Void Queen", color:0x5b2a86, eyes:0xd06bff, top:"crown" },
+                     3:{ name:"the Clockmaker", color:0x7a5a2a, eyes:0x7cf7ff, top:"hat" } };
+  const SETS = [
+    { sky:0x2a1650, ground:0x5a3d22, props:"dojo" },   { sky:0x3a0d0d, ground:0x2a1a14, props:"volcano" },
+    { sky:0x8fb8de, ground:0xe8f4ff, props:"peaks" },  { sky:0x0b3a5c, ground:0x1d6fa3, props:"ocean" },
+    { sky:0x14142e, ground:0x333344, props:"city" },   { sky:0x3f7d58, ground:0x2f6b2a, props:"jungle" },
+    { sky:0x9ad0ff, ground:0xffffff, props:"clouds" }, { sky:0x2b2340, ground:0x4a4a4a, props:"castle" } ];
   let tv = { i:0, scene:0, scenes:[], timer:null, paused:false };
+  let R=null, scene3, cam, clock, world, heroes3=[], villain3=null, dragon3=null, sparks=[], mode="title", modeT=0, shake=0, landed=false;
+
+  const mats = {};
+  const mat = (c, glow) => mats[c+"|"+!!glow] || (mats[c+"|"+!!glow] = glow
+      ? new THREE.MeshBasicMaterial({ color:c })
+      : new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.7 }));
+  function mesh(geo, c, x=0, y=0, z=0, glow){ const m = new THREE.Mesh(geo, mat(c, glow)); m.position.set(x,y,z); return m; }
+  function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
+
+  function makeNinja(c, eyes=0xffffff){
+    const g = new THREE.Group();
+    g.add(mesh(new THREE.BoxGeometry(.7,.8,.45), c, 0,1.05,0));
+    g.add(mesh(new THREE.BoxGeometry(.72,.12,.47), 0x222222, 0,.78,0));
+    g.add(mesh(new THREE.SphereGeometry(.34,12,10), c, 0,1.75,0));
+    g.add(mesh(new THREE.BoxGeometry(.52,.14,.12), 0x111111, 0,1.78,.27));
+    g.add(mesh(new THREE.SphereGeometry(.05,6,6), eyes, -.11,1.79,.34, true));
+    g.add(mesh(new THREE.SphereGeometry(.05,6,6), eyes, .11,1.79,.34, true));
+    const sword = mesh(new THREE.BoxGeometry(.06,1.1,.04), 0xcccccc, .15,1.3,-.28); sword.rotation.z = .6; g.add(sword);
+    const limb = (x, y, h, w) => { const piv = new THREE.Group(); piv.position.set(x,y,0);
+      piv.add(mesh(new THREE.BoxGeometry(w,h,w), c, 0,-h/2,0)); g.add(piv); return piv; };
+    g.userData = { legL:limb(-.18,.72,.7,.24), legR:limb(.18,.72,.7,.24), armL:limb(-.47,1.4,.65,.18), armR:limb(.47,1.4,.65,.18) };
+    return g;
+  }
+  function makeVillain(v){
+    const g = makeNinja(v.color, v.eyes); g.scale.setScalar(1.55);
+    if (v.top === "horns") [-1,1].forEach(s => { const h = mesh(new THREE.ConeGeometry(.08,.4,6), 0xaa0000, s*.22,2.1,0); h.rotation.z = -s*.4; g.add(h); });
+    if (v.top === "crown") for (let k=0;k<5;k++){ const a=k/5*Math.PI*2; g.add(mesh(new THREE.ConeGeometry(.07,.3,5), 0xd06bff, Math.cos(a)*.25,2.15,Math.sin(a)*.25, true)); }
+    if (v.top === "hat") { g.add(mesh(new THREE.CylinderGeometry(.42,.42,.05,16), 0x222222, 0,2.05,0)); g.add(mesh(new THREE.CylinderGeometry(.25,.25,.45,16), 0x222222, 0,2.3,0));
+      const clockFace = mesh(new THREE.CylinderGeometry(.22,.22,.05,16), 0xffe9a8, 0,1.1,.25, true); clockFace.rotation.x = Math.PI/2; g.add(clockFace); }
+    return g;
+  }
+  function makeDragon(){
+    const g = new THREE.Group();
+    for (let k=0;k<6;k++) g.add(mesh(new THREE.SphereGeometry(.35-k*.04,8,8), 0xffd21f, 0,0,-k*.45));
+    g.add(mesh(new THREE.BoxGeometry(.45,.35,.6), 0xffd21f, 0,.1,.45));
+    g.add(mesh(new THREE.SphereGeometry(.06,6,6), 0x00e0ff, -.15,.2,.7, true)); g.add(mesh(new THREE.SphereGeometry(.06,6,6), 0x00e0ff, .15,.2,.7, true));
+    const wing = s => { const piv = new THREE.Group(); piv.position.set(s*.25,.15,-.4); piv.add(mesh(new THREE.BoxGeometry(1.4,.04,.7), 0x3fa9ff, s*.7,0,0)); g.add(piv); return piv; };
+    g.userData = { wL:wing(-1), wR:wing(1) };
+    return g;
+  }
+  function buildSet(set, seed){
+    const g = new THREE.Group(), r = rng(seed+7);
+    const ground = mesh(new THREE.CircleGeometry(40,32), set.ground, 0,0,0); ground.rotation.x = -Math.PI/2; g.add(ground);
+    const spot = () => { let x, z; do { x = (r()-.5)*40; z = -4 - r()*22; } while (Math.abs(x) < 3 && z > -7); return [x, z]; };
+    for (let k=0;k<14;k++){
+      const [x,z] = spot(), s = .7 + r()*1.3;
+      if (set.props==="dojo"){ if(k<3){ const bx=k*7-7; g.add(mesh(new THREE.BoxGeometry(4,2.5,3),0xb03a2e,bx,1.25,-10)); const roof=mesh(new THREE.ConeGeometry(3.3,1.6,4),0x222222,bx,3.3,-10); roof.rotation.y=Math.PI/4; g.add(roof);} else g.add(mesh(new THREE.SphereGeometry(.8*s,8,8),0xff9ad5,x,2*s,z)); }
+      if (set.props==="volcano"){ if(k===0){ g.add(mesh(new THREE.ConeGeometry(9,10,12),0x3a2a22,0,5,-22)); g.add(mesh(new THREE.ConeGeometry(2.2,2,12),0xff4d00,0,9.2,-22,true)); } else g.add(mesh(new THREE.DodecahedronGeometry(.6*s),0x2a1a14,x,.4*s,z)); }
+      if (set.props==="peaks"){ g.add(mesh(new THREE.ConeGeometry(3*s,7*s,6),0xdfefff,x,3.5*s,z-6)); }
+      if (set.props==="ocean"){ g.add(mesh(new THREE.ConeGeometry(.3,3*s,5),0x2fd3a0,x,1.5*s,z)); if(k<4) g.add(mesh(new THREE.SphereGeometry(.4,8,8),0xbff6ff,x+1,2+r()*3,z,true)); }
+      if (set.props==="city"){ const h=3+r()*9; g.add(mesh(new THREE.BoxGeometry(2,h,2),0x2c2c54,x,h/2,z-4)); g.add(mesh(new THREE.BoxGeometry(2.05,.2,2.05),0xffe066,x,h*.7,z-4,true)); }
+      if (set.props==="jungle"){ g.add(mesh(new THREE.CylinderGeometry(.15,.2,3*s,6),0x6b4423,x,1.5*s,z)); g.add(mesh(new THREE.ConeGeometry(1.4*s,2*s,7),0x1f8a3a,x,3.4*s,z)); }
+      if (set.props==="clouds"){ g.add(mesh(new THREE.SphereGeometry(1.5*s,10,8),0xffffff,x,r()*5,z)); }
+      if (set.props==="castle"){ if(k<4){ const bx=k*5-7.5; g.add(mesh(new THREE.BoxGeometry(3,5,3),0x6d6d7a,bx,2.5,-14)); g.add(mesh(new THREE.ConeGeometry(2.2,2.5,4),0x3a2a66,bx,6.25,-14)); } else g.add(mesh(new THREE.DodecahedronGeometry(.5*s),0x55555f,x,.3,z)); }
+    }
+    return g;
+  }
+
+  function initThree(){
+    if (R) return true; if (!window.THREE) return false;
+    R = new THREE.WebGLRenderer({ antialias:true }); R.setPixelRatio(Math.min(devicePixelRatio, 2));
+    $("stage").appendChild(R.domElement);
+    scene3 = new THREE.Scene(); cam = new THREE.PerspectiveCamera(50, 16/9, .1, 200);
+    scene3.add(new THREE.HemisphereLight(0xffffff, 0x443366, .85));
+    const sun = new THREE.DirectionalLight(0xffffff, .8); sun.position.set(5,10,6); scene3.add(sun);
+    clock = new THREE.Clock(); R.setAnimationLoop(tick); return true;
+  }
+  function setupWorld(i, heroNames, se, dragon){
+    if (world) scene3.remove(world);
+    world = new THREE.Group(); scene3.add(world);
+    const set = SETS[(i*3) % SETS.length], sky = new THREE.Color(set.sky);
+    if (se === 2) sky.lerp(new THREE.Color(0x2a0a3a), .45);
+    if (se === 3) sky.lerp(new THREE.Color(0x3a2a0a), .3);
+    scene3.background = sky; scene3.fog = new THREE.Fog(sky, 18, 45);
+    world.add(buildSet(set, i+1));
+    heroes3 = heroNames.map(n => { const h = makeNinja(HERO_COLOR[n]); world.add(h); return h; });
+    villain3 = makeVillain(VILLAINS[se] || VILLAINS[1]); world.add(villain3);
+    dragon3 = dragon ? makeDragon() : null; if (dragon3) world.add(dragon3);
+    sparks = [];
+  }
+  function spark(x, y, z, c){
+    for (let k=0;k<8;k++){ const m = mesh(new THREE.SphereGeometry(.08,5,5), c, x,y,z, true);
+      m.userData = { v:new THREE.Vector3((Math.random()-.5)*6, Math.random()*5, (Math.random()-.5)*6), life:.7 };
+      world.add(m); sparks.push(m); }
+  }
+  const ease = p => 1 - Math.pow(1-p, 3);
+  function tick(){
+    if (!R || $("tv").style.display !== "flex" || !world) return;
+    const dt = Math.min(clock.getDelta(), .05), T = clock.elapsedTime; if (!tv.paused) modeT += dt; const t = modeT;
+    const w = $("screen").clientWidth, h = $("screen").clientHeight;
+    if (R.domElement.width !== Math.floor(w*R.getPixelRatio())) { R.setSize(w, h, false); cam.aspect = w/h; cam.updateProjectionMatrix(); }
+    const n = heroes3.length, vx = 4.5;
+    heroes3.forEach((hh, k) => {
+      const home = -1.4*(n-1) + k*1.4 - 1, u = hh.userData; let x = home, y = 0, ry = 0, walk = 0, spin = false;
+      if (mode === "enter"){ const p = Math.min(1, Math.max(0, t - k*.15)/1.6); x = -16 + (home+16)*ease(p); ry = p < 1 ? Math.PI/2 : 0; walk = p < 1 ? 1 : 0; }
+      else if (mode === "villain") ry = Math.PI/2*.7;
+      else if (mode === "fight"){ const p = (t*.7 + k/n) % 1, a = Math.sin(p*Math.PI);
+        x = home + (vx-1.3-home)*a; y = a*2.2; ry = Math.PI/2; spin = y > .4; walk = .5;
+        if (p > .48 && p < .52 && !u.hitNow){ u.hitNow = true; spark(vx-.8, 1.6+Math.random(), 0, HERO_COLOR[Object.keys(HERO_COLOR)[k%5]]); shake = .25; } if (p > .6) u.hitNow = false; }
+      else if (mode === "team"){ y = Math.abs(Math.sin(T*5 + k*.3))*.8; }
+      else if (mode === "title" || mode === "end"){ y = Math.abs(Math.sin(T*2 + k))*.08; }
+      hh.position.set(x, y, 0);
+      hh.rotation.y = spin ? T*14 : ry;
+      const sw = Math.sin(T*12)*.8*walk;
+      u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw; u.armR.rotation.x = sw;
+      u.armR.rotation.z = mode === "team" || mode === "end" ? 2.6 + Math.sin(T*8)*.3 : 0;
+    });
+    const vOn = mode === "villain" || mode === "fight" || mode === "team"; villain3.visible = vOn;
+    if (vOn){ let y = 0, x = vx, rz = 0;
+      if (mode === "villain"){ y = Math.max(0, 12 - t*16); if (y === 0 && !landed){ landed = true; shake = .8; spark(vx, .2, 0, 0x888888); } }
+      if (mode === "fight") x = vx + Math.sin(T*25)*.06;
+      if (mode === "team"){ const p = Math.min(1, t/1.2); x = vx + p*3; rz = -p*1.45; }
+      villain3.position.set(x, y, 0); villain3.rotation.set(0, -Math.PI/2*.8, rz);
+      const vu = villain3.userData, a = mode === "villain" ? Math.sin(T*3)*.5 : Math.sin(T*10)*.6; vu.armL.rotation.x = a; vu.armR.rotation.x = -a; }
+    if (dragon3){ dragon3.visible = mode === "fight" || mode === "team" || mode === "end";
+      const a = T*.9; dragon3.position.set(Math.cos(a)*7, 4.5 + Math.sin(T*2)*.6, Math.sin(a)*4 - 2); dragon3.rotation.y = -a;
+      dragon3.userData.wL.rotation.z = Math.sin(T*9)*.6; dragon3.userData.wR.rotation.z = -Math.sin(T*9)*.6; }
+    sparks = sparks.filter(m => { const d = m.userData; d.life -= dt; d.v.y -= 9*dt; m.position.addScaledVector(d.v, dt); m.scale.setScalar(Math.max(.01, d.life/.7)); if (d.life <= 0){ world.remove(m); return false; } return true; });
+    const look = new THREE.Vector3(0, 1.2, 0);
+    if (mode === "title"){ cam.position.set(Math.sin(T*.3)*10, 3, Math.cos(T*.3)*10); }
+    else if (mode === "enter"){ cam.position.set(-3 + t*.6, 2.2, 8.5); }
+    else if (mode === "villain"){ cam.position.set(1, 1.6, 7.5); look.set(3.5, 2, 0); }
+    else if (mode === "fight"){ const a = T*.35; cam.position.set(1 + Math.sin(a)*8, 2.8, Math.cos(a)*8); look.set(1, 1.5, 0); }
+    else if (mode === "team"){ cam.position.set(-1, 1.8, 7); look.set(-1, 1.3, 0); }
+    else { cam.position.set(0, 2.5 + t*1.2, 9 + t*1.5); }
+    if (shake > .01){ cam.position.x += (Math.random()-.5)*shake; cam.position.y += (Math.random()-.5)*shake; shake *= .88; }
+    cam.lookAt(look);
+    R.render(scene3, cam);
+  }
 
   function heroesFor(e){
     const all = ["Storm","Magma","Frost","Stone"].concat((e.season||1) >= 2 ? ["Wren"] : []);
     const named = all.filter(n => e.title.includes(n) || e.desc.includes(n));
-    return named.length ? named.concat(all.filter(n=>!named.includes(n)).slice(0,1)) : all;
+    return named.length ? named.concat(all.filter(n => !named.includes(n)).slice(0,1)) : all;
   }
-  function epNumber(i){ const se = episodes[i].season||1; return episodes.slice(0,i+1).filter(e=>(e.season||1)===se).length; }
+  function epNumber(i){ const se = episodes[i].season||1; return episodes.slice(0,i+1).filter(e => (e.season||1) === se).length; }
   function buildScenes(i){
-    const e = episodes[i], se = e.season||1, [vEmoji, vName] = VILLAIN[se] || VILLAIN[1];
-    const heroes = heroesFor(e), place = PLACES[(i*3) % PLACES.length];
-    const h = (cls) => heroes.map(n => `<span class="actor ${cls}">${NINJA[n]}</span>`).join("");
-    const extra = (e.title+e.desc).includes("Zip") || (e.title+e.desc).includes("dragon") ? `<span class="actor hop">🐉</span>` : "";
-    return [
-      { cap:"", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` },
-      { cap:esc(e.desc), stage:`<span class="actor">${place}</span>${h("enter-l")}`, say:e.desc },
-      { cap:`But ${vName} is watching...`, stage:`<span class="actor">${place}</span><span class="actor enter-r">${vEmoji}</span>`, say:`But ${vName} is watching.` },
-      { cap:"Ninja, GO! 🌀", stage:`${h("spin")}${extra}<span class="actor hit">${vEmoji}</span>`, flash:true, say:"Ninja, go!" },
-      { cap:`${heroes.join(", ")} fight together as one team!`, stage:`${h("hop")}<span class="actor">💥</span><span class="actor hit">${vEmoji}</span>`, flash:true, say:`${heroes.join(", ")} fight together as one team!` },
-      { cap: i === episodes.length-1 ? "THE END... for now." : "To be continued...", title:`<div class="title-card"><h3>${i === episodes.length-1 ? "THE END?" : "To be continued..."}</h3><div>${i < episodes.length-1 ? "Next: "+esc(episodes[i+1].title) : ""}</div></div>`, say: i < episodes.length-1 ? `To be continued. Next time: ${episodes[i+1].title}.` : "The end, for now." }
-    ];
+    const e = episodes[i], se = e.season||1, v = VILLAINS[se] || VILLAINS[1], heroes = heroesFor(e);
+    const last = i === episodes.length-1;
+    return { heroes, se, dragon:/Zip|dragon/i.test(e.title+e.desc), list:[
+      { mode:"title", title:`<div class="title-card"><div>👑 SUPREME NINJA</div><div>Season ${se} · Episode ${epNumber(i)}</div><h3>${esc(e.title)}</h3></div>`, say:`Season ${se}, episode ${epNumber(i)}. ${e.title}.` },
+      { mode:"enter", cap:esc(e.desc), say:e.desc },
+      { mode:"villain", cap:`But ${v.name} is watching...`, say:`But ${v.name} is watching.` },
+      { mode:"fight", cap:"Ninja, GO! 🌀", say:"Ninja, go!" },
+      { mode:"team", cap:`${heroes.join(", ")} fight together as one team!`, say:`${heroes.join(", ")} fight together as one team!` },
+      { mode:"end", title:`<div class="title-card"><h3>${last ? "THE END?" : "To be continued..."}</h3><div>${last ? "" : "Next: "+esc(episodes[i+1].title)}</div></div>`, say: last ? "The end, for now." : `To be continued. Next time: ${episodes[i+1].title}.` } ]};
   }
   function speak(t){ try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); } catch {} }
   function showScene(){
     const sc = tv.scenes[tv.scene];
-    $("stage").innerHTML = sc.stage || ""; $("caption").textContent = ""; $("caption").style.display = sc.title ? "none" : "block";
-    $("screen").querySelectorAll(".title-card").forEach(x=>x.remove());
+    mode = sc.mode; modeT = 0; landed = false;
+    $("screen").querySelectorAll(".title-card").forEach(x => x.remove());
     if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
-    $("caption").innerHTML = sc.cap;
-    $("screen").classList.remove("flash"); if (sc.flash) { void $("screen").offsetWidth; $("screen").classList.add("flash"); }
+    $("caption").style.display = sc.cap ? "block" : "none"; $("caption").innerHTML = sc.cap || "";
+    if (!R) $("caption").style.display = "block";
     speak(sc.say); schedule();
   }
   function schedule(){
@@ -246,11 +382,14 @@
     tv.timer = setTimeout(() => {
       if (tv.scene < tv.scenes.length-1) { tv.scene++; showScene(); }
       else { episodes[tv.i].done = true; saveEps(); renderEps(); if (tv.i < episodes.length-1) watch(tv.i+1); }
-    }, Math.max(3500, tv.scenes[tv.scene].say.length * 75));
+    }, Math.max(mode === "fight" ? 6000 : 4000, tv.scenes[tv.scene].say.length * 75));
   }
   function watch(i){
-    tv.i = i; tv.scene = 0; tv.scenes = buildScenes(i); tv.paused = false; $("tvPause").textContent = "⏸";
-    $("tv").style.display = "flex"; showScene();
+    $("tv").style.display = "flex";
+    const b = buildScenes(i);
+    tv.i = i; tv.scene = 0; tv.scenes = b.list; tv.paused = false; $("tvPause").textContent = "⏸";
+    if (initThree()) setupWorld(i, b.heroes, b.se, b.dragon);
+    showScene();
   }
   $("tvNext").onclick = () => { if (tv.i < episodes.length-1) watch(tv.i+1); };
   $("tvPrev").onclick = () => { if (tv.i > 0) watch(tv.i-1); };
