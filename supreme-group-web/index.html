@@ -666,8 +666,7 @@
     mode = sc.mode; modeT = 0; landed = false; focus = sc.focus || 0; shotT = 0;
     $("screen").querySelectorAll(".title-card").forEach(x => x.remove());
     if (sc.title) $("screen").insertAdjacentHTML("beforeend", sc.title);
-    $("caption").style.display = sc.cap ? "block" : "none"; $("caption").innerHTML = sc.cap || "";
-    if (!R) $("caption").style.display = "block";
+    $("caption").style.display = "none";
     $("bubble").style.display = "none"; $("bubble").dataset.for = ""; talking = false;
     if (sc.say || sc.line) speak(sc.say, sc); else try { speechSynthesis.cancel(); } catch {}
     schedule();
@@ -677,7 +676,7 @@
     tv.timer = setTimeout(() => {
       if (tv.scene < tv.scenes.length-1) { tv.scene++; showScene(); }
       else { episodes[tv.i].done = true; saveEps(); renderEps(); if (tv.i < episodes.length-1) watch(tv.i+1); }
-    }, tv.scenes[tv.scene].dur || Math.max(mode === "fight" ? 6000 : 4000, ((tv.scenes[tv.scene].say || "") + (tv.scenes[tv.scene].line || "")).length * 80 + 800));
+    }, tv.scenes[tv.scene].dur || Math.max(mode === "fight" ? 6000 : 4000, (tv.scenes[tv.scene].line || "").length * 85 + 1800));
   }
   let introWorld = false;
   function watch(i, withIntro){
