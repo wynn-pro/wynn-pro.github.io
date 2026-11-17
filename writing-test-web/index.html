@@ -1211,28 +1211,52 @@ document.addEventListener("keydown", e => {
 });
 
 /* ===================== RESULTS ===================== */
-// Leaderboard: top 10 scores saved on this device.
+// Leaderboard: shared top 10 via Supabase (REST API).
+// Paste your project URL and anon (public) key below — table setup SQL is in supabase-leaderboard.sql.
+// Left empty (or offline), scores are kept on this device only.
+const SUPABASE_URL = "https://havjhzdkkpbftmimnsbm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_IhIlOX6AEPUwMZVO7i_iTA_W5bpHvHJ";
+const LB_PATH = SUPABASE_URL && SUPABASE_KEY ? SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/writing_test_leaderboard" : "";
+const LB_HEADERS = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
 const LB_KEY = "writing-test-leaderboard";
-function lbLoad() { try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch (e) { return []; } }
-function lbRender(list, hi) {
-  const rows = lbLoad(); list.textContent = "";
+const lbSort = rows => rows.sort((a, b) => b.score - a.score || b.pct - a.pct || a.t - b.t);
+function lbLocal() { try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch (e) { return []; } }
+let lbCache = lbLocal();
+async function lbLoad() {
+  if (!LB_PATH) return lbCache;
+  try {
+    const r = await fetch(LB_PATH + "?select=name,score,pct,grade,t&order=score.desc,pct.desc,t.asc&limit=10", { headers: LB_HEADERS });
+    if (!r.ok) throw new Error(r.status);
+    lbCache = lbSort((await r.json()).filter(x => x && typeof x.score === "number"));
+  } catch (e) { /* offline: keep last list */ }
+  return lbCache;
+}
+function lbDraw(list, rows, hi) {
+  list.textContent = "";
   if (!rows.length) { list.append(el("li", "", "No scores yet — be the first!")); return; }
   const medal = ["🥇", "🥈", "🥉"];
   rows.forEach((r, i) => {
-    const li = el("li", r.t === hi ? "me" : "", (medal[i] || "") + " " + r.name + " — " + r.score + " pts ");
+    const li = el("li", r.t === hi ? "me" : "", (medal[i] || "") + " " + String(r.name).slice(0, 20) + " — " + r.score + " pts ");
     li.append(el("small", "", "(" + r.grade + ", " + r.pct + "%)")); list.append(li);
   });
 }
+function lbRender(list, hi) {
+  lbDraw(list, lbCache, hi);
+  lbLoad().then(rows => lbDraw(list, rows, hi));
+}
 let lbEntry = null;
-$("lbSave").onclick = () => {
-  const name = $("lbName").value.trim(); if (!name || !lbEntry) return;
+$("lbSave").onclick = async () => {
+  const name = $("lbName").value.trim().slice(0, 20); if (!name || !lbEntry) return;
+  const entry = lbEntry; lbEntry = null;
   save.lbName = name; persist();
-  lbEntry.name = name;
-  const rows = lbLoad(); rows.push(lbEntry);
-  rows.sort((a, b) => b.score - a.score || b.pct - a.pct);
-  try { localStorage.setItem(LB_KEY, JSON.stringify(rows.slice(0, 10))); } catch (e) {}
+  entry.name = name;
   $("lbForm").classList.add("hidden");
-  lbRender($("lbRes"), lbEntry.t); lbRender($("lbMenu")); lbEntry = null;
+  const local = lbSort(lbLocal().concat(entry)).slice(0, 10);
+  try { localStorage.setItem(LB_KEY, JSON.stringify(local)); } catch (e) {}
+  if (LB_PATH) {
+    try { await fetch(LB_PATH, { method: "POST", headers: { ...LB_HEADERS, Prefer: "return=minimal" }, body: JSON.stringify(entry) }); } catch (e) {}
+  } else lbCache = local;
+  lbRender($("lbRes"), entry.t); lbRender($("lbMenu"));
 };
 $("lbName").addEventListener("keydown", e => { if (e.key === "Enter") $("lbSave").click(); });
 
