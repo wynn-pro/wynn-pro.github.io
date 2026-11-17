@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wynn View</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.ytimg.com">
+<link rel="preconnect" href="https://www.google.com">
+<link rel="dns-prefetch" href="https://googlevideo.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -86,7 +91,10 @@
   .ptop h2 { flex: 1; font-size: 1.15rem; }
   .pclose { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--line); color: var(--ink); font-size: 1.1rem; }
   .pvideo { aspect-ratio: 16/9; background: #000; border-radius: 14px; overflow: hidden; }
+  .pvideo { background-size: cover; background-position: center; position: relative; }
   .pvideo iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .pmsg { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; text-align: center;
+          background: rgba(0,0,0,.65); padding: 16px; font-weight: 700; }
   .pctrl { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
   .pctrl .btn { font-size: .9rem; padding: 8px 14px; }
   .heartbtn.on { background: #ff5d8f; }
@@ -474,9 +482,50 @@ function fav(id) {
   document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => b.classList.toggle('on', favs.includes(id)));
   if (page === 'list' && !qBox.value) render();
 }
-// ---- in-page video player ----
+// ---- in-page video player (fast: one YouTube player is reused for every video) ----
+const LIVE = 'https://wynn-pro.github.io/wynn-view-web/';
+const isFile = location.protocol === 'file:';
 const player = document.getElementById('player');
-let playing = null;
+let playing = null, yt = null, ytReady = false;
+
+// Load YouTube's player code in the background, so the first video starts fast.
+window.onYouTubeIframeAPIReady = () => { ytReady = true; };
+function loadYT() {
+  if (isFile || document.getElementById('ytapi')) return;
+  const s = document.createElement('script');
+  s.id = 'ytapi'; s.src = 'https://www.youtube.com/iframe_api'; s.async = true;
+  document.head.appendChild(s);
+}
+(window.requestIdleCallback || (f => setTimeout(f, 300)))(loadYT);
+
+function playVideo(ep) {
+  const box = document.getElementById('pv');
+  box.style.backgroundImage = `url(https://i.ytimg.com/vi/${ep.vid}/hqdefault.jpg)`;
+  if (isFile) {
+    // YouTube won't play videos on a page opened from a file — send them to the real website.
+    box.innerHTML = `<div class="pmsg"><p>Videos play on the Wynn Studios website 🌐</p>
+      <a class="btn play" href="${LIVE}#v=${ep.id}">▶ Watch it there</a></div>`;
+    return;
+  }
+  if (yt && yt.loadVideoById) { yt.loadVideoById(ep.vid); return; }
+  if (ytReady) {
+    box.innerHTML = '<div id="ytp"></div>';
+    yt = new YT.Player('ytp', {
+      host: 'https://www.youtube-nocookie.com', videoId: ep.vid,
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1 },
+      events: {
+        onReady: e => { if (playing) e.target.playVideo(); },
+        onStateChange: e => { if (e.data === 0) step(1); }   // 0 = ended → play the next one
+      }
+    });
+    return;
+  }
+  // Player code still loading: a plain embed works too.
+  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${ep.vid}?autoplay=1&rel=0&playsinline=1"
+    title="${esc(ep.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+}
+
 function watch(id) {
   const ep = EPS.find(e => e.id === id);
   if (!ep) return;
@@ -488,10 +537,7 @@ function watch(id) {
     const t = b.nextElementSibling;
     if (t && !t.querySelector('.seen')) t.insertAdjacentHTML('beforeend', '<span class="seen"></span>');
   });
-  document.getElementById('pv').innerHTML =
-    `<iframe src="https://www.youtube-nocookie.com/embed/${ep.vid}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
-      title="${esc(ep.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
-      referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  playVideo(ep);
   document.getElementById('pt').textContent = `${s.emoji} ${ep.title}`;
   document.getElementById('pyt').href = ytUrl(ep);
   const favBtn = document.getElementById('pfav');
@@ -511,7 +557,8 @@ function step(d) {
 }
 function closePlayer() {
   player.hidden = true;
-  document.getElementById('pv').innerHTML = '';
+  if (yt && yt.pauseVideo) yt.pauseVideo();        // keep the player ready, so the next video opens instantly
+  else document.getElementById('pv').innerHTML = '';
   document.body.style.overflow = '';
   playing = null;
   if (page === 'home' && !qBox.value) render();
@@ -528,6 +575,13 @@ showTime();
 setInterval(() => { mins.n++; save('wv-mins', mins); showTime(); }, 60000);
 
 render();
+
+// A link like wynn-view-web/#v=bluey0 opens that video straight away.
+const startId = (location.hash.match(/^#v=([a-z]+\d+)$/) || [])[1];
+if (startId && EPS.some(e => e.id === startId)) {
+  const tryStart = (n) => (ytReady || n > 20) ? watch(startId) : setTimeout(() => tryStart(n + 1), 100);
+  loadYT(); tryStart(0);
+}
 </script>
 </body>
 </html>
