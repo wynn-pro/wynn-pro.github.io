@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wynn View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1424; --card: #18233a; --line: #2a3a58; --ink: #f2f6ff; --muted: #9fb0c8;
+    --accent: #2ed47a; --yellow: #ffd23f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  h1, h2, h3, button, .logo { font-family: 'Fredoka', sans-serif; }
+  button { cursor: pointer; font: inherit; }
+  a { color: inherit; }
+
+  header {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 16px; background: rgba(13,20,36,.94); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo { display: flex; align-items: center; gap: 8px; font-size: 1.6rem; font-weight: 700; text-decoration: none; }
+  .logo .eye { width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
+               display: grid; place-items: center; font-size: 1.3rem; color: #0d1424; }
+  .logo b { color: var(--accent); }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav button { background: transparent; border: 0; color: var(--muted); padding: 8px 14px;
+               border-radius: 999px; font-weight: 600; font-size: 1rem; }
+  nav button.on, nav button:hover { background: var(--card); color: var(--ink); }
+  .search { margin-left: auto; flex: 1; max-width: 300px; min-width: 160px; }
+  .search input { width: 100%; padding: 9px 16px; border-radius: 999px; border: 2px solid var(--line);
+                  background: var(--card); color: var(--ink); font: inherit; outline: none; }
+  .search input:focus { border-color: var(--accent); }
+  .home-link { color: var(--muted); text-decoration: none; font-size: .9rem; }
+
+  main { padding: 18px 16px 60px; max-width: 1200px; margin: 0 auto; }
+
+  .hero { border-radius: 22px; padding: 34px 28px; margin-bottom: 26px; position: relative; overflow: hidden;
+          min-height: 220px; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; }
+  .hero .big { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); font-size: 7rem;
+               opacity: .9; pointer-events: none; }
+  .hero h1 { font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1; text-shadow: 0 3px 0 rgba(0,0,0,.25); max-width: 70%; }
+  .hero p { max-width: 520px; font-size: 1.05rem; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .hero .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 999px;
+         border: 0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+  .btn.play { background: #fff; color: #12223b; }
+  .btn.ghost { background: rgba(0,0,0,.3); color: #fff; }
+  .dots { position: absolute; bottom: 14px; right: 20px; display: flex; gap: 6px; }
+  .dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; }
+  .dots span.on { background: #fff; }
+
+  .shelf { margin-bottom: 28px; }
+  .shelf h2 { font-size: 1.4rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .shelf h2 small { font-family: 'Nunito'; font-size: .85rem; color: var(--muted); font-weight: 400; }
+  .rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 230px); gap: 14px;
+          overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+  .rail::-webkit-scrollbar { height: 8px; }
+  .rail::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+
+  .ep { background: var(--card); border-radius: 16px; overflow: hidden; scroll-snap-align: start;
+        transition: transform .15s; position: relative; }
+  .ep:hover { transform: translateY(-4px); }
+  .thumb { aspect-ratio: 16/9; display: grid; place-items: center; font-size: 3rem; position: relative; cursor: pointer; }
+  .thumb .tag { position: absolute; left: 8px; top: 8px; font-size: .7rem; font-weight: 700;
+                background: rgba(0,0,0,.45); padding: 2px 8px; border-radius: 999px; font-family: 'Fredoka'; }
+  .thumb .playi { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.2rem;
+                  background: rgba(0,0,0,.35); opacity: 0; transition: opacity .15s; }
+  .thumb:hover .playi { opacity: 1; }
+  .ep .info { padding: 10px 12px 12px; }
+  .ep h3 { font-size: 1rem; margin-bottom: 2px; }
+  .ep p { font-size: .82rem; color: var(--muted); }
+  .heart { position: absolute; right: 8px; top: 8px; background: rgba(0,0,0,.45); border: 0; color: #fff;
+           width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; z-index: 2; }
+  .heart.on { background: #ff5d8f; }
+  .seen { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); }
+
+  .shows { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .show { border-radius: 20px; padding: 22px; min-height: 170px; display: flex; flex-direction: column;
+          justify-content: space-between; cursor: pointer; border: 0; text-align: left; color: #fff;
+          transition: transform .15s; }
+  .show:hover { transform: scale(1.03); }
+  .show .e { font-size: 3.4rem; }
+  .show h3 { font-size: 1.5rem; }
+  .show p { font-size: .9rem; opacity: .9; font-family: 'Nunito'; }
+
+  .empty { color: var(--muted); padding: 30px; text-align: center; background: var(--card); border-radius: 16px; }
+  .note { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 30px; }
+
+  .timer { position: fixed; right: 16px; bottom: 16px; background: var(--card); border: 1px solid var(--line);
+           padding: 8px 14px; border-radius: 999px; font-size: .85rem; color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .hero .big { font-size: 4.5rem; top: 30%; }
+    .hero h1 { max-width: 100%; }
+    .search { max-width: none; order: 3; flex-basis: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="#" onclick="go('home');return false"><span class="eye">👁</span>Wynn<b>View</b></a>
+  <nav id="nav">
+    <button data-p="home" class="on">Home</button>
+    <button data-p="shows">Shows</button>
+    <button data-p="list">My List ❤️</button>
+  </nav>
+  <div class="search"><input id="q" type="search" placeholder="🔍 Search shows & episodes"></div>
+  <a class="home-link" href="../index.html">← Wynn Studios</a>
+</header>
+
+<main id="app"></main>
+<div class="timer" id="timer">⏱ 0 min on Wynn View today</div>
+
+<script>
+// Each show uses a colour + emoji (no copyrighted art). Episodes open the real video on YouTube.
+const SHOWS = {
+  bluey: {
+    name: 'Bluey', emoji: '🐶', color: 'linear-gradient(135deg,#4aa3ff,#1d5fd1)',
+    blurb: 'A fun-loving puppy and her family turn everyday life into big games.',
+    channel: 'https://www.youtube.com/results?search_query=Bluey+official+channel',
+    eps: [
+      ['Keepy Uppy', "Don't let the balloon touch the ground!", '🎈'],
+      ['Magic Xylophone', 'One tap and Dad freezes!', '🎵'],
+      ['Hospital', 'Doctor Bluey is ready to help.', '🩺'],
+      ['The Creek', 'An adventure down by the water.', '🏞️'],
+      ['Grannies', 'Bluey and Bingo play grannies.', '👵'],
+      ['Sleepytime', 'A big dream across the stars.', '🌙'],
+      ['Camping', 'A new friend at the campsite.', '⛺'],
+      ['Takeaway', 'Waiting for dinner is hard!', '🥡'],
+    ]
+  },
+  peppa: {
+    name: 'Peppa Pig', emoji: '🐷', color: 'linear-gradient(135deg,#ff8fb5,#e0457b)',
+    blurb: 'Peppa, George and their family love jumping in muddy puddles.',
+    channel: 'https://www.youtube.com/results?search_query=Peppa+Pig+official+channel',
+    eps: [
+      ['Muddy Puddles', 'Everyone loves jumping in muddy puddles!', '💦'],
+      ['Mr Dinosaur Is Lost', "George can't find his favourite toy.", '🦕'],
+      ['Polly Parrot', 'A parrot that copies everything.', '🦜'],
+      ['Best Friend', 'Suzy Sheep comes to play.', '🐑'],
+      ['The Playgroup', 'A fun day at playgroup.', '🎨'],
+      ['Bicycles', 'Peppa learns to ride.', '🚲'],
+      ['Picnic', 'Lunch outside — with ducks!', '🧺'],
+      ['Snow', 'Peppa and George build a snowman.', '⛄'],
+    ]
+  },
+  ninjago: {
+    name: 'Ninjago', emoji: '🥷', color: 'linear-gradient(135deg,#ff6a3d,#7a1fa2)',
+    blurb: 'Brave ninja use spinjitzu and elemental powers to protect their world.',
+    channel: 'https://www.youtube.com/results?search_query=LEGO+Ninjago+official',
+    eps: [
+      ['Way of the Ninja', 'Where the ninja story begins.', '⛩️'],
+      ['Masters of Spinjitzu', 'Learn the spinning ninja move!', '🌀'],
+      ['Rise of the Snakes', 'Ancient serpents awaken.', '🐍'],
+      ['Dragons Rising', 'Dragons return to the realms.', '🐉'],
+      ['Elemental Powers', 'Fire, ice, lightning and earth.', '⚡'],
+      ['Training Day', 'Practice with Master Wu.', '🥋'],
+      ['Ninja Build', 'Cool builds and vehicles.', '🧱'],
+      ['Best Battles', 'The biggest ninja battles.', '⚔️'],
+    ]
+  }
+};
+
+const EPS = [];
+for (const [key, s] of Object.entries(SHOWS)) {
+  s.eps.forEach(([title, desc, emoji], i) => EPS.push({ id: key + i, show: key, title, desc, emoji }));
+}
+
+function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+let favs = load('wv-favs', []);
+let seen = load('wv-seen', []);
+let mins = load('wv-mins', { day: '', n: 0 });
+const today = new Date().toDateString();
+if (mins.day !== today) mins = { day: today, n: 0 };
+
+const app = document.getElementById('app');
+const qBox = document.getElementById('q');
+let page = 'home', heroI = 0, heroTimer;
+
+function ytUrl(ep) {
+  const name = ep.show === 'ninjago' ? 'LEGO Ninjago' : SHOWS[ep.show].name;
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(name + ' ' + ep.title + ' official');
+}
+
+function card(ep) {
+  const s = SHOWS[ep.show];
+  return `<div class="ep">
+    <button class="heart ${favs.includes(ep.id) ? 'on' : ''}" data-fav="${ep.id}" onclick="fav('${ep.id}')" title="Add to My List">♥</button>
+    <div class="thumb" style="background:${s.color}" onclick="watch('${ep.id}')">
+      <span class="tag">${s.emoji} ${s.name}</span>${ep.emoji}
+      <span class="playi">▶</span>
+      ${seen.includes(ep.id) ? '<span class="seen"></span>' : ''}
+    </div>
+    <div class="info"><h3>${ep.title}</h3><p>${ep.desc}</p></div>
+  </div>`;
+}
+
+function shelf(title, eps, sub = '') {
+  if (!eps.length) return '';
+  return `<section class="shelf"><h2>${title} <small>${sub}</small></h2><div class="rail">${eps.map(card).join('')}</div></section>`;
+}
+
+function hero() {
+  const keys = Object.keys(SHOWS), k = keys[heroI], s = SHOWS[k];
+  return `<section class="hero" id="hero" style="background:${s.color}">
+    <div class="big">${s.emoji}</div>
+    <h1>${s.name}</h1><p>${s.blurb}</p>
+    <div class="row">
+      <button class="btn play" onclick="watch('${k}0')">▶ Watch now</button>
+      <button class="btn ghost" onclick="openShow('${k}')">All episodes</button>
+    </div>
+    <div class="dots">${keys.map((_, i) => `<span class="${i === heroI ? 'on' : ''}" onclick="setHero(${i})"></span>`).join('')}</div>
+  </section>`;
+}
+
+function render(showKey) {
+  clearInterval(heroTimer);
+  const q = qBox.value.trim().toLowerCase();
+  if (q) {
+    const r = EPS.filter(e => (e.title + ' ' + SHOWS[e.show].name).toLowerCase().includes(q));
+    const safe = q.replace(/[<>&"]/g, '');
+    app.innerHTML = `<section class="shelf"><h2>Results for “${safe}”</h2>
+      ${r.length ? `<div class="grid">${r.map(card).join('')}</div>` : '<div class="empty">Nothing found 🙈 Try “Bluey”, “Peppa” or “Ninjago”.</div>'}</section>`;
+    return;
+  }
+  if (showKey) {
+    const s = SHOWS[showKey];
+    app.innerHTML = `<section class="hero" style="background:${s.color}"><div class="big">${s.emoji}</div>
+      <h1>${s.name}</h1><p>${s.blurb}</p>
+      <div class="row"><a class="btn play" href="${s.channel}" target="_blank" rel="noopener">📺 Official channel</a></div></section>
+      <section class="shelf"><h2>Episodes</h2><div class="grid">${EPS.filter(e => e.show === showKey).map(card).join('')}</div></section>`;
+    return;
+  }
+  if (page === 'shows') {
+    app.innerHTML = `<section class="shelf"><h2>All Shows</h2><div class="shows">${Object.entries(SHOWS).map(([k, s]) =>
+      `<button class="show" style="background:${s.color}" onclick="openShow('${k}')"><span class="e">${s.emoji}</span>
+       <div><h3>${s.name}</h3><p>${s.eps.length} episodes</p></div></button>`).join('')}</div></section>`;
+    return;
+  }
+  if (page === 'list') {
+    const f = EPS.filter(e => favs.includes(e.id));
+    app.innerHTML = `<section class="shelf"><h2>My List ❤️</h2>${f.length ? `<div class="grid">${f.map(card).join('')}</div>`
+      : '<div class="empty">Tap the ♥ on any episode to save it here!</div>'}</section>`;
+    return;
+  }
+  const recent = seen.slice().reverse().map(id => EPS.find(e => e.id === id)).filter(Boolean);
+  app.innerHTML = hero()
+    + shelf('▶ Keep watching', recent)
+    + Object.entries(SHOWS).map(([k, s]) => shelf(s.emoji + ' ' + s.name, EPS.filter(e => e.show === k), s.eps.length + ' episodes')).join('')
+    + "<p class=\"note\">Videos open on YouTube. Bluey, Peppa Pig and Ninjago belong to their creators — this is just Wynn's favourites page.</p>";
+  heroTimer = setInterval(() => setHero((heroI + 1) % Object.keys(SHOWS).length), 6000);
+}
+
+function setHero(i) { heroI = i; const h = document.getElementById('hero'); if (h) h.outerHTML = hero(); }
+function go(p) {
+  page = p; qBox.value = '';
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  render(); window.scrollTo(0, 0);
+}
+function openShow(k) { qBox.value = ''; render(k); window.scrollTo(0, 0); }
+function fav(id) {
+  favs = favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id];
+  save('wv-favs', favs);
+  document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => b.classList.toggle('on', favs.includes(id)));
+  if (page === 'list' && !qBox.value) render();
+}
+function watch(id) {
+  const ep = EPS.find(e => e.id === id);
+  seen = [...seen.filter(x => x !== id), id].slice(-12);
+  save('wv-seen', seen);
+  window.open(ytUrl(ep), '_blank', 'noopener');
+  document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => {
+    const t = b.nextElementSibling;
+    if (t && !t.querySelector('.seen')) t.insertAdjacentHTML('beforeend', '<span class="seen"></span>');
+  });
+}
+
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => go(b.dataset.p));
+qBox.addEventListener('input', () => render());
+
+const timerEl = document.getElementById('timer');
+function showTime() { timerEl.textContent = `⏱ ${mins.n} min on Wynn View today`; }
+showTime();
+setInterval(() => { mins.n++; save('wv-mins', mins); showTime(); }, 60000);
+
+render();
+</script>
+</body>
+</html>

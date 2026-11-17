@@ -463,6 +463,30 @@ const CARTOONS = [
     } },
 ];
 
+/* Make every video longer: it plays its cartoon 6 times, each round with a twist. */
+const ROUNDS = [
+  { name: 'Part 1', speed: 1 },
+  { name: 'Part 2 · Slow-mo 🐢', speed: .5 },
+  { name: 'Part 3 · Crazy colours 🌈', speed: 1, filter: 'hue-rotate(160deg) saturate(1.6)' },
+  { name: 'Part 4 · SUPER FAST ⚡', speed: 2 },
+  { name: 'Part 5 · Old movie 📽️', speed: 1, filter: 'grayscale(1) sepia(.7) contrast(1.2)' },
+  { name: 'Part 6 · Final round 🏆', speed: 1 },
+];
+CARTOONS.forEach(v => {
+  const scene = v.dur, draw = v.draw;
+  v.dur = scene * ROUNDS.length;
+  v.draw = (c, t, W, H) => {
+    const k = Math.min(ROUNDS.length - 1, Math.floor(t / scene)), R = ROUNDS[k];
+    const local = ((t - k * scene) * R.speed) % scene;
+    c.save(); if (R.filter) c.filter = R.filter; draw(c, local, W, H); c.restore();
+    const s = W / 1280;                       // label size scales with the screen
+    c.font = `bold ${Math.round(28 * s)}px Fredoka`; c.textAlign = 'right';
+    const tw = c.measureText(R.name).width;
+    c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(W - tw - 36 * s, 16 * s, tw + 24 * s, 44 * s);
+    c.fillStyle = '#ffd23f'; c.fillText(R.name, W - 24 * s, 48 * s);
+  };
+});
+
 /* ===================== Shorts (tall cartoons, they loop) ===================== */
 const SHORTS = [
   { id: 's-frog', title: 'Frog does 100 jumps 🐸', chan: 'Ocean Buddies', av: '🐙', cat: 'Animals', dur: 10, views: 88000,

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WynnFlix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b12;
+    --panel: #171724;
+    --panel2: #222234;
+    --text: #f4f2ff;
+    --muted: #a5a2bd;
+    --brand: #ff9f1c;
+    --brand2: #ffd23f;
+    --good: #46d18a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Nunito", system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  a { color: inherit; }
+
+  /* ---------- Profile picker ---------- */
+  #profiles {
+    position: fixed; inset: 0; z-index: 50;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 28px; padding: 16px;
+  }
+  #profiles h1 { font-family: "Fredoka", sans-serif; font-size: clamp(28px, 6vw, 48px); margin: 0; }
+  .profile-list { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
+  .profile {
+    background: none; border: 0; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 17px;
+  }
+  .profile .face {
+    width: 110px; height: 110px; border-radius: 14px;
+    display: grid; place-items: center; font-size: 56px;
+    border: 3px solid transparent; transition: .15s;
+  }
+  .profile:hover .face, .profile:focus-visible .face { border-color: var(--text); transform: scale(1.05); }
+  .profile:hover, .profile:focus-visible { color: var(--text); outline: none; }
+
+  /* ---------- Top bar ---------- */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; gap: 20px;
+    padding: 12px 4vw;
+    background: linear-gradient(#0b0b12ee, #0b0b1200);
+    transition: background .25s;
+  }
+  header.solid { background: #0b0b12; }
+  .logo {
+    font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 30px; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--brand), var(--brand2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-decoration: none; white-space: nowrap;
+  }
+  nav { display: flex; gap: 16px; }
+  nav button {
+    background: none; border: 0; color: var(--muted); font-size: 15px; padding: 4px 0;
+  }
+  nav button.on, nav button:hover { color: var(--text); font-weight: 800; }
+  .spacer { flex: 1; }
+  #search {
+    background: #00000088; border: 1px solid #ffffff44; color: var(--text);
+    border-radius: 8px; padding: 8px 12px; width: 190px; font-size: 15px;
+  }
+  #search:focus { outline: 2px solid var(--brand); }
+  #me {
+    width: 38px; height: 38px; border-radius: 8px; border: 0; font-size: 22px;
+    display: grid; place-items: center; flex: 0 0 auto;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; min-height: 78vh;
+    display: flex; align-items: flex-end;
+    padding: 110px 4vw 70px;
+    overflow: hidden; isolation: isolate;
+  }
+  .hero-bg { position: absolute; inset: 0; z-index: -1; transition: background .6s; }
+  .hero-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, #0b0b12 5%, #0b0b1288 50%, transparent), linear-gradient(0deg, #0b0b12, transparent 40%);
+  }
+  .hero-emoji {
+    position: absolute; right: 8vw; top: 50%; transform: translateY(-50%); z-index: -1;
+    font-size: clamp(120px, 26vw, 320px);
+    animation: bob 4s ease-in-out infinite;
+    filter: drop-shadow(0 20px 40px #0008);
+  }
+  @keyframes bob { 50% { transform: translateY(-56%) rotate(-4deg); } }
+  .hero-info { max-width: 560px; }
+  .tag-original { font-weight: 800; letter-spacing: 3px; font-size: 13px; color: var(--brand2); }
+  .hero h2 {
+    font-family: "Fredoka", sans-serif; font-size: clamp(38px, 7vw, 72px);
+    margin: 6px 0 10px; line-height: 1;
+    text-shadow: 0 4px 20px #0009;
+  }
+  .meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 15px; }
+  .meta .match { color: var(--good); font-weight: 800; }
+  .meta .age { border: 1px solid var(--muted); padding: 0 6px; border-radius: 4px; }
+  .hero p { font-size: 18px; line-height: 1.45; }
+  .btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    border: 0; border-radius: 8px; padding: 11px 24px;
+    font-size: 18px; font-weight: 800; display: inline-flex; gap: 8px; align-items: center;
+    text-decoration: none;
+  }
+  .btn-play { background: var(--text); color: #111; }
+  .btn-play:hover { background: #fff; }
+  .btn-more { background: #6d6d8a88; color: var(--text); }
+  .btn-more:hover { background: #6d6d8acc; }
+
+  /* ---------- Rows ---------- */
+  main { position: relative; margin-top: -40px; padding-bottom: 60px; }
+  .row { margin: 0 0 30px; }
+  .row h3 { font-family: "Fredoka", sans-serif; font-size: 22px; margin: 0 4vw 10px; }
+  .strip {
+    display: flex; gap: 10px; overflow-x: auto; padding: 8px 4vw 18px;
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .card {
+    flex: 0 0 auto; width: 230px; aspect-ratio: 16/9;
+    border-radius: 8px; border: 0; padding: 0; position: relative; overflow: hidden;
+    scroll-snap-align: start; color: var(--text); text-align: left;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover, .card:focus-visible { transform: scale(1.08); z-index: 2; box-shadow: 0 10px 30px #000c; outline: none; }
+  .card .big { position: absolute; right: 10px; top: 4px; font-size: 64px; }
+  .card .t {
+    position: absolute; left: 10px; bottom: 8px; right: 10px;
+    font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.05;
+    text-shadow: 0 2px 6px #000a;
+  }
+  .card .w-badge { position: absolute; left: 8px; top: 6px; font-size: 18px; }
+  .card .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--brand); }
+  .card.top10 { width: 270px; display: flex; overflow: visible; }
+  .card .num {
+    font-family: "Fredoka", sans-serif; font-size: 130px; font-weight: 700; line-height: .8;
+    color: var(--bg); -webkit-text-stroke: 3px #777; align-self: flex-end;
+    width: 90px; text-align: center;
+  }
+  .card.top10 .inner { position: relative; flex: 1; border-radius: 8px; overflow: hidden; }
+  .empty { color: var(--muted); margin: 0 4vw; font-size: 18px; }
+
+  /* ---------- Modal ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: #000b; z-index: 30;
+    display: none; align-items: flex-start; justify-content: center;
+    overflow-y: auto; padding: 40px 12px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: 12px; width: min(820px, 100%);
+    overflow: hidden; box-shadow: 0 20px 60px #000;
+  }
+  .modal-top { position: relative; aspect-ratio: 16/8; display: flex; align-items: flex-end; padding: 24px; min-height: 240px; }
+  .modal-top .big { position: absolute; right: 6%; top: 10%; font-size: clamp(90px, 18vw, 170px); animation: bob 4s ease-in-out infinite; }
+  .modal-top::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--panel), transparent 60%); }
+  .modal-top > div { position: relative; z-index: 1; }
+  .modal-top h2 { font-family: "Fredoka", sans-serif; font-size: clamp(30px, 6vw, 50px); margin: 0 0 12px; }
+  .close {
+    position: absolute; right: 14px; top: 14px; z-index: 2;
+    width: 40px; height: 40px; border-radius: 50%; border: 0;
+    background: var(--panel); color: var(--text); font-size: 22px;
+  }
+  .round {
+    width: 46px; height: 46px; border-radius: 50%; border: 2px solid #ffffff88;
+    background: #2a2a3a88; color: var(--text); font-size: 20px;
+  }
+  .round.on { border-color: var(--good); color: var(--good); background: #46d18a22; }
+  .modal-body { padding: 0 24px 24px; }
+  .modal-body p { line-height: 1.5; font-size: 16px; }
+  .eps h4 { font-family: "Fredoka", sans-serif; font-size: 22px; margin: 22px 0 8px; }
+  .ep {
+    display: flex; gap: 14px; align-items: center; width: 100%;
+    background: none; border: 0; border-top: 1px solid #ffffff1a;
+    padding: 14px 6px; color: var(--text); text-align: left; border-radius: 6px;
+  }
+  .ep:hover { background: var(--panel2); }
+  .ep .n { font-size: 24px; color: var(--muted); width: 28px; text-align: center; }
+  .ep .thumb { width: 110px; flex: 0 0 auto; aspect-ratio: 16/9; border-radius: 6px; display: grid; place-items: center; font-size: 34px; position: relative; overflow: hidden; }
+  .ep .thumb .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--brand); }
+  .ep b { display: block; font-size: 16px; }
+  .ep span { color: var(--muted); font-size: 14px; }
+  .game-link { margin-top: 6px; display: inline-block; color: var(--brand2); font-weight: 800; }
+
+  /* ---------- Player ---------- */
+  #player {
+    position: fixed; inset: 0; z-index: 40; background: #000;
+    display: none; flex-direction: column;
+  }
+  #player.open { display: flex; }
+  #stage { position: relative; flex: 1; overflow: hidden; }
+  #stage .sky { position: absolute; inset: 0; }
+  #stage .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+  #stage .star {
+    position: absolute; font-size: clamp(90px, 16vw, 180px); bottom: 14%; left: 10%;
+    transition: left 3s ease-in-out;
+  }
+  #stage .star.hop { animation: hop .6s ease-in-out infinite alternate; }
+  @keyframes hop { to { transform: translateY(-30px) rotate(6deg); } }
+  #stage .pal { position: absolute; font-size: clamp(60px, 10vw, 110px); bottom: 15%; right: 12%; opacity: 0; transition: opacity .6s; }
+  #stage .float { position: absolute; left: 0; font-size: 40px; animation: drift linear infinite; }
+  @keyframes drift { from { transform: translateX(110vw); } to { transform: translateX(-20vw); } }
+  #sub {
+    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
+    background: #000c; padding: 8px 16px; border-radius: 6px;
+    font-size: clamp(16px, 2.6vw, 26px); text-align: center; max-width: 90%;
+  }
+  #ptitle { position: absolute; top: 16px; left: 70px; right: 16px; font-family: "Fredoka", sans-serif; font-size: 20px; text-shadow: 0 2px 6px #000; }
+  #back { position: absolute; top: 8px; left: 14px; background: none; border: 0; color: #fff; font-size: 34px; z-index: 2; }
+  #pause-big { position: absolute; inset: 0; display: none; place-items: center; font-size: 100px; background: #0006; pointer-events: none; }
+  #player.paused #pause-big { display: grid; }
+  #player.paused .star, #player.paused .float { animation-play-state: paused; }
+  .controls { background: #0b0b12; padding: 10px 4vw 16px; }
+  #seek { width: 100%; accent-color: var(--brand); }
+  .ctrl-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ctrl-row button { background: none; border: 0; color: #fff; font-size: 22px; padding: 4px 8px; }
+  .ctrl-row .time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  #next-up {
+    position: absolute; right: 20px; bottom: 20px; display: none; z-index: 2;
+    background: var(--text); color: #111; font-weight: 800; border: 0; border-radius: 8px; padding: 12px 18px; font-size: 17px;
+  }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(120px);
+    background: var(--panel2); padding: 12px 20px; border-radius: 10px; z-index: 60;
+    transition: transform .3s; box-shadow: 0 6px 20px #000a;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  footer { color: var(--muted); text-align: center; padding: 30px 16px 40px; font-size: 14px; }
+
+  @media (max-width: 700px) {
+    header { gap: 10px; padding: 10px 16px; }
+    .logo { font-size: 24px; }
+    nav { display: none; }
+    #search { width: 110px; }
+    .strip { padding-left: 16px; padding-right: 16px; }
+    .row h3 { margin: 0 16px 8px; font-size: 19px; }
+    .card { width: 170px; }
+    .card .big { font-size: 46px; }
+    .card .t { font-size: 16px; }
+    .card.top10 { width: 210px; }
+    .card .num { font-size: 96px; width: 66px; }
+    .hero { min-height: 70vh; padding: 100px 16px 60px; }
+    .hero p { font-size: 16px; }
+    .hero-emoji { opacity: .55; right: 2vw; top: 36%; }
+    #ptitle { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Who's watching? -->
+<section id="profiles">
+  <div class="logo" style="font-size:44px">WYNNFLIX</div>
+  <h1>Who's watching?</h1>
+  <div class="profile-list" id="profile-list"></div>
+</section>
+
+<header id="top">
+  <a class="logo" href="#" id="logo">WYNNFLIX</a>
+  <nav>
+    <button data-tab="home" class="on">Home</button>
+    <button data-tab="games">From Wynn's Games</button>
+    <button data-tab="list">My List</button>
+  </nav>
+  <div class="spacer"></div>
+  <input id="search" type="search" placeholder="🔍 Search" aria-label="Search shows">
+  <button id="me" title="Switch profile"></button>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-emoji" id="hero-emoji"></div>
+  <div class="hero-info">
+    <div class="tag-original">🐉 WYNNFLIX ORIGINAL</div>
+    <h2 id="hero-title"></h2>
+    <div class="meta" id="hero-meta"></div>
+    <p id="hero-desc"></p>
+    <div class="btns">
+      <button class="btn btn-play" id="hero-play">▶ Play</button>
+      <button class="btn btn-more" id="hero-more">ⓘ More Info</button>
+    </div>
+  </div>
+</section>
+
+<main id="rows"></main>
+
+<footer>WynnFlix — made by Wynn 🐉 · All the shows are made up! · <a href="../index.html">← Back to Wynn's games</a></footer>
+
+<!-- Details modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="modal-top" id="m-top">
+      <button class="close" id="m-close" aria-label="Close">✕</button>
+      <div class="big" id="m-emoji"></div>
+      <div>
+        <h2 id="m-title"></h2>
+        <div class="btns">
+          <button class="btn btn-play" id="m-play">▶ Play</button>
+          <button class="round" id="m-list" title="Add to My List">＋</button>
+          <button class="round" id="m-like" title="I like this">👍</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="meta" id="m-meta"></div>
+      <p id="m-desc"></p>
+      <div id="m-game"></div>
+      <div class="eps"><h4>Episodes</h4><div id="m-eps"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Video player -->
+<div id="player">
+  <div id="stage">
+    <div class="sky" id="sky"></div>
+    <div class="ground" id="ground"></div>
+    <div id="floats"></div>
+    <div class="star hop" id="star"></div>
+    <div class="pal" id="pal"></div>
+    <div id="sub"></div>
+    <div id="ptitle"></div>
+    <button id="back" aria-label="Back">←</button>
+    <div id="pause-big">⏸</div>
+    <button id="next-up">Next Episode ▶</button>
+  </div>
+  <div class="controls">
+    <input type="range" id="seek" min="0" max="60" step="0.1" value="0" aria-label="Seek">
+    <div class="ctrl-row">
+      <button id="pp" aria-label="Play or pause">⏸</button>
+      <button id="rew" aria-label="Back 10 seconds">⏪ 10</button>
+      <button id="fwd" aria-label="Forward 10 seconds">10 ⏩</button>
+      <span class="time" id="time">0:00 / 1:00</span>
+      <div class="spacer"></div>
+      <button id="nxt" aria-label="Next episode">⏭</button>
+      <button id="fs" aria-label="Full screen">⛶</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= DATA ================= */
+const EP_LEN = 60; // every episode is 60 seconds long
+
+const SHOWS = [
+  { id: "dragon", title: "Dragon Blocks: The Series", emoji: "🐉", pal: "🧱", colors: ["#ff7a18", "#7a1fa2"], ground: "#3d2b1f",
+    games: true, cat: "Adventure", year: 2026, age: "7+", match: 99, game: "../dragon-blocks-web/index.html",
+    desc: "A little dragon builds a whole world one block at a time — but every night the blocks start moving on their own!",
+    eps: ["The First Block", "Tower Trouble", "Lava Lake", "The Block Thief", "Biggest Build Ever"],
+    lines: ["One more block and my castle is done!", "Wait... did that block just wiggle?", "The blocks are running away!", "Come back, little blocks!", "I'll build a block fence. Easy!", "Uh oh. The fence is running too.", "Okay. Deep breath. Dragon plan time.", "What if... I just ask them nicely?", "Please come home, blocks? 🥺", "They're coming back! Hooray!"] },
+  { id: "pip", title: "Pip's Quest", emoji: "🐣", pal: "🗝️", colors: ["#43c6ac", "#191654"], ground: "#2e5e2e",
+    games: true, cat: "Adventure", year: 2026, age: "All", match: 97, game: "../pip-quest-web/index.html",
+    desc: "Pip is the smallest chick in the whole valley, and she's on a quest to find the Golden Key.",
+    eps: ["Out of the Shell", "The Windy Bridge", "The Sleepy Giant", "Key of Gold"],
+    lines: ["I'm small, but I'm brave!", "The map says... go left. Or right?", "That bridge is SO wobbly.", "Hello, Mr. Frog! Seen a key?", "Ribbit means no, I think.", "Look! Something shiny!", "It's just a spoon. Hmm.", "Never give up, Pip!", "The Golden Key! I found it!", "Now... what does it open?"] },
+  { id: "nights", title: "99 Nights", emoji: "🌲", pal: "🔦", colors: ["#0f2027", "#2c5364"], ground: "#16261b",
+    games: true, cat: "Spooky", year: 2026, age: "10+", match: 95, game: "../99-nights-web/index.html",
+    desc: "Lost in a deep, dark forest. Keep the campfire burning. Survive 99 nights. Don't look behind the trees...",
+    eps: ["Night One", "The Strange Footprints", "Firewood", "Eyes in the Dark", "Night 99"],
+    lines: ["The fire is our only light.", "Did you hear that?", "Just the wind... probably.", "We need more wood before dark.", "Footprints! Giant ones!", "Stay close to the fire.", "Only 98 more nights to go.", "Something is watching us...", "It's... a very big bunny?", "Okay that's still scary."] },
+  { id: "speed", title: "Speedway 5 Billion", emoji: "🏎️", pal: "🏁", colors: ["#f12711", "#f5af19"], ground: "#333",
+    games: true, cat: "Action", year: 2026, age: "7+", match: 96, game: "../speedway-5-billion-web/index.html",
+    desc: "The fastest race in the galaxy. Five billion laps. One very determined driver.",
+    eps: ["Lap One", "Pit Stop Panic", "Rainbow Road Rage", "Lap 5 Billion"],
+    lines: ["Engines ready? GO!", "Zoom zoom zoom!", "Only 4,999,999,999 laps left!", "Pit stop! Change the tyres!", "Faster! FASTER!", "Watch out for the banana peel!", "I'm in first place!", "Wait, I'm in last place...", "Turbo boost ON!", "The finish line! We did it!"] },
+  { id: "frost", title: "Frostfall", emoji: "❄️", pal: "🐧", colors: ["#83a4d4", "#3b6fb6"], ground: "#e8f4ff",
+    games: true, cat: "Adventure", year: 2026, age: "All", match: 93, game: "../frostfall-web/index.html",
+    desc: "When the snow never stops falling, a brave snowflake and a penguin go to wake up the sun.",
+    eps: ["The Endless Snow", "Ice Cave", "Penguin Friends", "Wake Up, Sun!"],
+    lines: ["Brrr! It's SO cold.", "The sun has been asleep for weeks.", "We have to wake it up!", "Slide down the mountain! Wheee!", "An ice cave! Echo... echo...", "Penguins! Can you help us?", "They said yes! I think.", "Climb to the top of the sky!", "WAKE UP, SUN!", "Good morning! Everything is warm!"] },
+  { id: "tides", title: "Tiny Tides", emoji: "🐠", pal: "🫧", colors: ["#00c6ff", "#0052cc"], ground: "#e0c27a",
+    games: true, cat: "Funny", year: 2026, age: "All", match: 92, game: "../tiny-tides-web/index.html",
+    desc: "A tiny fish with a giant attitude explores the reef and makes friends with everyone. Even the crab.",
+    eps: ["Blub Blub", "The Grumpy Crab", "Bubble Party", "The Big Wave"],
+    lines: ["Blub! Hi, ocean!", "I'm the bravest fish in the sea!", "Is that... a crab?", "Hello, Mr. Crab! Wanna be friends?", "He said 'go away'. Rude.", "Bubble party time! 🫧", "Even Mr. Crab is dancing!", "Uh oh... big wave!", "Hold on to the coral!", "Best day under the sea!"] },
+  { id: "hedge", title: "Hedgehog Hustle", emoji: "🦔", pal: "🍎", colors: ["#56ab2f", "#2f6b12"], ground: "#4b3621",
+    games: true, cat: "Funny", year: 2026, age: "All", match: 94, game: "../hedgehog-hustle-web/index.html",
+    desc: "Hugo the hedgehog has one job: collect every apple before winter. How hard can it be?",
+    eps: ["Apple Season", "The Roll-y Hill", "Squirrel Showdown"],
+    lines: ["Apples! Apples everywhere!", "One for me, one for later...", "Oops, I rolled down the hill!", "Wheeeee!", "Hey! That squirrel took my apple!", "Squirrel! Give it back!", "Fine. We can share.", "Sharing is actually nice.", "Winter, I'm ready!", "Zzzzz... 😴"] },
+  { id: "castle", title: "Castle Defense", emoji: "🏰", pal: "🛡️", colors: ["#5f2c82", "#49a09d"], ground: "#3a5a2a",
+    games: true, cat: "Action", year: 2026, age: "10+", match: 91, game: "../castle-defense-web/index.html",
+    desc: "The goblins are coming! One small castle, one very loud knight, and a catapult that only sort of works.",
+    eps: ["The Goblin Horn", "Catapult Chaos", "The Siege", "Victory Feast"],
+    lines: ["Goblins on the hill!", "Ready the catapult!", "Fire!", "...It went backwards.", "Okay, try again. FIRE!", "Direct hit!", "Close the big gate!", "Hold the wall, everyone!", "The goblins are running away!", "Feast time! 🍗"] },
+  { id: "snack", title: "Space Snack Squad", emoji: "🚀", pal: "🍩", colors: ["#1a2a6c", "#b21f1f"], ground: "#4a4a6a",
+    games: false, cat: "Funny", year: 2025, age: "All", match: 98,
+    desc: "Three astronauts deliver snacks across the galaxy. The aliens are VERY hungry customers.",
+    eps: ["Donut Delivery", "The Pizza Planet", "Snack Attack", "The Last Cookie", "Lunch on the Moon"],
+    lines: ["Snack delivery for Planet Zork!", "Five hundred donuts, coming up!", "The aliens look hungry...", "Hello! Your donuts are here!", "They ate the box too.", "Next stop: the Pizza Planet!", "Uh oh. We're out of snacks.", "Quick! Bake more in space!", "Space cookies! Floating cookies!", "Five stars from the aliens! ⭐"] },
+  { id: "wizard", title: "The Wobbly Wizard", emoji: "🧙", pal: "✨", colors: ["#8e2de2", "#4a00e0"], ground: "#2a1a4a",
+    games: false, cat: "Funny", year: 2025, age: "All", match: 94,
+    desc: "Wally is learning magic. Every spell goes a tiny bit wrong. Today he turned his cat into a teapot.",
+    eps: ["Abraca-Oops", "The Teapot Cat", "Flying Lessons", "Spell Exam"],
+    lines: ["Abracadabra!", "Hmm. That's not a rabbit.", "That's... a teapot?", "Mittens, is that you?", "Meow. *steam noises*", "Okay, reverse spell!", "Now the teapot is a cat AND a teapot.", "Let's call it a 'cat-pot'.", "I'll practise more tomorrow.", "Best wizard ever! Almost."] },
+  { id: "owl", title: "Night Owl Detectives", emoji: "🦉", pal: "🔍", colors: ["#3a3d40", "#181a1c"], ground: "#1d1d2b",
+    games: false, cat: "Mystery", year: 2026, age: "7+", match: 90,
+    desc: "Every night, Detective Hoot solves a mystery in the forest. Who stole the moon cheese?",
+    eps: ["The Missing Cheese", "Footprints in Mud", "The Fox Did It?", "Case Closed"],
+    lines: ["Hoot hoot! A new case!", "The moon cheese is missing!", "Let's look for clues.", "Footprints! Tiny ones.", "A mouse? No... too big.", "Hmm. Crumbs lead this way.", "Aha! It was... the raccoon!", "He wanted a midnight snack.", "Case closed!", "Now who wants cheese? 🧀"] },
+  { id: "robo", title: "Robo Pals", emoji: "🤖", pal: "🔋", colors: ["#3a7bd5", "#3a6073"], ground: "#5a6a7a",
+    games: false, cat: "Funny", year: 2025, age: "All", match: 89,
+    desc: "Two robots try to learn what humans do for fun. Today: dancing. Tomorrow: sneezing.",
+    eps: ["Beep Boop Hello", "Dance Mode", "What is a Sneeze?", "Low Battery"],
+    lines: ["BEEP. HELLO. HUMAN.", "WHAT. IS. FUN?", "Humans say dancing is fun.", "ACTIVATING DANCE MODE.", "*robot noises*", "This is... FUN!", "Warning: too much fun.", "Battery at 10 percent.", "Need... charging...", "Sleep mode. Good night. 💤"] },
+  { id: "volcano", title: "Volcano Kitchen", emoji: "🌋", pal: "🍳", colors: ["#e65c00", "#a83200"], ground: "#4a2511",
+    games: false, cat: "Funny", year: 2026, age: "All", match: 88,
+    desc: "A cooking show on top of a volcano. The oven is very, very hot.",
+    eps: ["Lava Pancakes", "Hot Hot Soup", "The Explosive Cake"],
+    lines: ["Welcome to Volcano Kitchen!", "Today: pancakes!", "Our oven is... a volcano.", "Flip it! Higher!", "That's a really good flip.", "Uh oh. It landed in the lava.", "Crispy pancakes!", "Okay, very crispy.", "Taste test... MMM.", "See you next time! 🔥"] },
+  { id: "penguin", title: "Penguin FC", emoji: "🐧", pal: "⚽", colors: ["#2193b0", "#135d73"], ground: "#d8f0ff",
+    games: false, cat: "Action", year: 2026, age: "All", match: 93,
+    desc: "The worst football team in the Arctic wants to win the Ice Cup. They slide a lot.",
+    eps: ["Kick Off", "Slippery Pitch", "The Walrus Team", "Ice Cup Final"],
+    lines: ["Welcome to Penguin FC!", "Pass the ball!", "Whoops. We slid.", "Everybody slides on ice.", "The Walrus team is HUGE.", "Don't be scared, team!", "Penguin power!", "He shoots... he scores!", "GOOOAAL!", "We won the Ice Cup! 🏆"] },
+  { id: "moon", title: "Mystery of Moon Island", emoji: "🏝️", pal: "🌕", colors: ["#141e30", "#243b55"], ground: "#c2a46a",
+    games: false, cat: "Mystery", year: 2025, age: "10+", match: 87,
+    desc: "An island that only appears during a full moon. Three friends have one night to explore it.",
+    eps: ["The Glowing Shore", "The Hidden Door", "Moon Map", "Before Sunrise"],
+    lines: ["Look! The island appeared!", "It only comes at full moon.", "Let's row over there.", "The sand is glowing!", "There's a door in the rock...", "It needs a password.", "'Moon'? ...It opened!", "A treasure map!", "We have to leave before sunrise!", "See you next full moon... 🌕"] },
+];
+
+const PROFILES = [
+  { name: "Wynn", face: "🐉", color: "#ff9f1c" },
+  { name: "Mum", face: "🌸", color: "#e0457b" },
+  { name: "Dad", face: "🦁", color: "#2a9d8f" },
+  { name: "Guest", face: "😎", color: "#5865f2" },
+];
+
+const ROWS_BY_CAT = [
+  ["Funny", "😂 Funny Shows"],
+  ["Adventure", "🗺️ Big Adventures"],
+  ["Action", "⚡ Action"],
+  ["Mystery", "🔍 Mysteries"],
+  ["Spooky", "👻 A Little Bit Spooky"],
+];
+
+/* ================= STORAGE (one save per profile) ================= */
+let profile = PROFILES[3];
+let store = emptyStore();
+
+function emptyStore() { return { list: [], likes: [], progress: {} }; }
+function storeKey() { return "wynnflix-" + profile.name; }
+function loadStore() {
+  try { store = Object.assign(emptyStore(), JSON.parse(localStorage.getItem(storeKey()) || "{}")); }
+  catch (e) { store = emptyStore(); }
+}
+function saveStore() { try { localStorage.setItem(storeKey(), JSON.stringify(store)); } catch (e) {} }
+
+/* ================= HELPERS ================= */
+const $ = (id) => document.getElementById(id);
+const byId = (id) => SHOWS.find((s) => s.id === id);
+const grad = (s) => `linear-gradient(135deg, ${s.colors[0]}, ${s.colors[1]})`;
+const fmt = (sec) => Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
+function esc(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+function metaHTML(s) {
+  return `<span class="match">${s.match}% Match</span><span>${s.year}</span><span class="age">${s.age}</span><span>${s.eps.length} Episodes</span><span>· ${s.cat}</span>`;
+}
+
+function toast(msg) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+/* ================= PROFILES ================= */
+function showProfiles() {
+  $("profile-list").innerHTML = PROFILES.map((p, i) => `
+    <button class="profile" data-i="${i}">
+      <div class="face" style="background:${p.color}">${p.face}</div>${p.name}
+    </button>`).join("");
+  $("profiles").style.display = "flex";
+}
+$("profile-list").addEventListener("click", (e) => {
+  const b = e.target.closest(".profile");
+  if (!b) return;
+  profile = PROFILES[+b.dataset.i];
+  loadStore();
+  $("me").textContent = profile.face;
+  $("me").style.background = profile.color;
+  $("profiles").style.display = "none";
+  goTab("home");
+  toast("Hi " + profile.name + "! 👋");
+});
+$("me").addEventListener("click", showProfiles);
+
+/* ================= HERO ================= */
+let heroShow = SHOWS[0];
+function setHero(s) {
+  heroShow = s;
+  $("hero-bg").style.background = grad(s);
+  $("hero-emoji").textContent = s.emoji;
+  $("hero-title").textContent = s.title;
+  $("hero-meta").innerHTML = metaHTML(s);
+  $("hero-desc").textContent = s.desc;
+  $("hero-play").textContent = store.progress[s.id] ? `▶ Resume E${store.progress[s.id].ep + 1}` : "▶ Play";
+}
+$("hero-play").addEventListener("click", () => playShow(heroShow));
+$("hero-more").addEventListener("click", () => openModal(heroShow));
+
+/* ================= ROWS ================= */
+let tab = "home";
+
+function card(s, rank) {
+  const p = store.progress[s.id];
+  const bar = p ? `<div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div>` : "";
+  const inner = `<span class="w-badge">🐉</span><span class="big">${s.emoji}</span><span class="t">${esc(s.title)}</span>${bar}`;
+  if (rank) {
+    return `<button class="card top10" data-id="${s.id}" style="background:none" aria-label="${esc(s.title)}"><span class="num">${rank}</span><span class="inner" style="background:${grad(s)}">${inner}</span></button>`;
+  }
+  return `<button class="card" data-id="${s.id}" style="background:${grad(s)}" aria-label="${esc(s.title)}">${inner}</button>`;
+}
+function row(title, shows, top10) {
+  if (!shows.length) return "";
+  return `<section class="row"><h3>${title}</h3><div class="strip">${shows.map((s, i) => card(s, top10 ? i + 1 : 0)).join("")}</div></section>`;
+}
+
+function render() {
+  const q = $("search").value.trim().toLowerCase();
+  let html = "";
+  const showHero = !q && tab !== "list";
+  $("hero").style.display = showHero ? "" : "none";
+  $("rows").style.marginTop = showHero ? "" : "90px";
+
+  if (q) {
+    const found = SHOWS.filter((s) => (s.title + " " + s.cat + " " + s.desc).toLowerCase().includes(q));
+    html = found.length ? row(`Results for "${esc(q)}"`, found)
+      : `<p class="empty">No shows found for "${esc(q)}". Try "dragon" or "funny"!</p>`;
+  } else if (tab === "list") {
+    const mine = store.list.map(byId).filter(Boolean);
+    html = mine.length ? row("My List", mine) : `<p class="empty">Your list is empty. Press ＋ on a show to add it!</p>`;
+  } else {
+    const pool = tab === "games" ? SHOWS.filter((s) => s.games) : SHOWS;
+    const watching = Object.keys(store.progress).map(byId).filter((s) => s && pool.includes(s));
+    const mine = store.list.map(byId).filter((s) => s && pool.includes(s));
+    const top = [...pool].sort((a, b) => b.match - a.match).slice(0, 10);
+
+    html += row(`Continue Watching for ${esc(profile.name)}`, watching);
+    html += row("Top 10 on WynnFlix Today", top, true);
+    if (tab !== "games") html += row("From Wynn's Games 🎮", SHOWS.filter((s) => s.games));
+    html += row("My List", mine);
+    for (const [cat, label] of ROWS_BY_CAT) html += row(label, pool.filter((s) => s.cat === cat));
+  }
+  $("rows").innerHTML = html;
+}
+
+$("rows").addEventListener("click", (e) => {
+  const c = e.target.closest(".card");
+  if (c) openModal(byId(c.dataset.id));
+});
+
+function goTab(t) {
+  tab = t;
+  $("search").value = "";
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
+  const pool = t === "games" ? SHOWS.filter((s) => s.games) : SHOWS;
+  setHero(pool[Math.floor(Math.random() * pool.length)]);
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => goTab(b.dataset.tab)));
+$("logo").addEventListener("click", (e) => { e.preventDefault(); goTab("home"); });
+$("search").addEventListener("input", render);
+window.addEventListener("scroll", () => $("top").classList.toggle("solid", window.scrollY > 40));
+
+/* ================= DETAILS MODAL ================= */
+let modalShow = null;
+
+function openModal(s) {
+  modalShow = s;
+  $("m-top").style.background = grad(s);
+  $("m-emoji").textContent = s.emoji;
+  $("m-title").textContent = s.title;
+  $("m-meta").innerHTML = metaHTML(s);
+  $("m-desc").textContent = s.desc;
+  $("m-game").innerHTML = s.game ? `<a class="game-link" href="${s.game}">🎮 Play the ${esc(s.title.split(":")[0])} game →</a>` : "";
+  const p = store.progress[s.id];
+  $("m-eps").innerHTML = s.eps.map((name, i) => {
+    const bar = p && p.ep === i ? `<div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div>` : "";
+    return `<button class="ep" data-ep="${i}">
+      <span class="n">${i + 1}</span>
+      <span class="thumb" style="background:${grad(s)}">${i % 2 ? s.pal : s.emoji}${bar}</span>
+      <span><b>${esc(name)}</b><span>1m · Episode ${i + 1}</span></span>
+    </button>`;
+  }).join("");
+  $("m-play").textContent = p ? `▶ Resume E${p.ep + 1}` : "▶ Play";
+  updateModalButtons();
+  $("overlay").classList.add("open");
+  $("overlay").scrollTop = 0;
+  document.body.style.overflow = "hidden";
+}
+function updateModalButtons() {
+  const inList = store.list.includes(modalShow.id);
+  $("m-list").textContent = inList ? "✓" : "＋";
+  $("m-list").classList.toggle("on", inList);
+  $("m-like").classList.toggle("on", store.likes.includes(modalShow.id));
+}
+function closeModal() {
+  $("overlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+$("m-close").addEventListener("click", closeModal);
+$("overlay").addEventListener("click", (e) => { if (e.target === $("overlay")) closeModal(); });
+$("m-play").addEventListener("click", () => { closeModal(); playShow(modalShow); });
+$("m-eps").addEventListener("click", (e) => {
+  const b = e.target.closest(".ep");
+  if (b) { closeModal(); playShow(modalShow, +b.dataset.ep, 0); }
+});
+$("m-list").addEventListener("click", () => {
+  const i = store.list.indexOf(modalShow.id);
+  if (i >= 0) { store.list.splice(i, 1); toast("Removed from My List"); }
+  else { store.list.push(modalShow.id); toast("Added to My List ✓"); }
+  saveStore(); updateModalButtons(); render();
+});
+$("m-like").addEventListener("click", () => {
+  const i = store.likes.indexOf(modalShow.id);
+  if (i >= 0) store.likes.splice(i, 1);
+  else { store.likes.push(modalShow.id); toast("You liked " + modalShow.title + " 👍"); }
+  saveStore(); updateModalButtons();
+});
+
+/* ================= PLAYER ================= */
+// The "video" is a cartoon scene: the show's character hops around while subtitles tell the story.
+let cur = null, ep = 0, t = 0, playing = false, last = 0, raf = 0, lastSave = -1;
+
+function playShow(s, epIndex, start) {
+  cur = s;
+  const p = store.progress[s.id];
+  ep = epIndex != null ? epIndex : (p ? p.ep : 0);
+  t = start != null ? start : (p && p.ep === ep ? p.t : 0);
+  $("sky").style.background = grad(s);
+  $("ground").style.background = s.ground;
+  $("star").textContent = s.emoji;
+  $("pal").textContent = s.pal;
+  $("ptitle").textContent = `${s.title} · E${ep + 1} "${s.eps[ep]}"`;
+  $("floats").innerHTML = ["☁️", "✨", "☁️", s.pal].map((f, i) =>
+    `<div class="float" style="top:${8 + i * 13}%;animation-duration:${9 + i * 4}s;animation-delay:-${i * 3}s">${f}</div>`).join("");
+  $("next-up").style.display = "none";
+  $("player").classList.add("open");
+  document.body.style.overflow = "hidden";
+  setPlaying(true);
+  draw();
+}
+
+function setPlaying(on) {
+  playing = on;
+  $("player").classList.toggle("paused", !on);
+  $("pp").textContent = on ? "⏸" : "▶";
+  last = performance.now();
+  cancelAnimationFrame(raf);
+  if (on) raf = requestAnimationFrame(tick);
+}
+
+function tick(now) {
+  if (!playing) return;
+  t += (now - last) / 1000;
+  last = now;
+  if (t >= EP_LEN) finishEpisode();
+  draw();
+  if (playing) raf = requestAnimationFrame(tick);
+}
+
+function finishEpisode() {
+  t = EP_LEN;
+  setPlaying(false);
+  saveProgress();
+  if (ep < cur.eps.length - 1) $("next-up").style.display = "block";
+  else toast("You finished " + cur.title + "! 🎉");
+}
+
+function draw() {
+  $("seek").value = t;
+  $("time").textContent = `${fmt(t)} / ${fmt(EP_LEN)}`;
+  // a new subtitle every 6 seconds; each episode starts at a different line
+  const n = cur.lines.length;
+  $("sub").textContent = cur.lines[(Math.floor(t / (EP_LEN / n)) + ep * 2) % n];
+  // the character walks back and forth, and a friend pops in sometimes
+  const phase = Math.floor(t / 6);
+  $("star").style.left = (phase % 2 ? 55 : 10) + "%";
+  $("pal").style.opacity = phase % 3 === 1 ? 1 : 0;
+  // save where you are every 3 seconds
+  const tick3 = Math.floor(t / 3);
+  if (tick3 !== lastSave) { lastSave = tick3; saveProgress(); }
+}
+
+function saveProgress() {
+  if (!cur) return;
+  const done = t >= EP_LEN - 1;
+  if (done && ep >= cur.eps.length - 1) delete store.progress[cur.id]; // whole show finished
+  else if (done) store.progress[cur.id] = { ep: ep + 1, t: 0 };       // ready for next episode
+  else store.progress[cur.id] = { ep, t };
+  saveStore();
+}
+
+function closePlayer() {
+  saveProgress();
+  setPlaying(false);
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  $("player").classList.remove("open");
+  document.body.style.overflow = "";
+  render();
+}
+
+function togglePlay() {
+  if (t >= EP_LEN) { t = 0; $("next-up").style.display = "none"; }
+  setPlaying(!playing);
+}
+function nextEp() {
+  if (ep < cur.eps.length - 1) playShow(cur, ep + 1, 0);
+  else toast("That was the last episode!");
+}
+
+$("pp").addEventListener("click", togglePlay);
+$("stage").addEventListener("click", (e) => { if (!e.target.closest("button")) togglePlay(); });
+$("rew").addEventListener("click", () => { t = Math.max(0, t - 10); draw(); });
+$("fwd").addEventListener("click", () => { t = Math.min(EP_LEN - 0.5, t + 10); draw(); });
+$("seek").addEventListener("input", (e) => { t = Math.min(+e.target.value, EP_LEN - 0.5); draw(); });
+$("nxt").addEventListener("click", nextEp);
+$("next-up").addEventListener("click", nextEp);
+$("back").addEventListener("click", closePlayer);
+$("fs").addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if ($("player").requestFullscreen) $("player").requestFullscreen().catch(() => {});
+});
+
+document.addEventListener("keydown", (e) => {
+  if ($("player").classList.contains("open")) {
+    if (e.key === " ") { e.preventDefault(); togglePlay(); }
+    else if (e.key === "ArrowLeft") $("rew").click();
+    else if (e.key === "ArrowRight") $("fwd").click();
+    else if (e.key === "Escape" && !document.fullscreenElement) closePlayer();
+  } else if (e.key === "Escape") closeModal();
+});
+
+/* ================= START ================= */
+setHero(SHOWS[0]);
+render();
+showProfiles();
+</script>
+</body>
+</html>
