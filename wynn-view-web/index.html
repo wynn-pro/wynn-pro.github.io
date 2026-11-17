@@ -163,6 +163,36 @@ const SHOWS = {
       ['Ninja Build', 'Cool builds and vehicles.', '🧱'],
       ['Best Battles', 'The biggest ninja battles.', '⚔️'],
     ]
+  },
+  paw: {
+    name: 'Paw Patrol', emoji: '🐕‍🦺', color: 'linear-gradient(135deg,#3db7ff,#e8262b)',
+    blurb: 'A team of rescue pups is ready for action — no job is too big, no pup is too small!',
+    channel: 'https://www.youtube.com/results?search_query=PAW+Patrol+official',
+    eps: [
+      ['Pups Save the Day', 'The whole team rushes to help.', '🚨'],
+      ['Mighty Pups', 'The pups get super powers!', '💥'],
+      ['Sea Patrol', 'Rescues out on the ocean.', '🌊'],
+      ['Dino Rescue', 'The pups find dinosaurs!', '🦖'],
+      ['Jet to the Rescue', 'High-flying rescue mission.', '✈️'],
+      ['Rescue Knights', 'Pups in shining armour.', '🛡️'],
+      ['Moto Pups', 'Zooming on motorbikes.', '🏍️'],
+      ['Cat Pack', 'Pups that are cats? Meow!', '🐱'],
+    ]
+  },
+  poke: {
+    name: 'Pokémon', emoji: '⚡', color: 'linear-gradient(135deg,#ffcb05,#e3350d)',
+    blurb: 'Catch, train and battle with amazing creatures on a big adventure.',
+    channel: 'https://www.youtube.com/results?search_query=Pok%C3%A9mon+official+channel',
+    eps: [
+      ['I Choose You!', 'Where the adventure begins.', '🔴'],
+      ['Pokémon Horizons', 'A brand-new journey.', '🌅'],
+      ['Pokémon Journeys', 'Travel to every region.', '🗺️'],
+      ['Gym Battles', 'Win badges in big battles.', '🏅'],
+      ['Legendary Pokémon', 'The rarest Pokémon of all.', '🌟'],
+      ['Evolution Moments', 'Watch Pokémon evolve!', '✨'],
+      ['Pokémon League', 'The biggest tournament.', '🏆'],
+      ['Funny Moments', 'The silliest Pokémon scenes.', '😂'],
+    ]
   }
 };
 
@@ -226,7 +256,7 @@ function render(showKey) {
     const r = EPS.filter(e => (e.title + ' ' + SHOWS[e.show].name).toLowerCase().includes(q));
     const safe = q.replace(/[<>&"]/g, '');
     app.innerHTML = `<section class="shelf"><h2>Results for “${safe}”</h2>
-      ${r.length ? `<div class="grid">${r.map(card).join('')}</div>` : '<div class="empty">Nothing found 🙈 Try “Bluey”, “Peppa” or “Ninjago”.</div>'}</section>`;
+      ${r.length ? `<div class="grid">${r.map(card).join('')}</div>` : '<div class="empty">Nothing found 🙈 Try “Bluey”, “Peppa”, “Ninjago”, “Paw” or “Pokémon”.</div>'}</section>`;
     return;
   }
   if (showKey) {
@@ -253,7 +283,7 @@ function render(showKey) {
   app.innerHTML = hero()
     + shelf('▶ Keep watching', recent)
     + Object.entries(SHOWS).map(([k, s]) => shelf(s.emoji + ' ' + s.name, EPS.filter(e => e.show === k), s.eps.length + ' episodes')).join('')
-    + "<p class=\"note\">Videos open on YouTube. Bluey, Peppa Pig and Ninjago belong to their creators — this is just Wynn's favourites page.</p>";
+    + "<p class=\"note\">Videos open on YouTube. Bluey, Peppa Pig, Ninjago, Paw Patrol and Pokémon belong to their creators — this is just Wynn's favourites page.</p>";
   heroTimer = setInterval(() => setHero((heroI + 1) % Object.keys(SHOWS).length), 6000);
 }
 
