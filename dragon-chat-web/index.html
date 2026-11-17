@@ -118,17 +118,25 @@ const jokes = [
   "Why did the math book look sad? 📘\nIt had too many <b>problems</b>.",
   "What do you call a fish with no eyes? 🐟\nA <b>fsh</b>."
 ];
+const jokeTails = [
+  "\n\n😂 Get it? I've got loads more where that came from. Just say <b>joke</b> again and I'll find another one in my dragon cave of jokes!",
+  "\n\n🐉 Hehe, that one makes me laugh so hard that smoke comes out of my nose! Want to hear another? Or I can give you a <b>riddle</b> to solve instead.",
+  "\n\n🤣 Okay, okay, maybe that was a bit silly... but silly is the best kind of funny! Try telling that one to your friends or family and see if they laugh.",
+  "\n\n😆 I told that joke to a knight once and he laughed so much his armour rattled! Say <b>joke</b> for another, or <b>fact</b> if you want to learn something cool."
+];
 const facts = [
-  "🐙 An octopus has <b>three hearts</b> and blue blood.",
-  "🍯 Honey never goes bad. People found 3000-year-old honey in Egypt that was still OK to eat!",
-  "🦈 Sharks are older than trees. They've been around for about <b>400 million years</b>.",
-  "🌍 A day on Venus is longer than a year on Venus.",
-  "🐌 Some snails can sleep for <b>3 years</b>.",
-  "⚡ Lightning is about 5 times hotter than the surface of the Sun.",
-  "🦒 Giraffes only need about 30 minutes of sleep a day.",
-  "🐝 Bees can recognise human faces.",
-  "🧠 Your brain uses about 20% of all your body's energy.",
-  "🍌 Bananas are berries, but strawberries are not!"
+  "🐙 An octopus has <b>three hearts</b> and blue blood!\n\nTwo of the hearts pump blood to the gills (that's how it breathes underwater), and the third heart pumps blood to the rest of its body. Its blood is blue because it uses copper to carry oxygen, while our blood uses iron, which makes it red. Even cooler, an octopus has nine brains: one main brain and a mini brain in each of its eight arms!",
+  "🍯 Honey <b>never goes bad</b>!\n\nScientists exploring ancient Egyptian tombs found pots of honey that were over <b>3000 years old</b>, and it was still OK to eat. Honey has very little water in it and it's a bit acidic, so germs and mould can't grow in it. Bees make it by collecting nectar from flowers and fanning it with their wings until it gets thick and sticky.",
+  "🦈 Sharks are <b>older than trees</b>!\n\nSharks have been swimming in the oceans for about <b>400 million years</b>, but the first trees only grew about 350 million years ago. That means sharks were around before the dinosaurs too! Some sharks, like the Greenland shark, can live for more than 250 years, which makes them some of the oldest animals alive today.",
+  "🌍 A day on Venus is <b>longer than a year</b> on Venus!\n\nVenus spins super slowly. It takes 243 Earth days to turn around once, but only 225 Earth days to go all the way around the Sun. Venus also spins backwards compared to most planets, so on Venus the Sun rises in the west and sets in the east. It's also the hottest planet, even hotter than Mercury, because its thick clouds trap the heat.",
+  "🐌 Some snails can <b>sleep for 3 years</b>!\n\nSnails need to stay damp to survive. When the weather gets too hot and dry, they hide inside their shells, seal the opening with a layer of slime that hardens, and go into a super long sleep. When it finally rains again, they wake up and slither off like nothing happened!",
+  "⚡ Lightning is about <b>5 times hotter than the surface of the Sun</b>!\n\nA lightning bolt can reach around 30,000°C for a tiny split second. That heat makes the air around it expand so fast that it creates a giant boom, which is what thunder is! You see the lightning before you hear the thunder because light travels much faster than sound. Count the seconds between them and divide by 3 to guess how many kilometres away the storm is.",
+  "🦒 Giraffes only need about <b>30 minutes of sleep</b> a day!\n\nIn the wild, giraffes have to watch out for lions, so they usually sleep standing up in quick naps of just a few minutes. Their necks are super long, but they have the same number of neck bones as you (seven!). Each one can be as long as your arm. A giraffe's tongue is purple-black and about 50 cm long.",
+  "🐝 Bees can <b>recognise human faces</b>!\n\nScientists tested honeybees and found they could learn to remember faces by putting together patterns like where the eyes, nose and mouth are. Bees are also great at maths: they can understand the idea of zero and count up to about four. A bee visits around 50 to 100 flowers on each trip out of the hive!",
+  "🧠 Your brain uses about <b>20% of all your body's energy</b>!\n\nEven though your brain is only about 2% of your body weight, it's always working, even while you sleep. It has around 86 billion tiny cells called neurons that send messages to each other super fast. When you learn something new, like coding in Python, your brain actually builds new connections!",
+  "🍌 Bananas are <b>berries</b>, but strawberries are <b>not</b>!\n\nTo scientists, a berry is a fruit that grows from one flower and has its seeds inside. Bananas, grapes, tomatoes and even pumpkins count as berries! Strawberries have their seeds on the outside, so they don't count. A strawberry has about 200 seeds on it.",
+  "🌋 There are more volcanoes <b>under the ocean</b> than on land!\n\nScientists think there could be over a million underwater volcanoes. Some of them grow so tall that they poke out of the water and become islands, which is how Hawaii and Iceland were made. The biggest volcano in our whole solar system is Olympus Mons on Mars, and it's nearly three times taller than Mount Everest!",
+  "🐧 Emperor penguins can dive deeper than <b>500 metres</b>!\n\nThey can hold their breath for over 20 minutes while they hunt for fish and squid. To keep warm in Antarctica, where it can be -40°C, thousands of penguins huddle together in a big group and take turns standing on the cold outside edge. The dads keep the egg warm on their feet for about two months without eating!"
 ];
 // [question, answer shown, keyword to check]
 const riddles = [
@@ -149,8 +157,14 @@ const storyBits = {
   hero: ["a brave little dragon", "a ninja hamster", "a robot who loved pizza", "a wizard who was scared of the dark", "a kid named Wynn"],
   place: ["on a floating island", "deep under the ocean", "inside a giant volcano", "in a city made of candy", "on the Moon"],
   problem: ["a giant slime ate all the gold", "the sun stopped shining", "every cat in the world went missing", "someone stole the king's crown", "the wifi broke forever"],
-  ending: ["and they all had a huge party with cake 🎂", "and became the most famous hero ever ⭐", "and found a secret treasure chest full of gems 💎", "and made a new best friend 🤝"]
+  ending: ["and they all had a huge party with cake 🎂", "and became the most famous hero ever ⭐", "and found a secret treasure chest full of gems 💎", "and made a new best friend 🤝"],
+  friend: ["a grumpy talking cat", "a tiny glowing fairy", "a giant friendly golem", "a parrot who only spoke in rhymes", "a skateboarding turtle"],
+  villain: ["the Shadow King", "an evil robot called Byte", "a sneaky goblin chief", "a huge ice monster named Brrrzak", "the Wicked Witch of the Swamp"],
+  item: ["a glowing sword", "a magic map that drew itself", "a pair of rocket boots", "a wand made from a dragon's tooth", "a backpack that could hold anything"],
+  obstacle: ["a bridge made of wobbly jelly", "a maze full of trapdoors", "a river of bubbling lava", "a forest where the trees could walk", "a giant riddle-asking door"]
 };
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const the = s => s.replace(/^(a|an) /, 'the ');
 
 // safe maths: only numbers and + - * / % ^ ( )
 function mathAnswer(text){
@@ -198,20 +212,33 @@ function reply(raw){
   const math = mathAnswer(raw); if (math) return math;
 
   if (/^(hi|hello|hey|yo|sup|hiya|good (morning|afternoon|evening))\b/.test(t))
-    return pick([`Hi${hi}! 👋 What do you want to talk about?`, `Hello${hi}! 🐉 I'm Dragon Chat. Ask me anything!`, `Hey there${hi}! Want a joke, a fact, or a story?`]);
-  if (/how are you|how r u|how's it going/.test(t)) return pick(["I'm great! My fire is extra hot today 🔥 How are you?", "Super good! I just ate a cloud. ☁️ How about you?"]);
+    return pick([
+      `Hi${hi}! 👋 It's so good to see you! I've been sitting in my cave waiting for someone to chat with.\n\nI can tell you a <b>joke</b>, share an amazing <b>fact</b>, make up a long <b>story</b>, give you a <b>riddle</b>, do <b>maths</b>, or play <b>rock paper scissors</b>. What do you want to do first?`,
+      `Hello${hi}! 🐉 I'm Dragon Chat, the friendliest dragon on the whole internet! Wynn built me, and I love talking about games, animals, space and silly stuff.\n\nAsk me anything you like, or type <b>help</b> to see the full list of things I can do!`,
+      `Hey there${hi}! 🔥 Welcome back to my dragon den. Today I'm feeling super chatty!\n\nWant to hear a joke that will make you snort? A fact that will blow your mind? Or a brand new adventure story with heroes and villains? Just tell me!`
+    ]);
+  if (/how are you|how r u|how's it going/.test(t)) return pick([
+    "I'm great, thanks for asking! 🔥 My fire is extra hot today, and I spent the morning flying over mountains and counting clouds (I got to 347 before I lost count).\n\nHow are <b>you</b> doing today? Did anything fun happen?",
+    "Super good! ☁️ I just ate a fluffy cloud for breakfast. It tasted like marshmallows. Then I played a few of Wynn's games and got a new high score!\n\nHow about you? Are you having a good day?"
+  ]);
   if (/(i'?m|i am) (good|great|fine|ok|happy|awesome)/.test(t)) return "Yay! That makes me happy too 😄";
   if (/(i'?m|i am) (sad|bored|tired|angry|upset)/.test(t)) {
     if (t.includes('bored')) return "Bored? Let's fix that! 🎮 Try one of Wynn's games: " + gameLink(pick(games)) + "\nOr say \"story\" and I'll make one up!";
     return "Oh no 😢 I'm sorry. Here's something to cheer you up:\n\n" + pick(jokes);
   }
   if (/who (are|made|created|built) you|what are you|your name/.test(t)) return "I'm <b>Dragon Chat</b> 🐉, a chat robot made by <b>Wynn</b>! I can tell jokes, share facts, do maths, tell stories, play games and suggest Wynn's games.";
-  if (/joke|funny|make me laugh/.test(t)) return pick(jokes);
+  if (/joke|funny|make me laugh/.test(t)) return pick(jokes) + pick(jokeTails);
   if (/fact|tell me something|did you know/.test(t)) return pick(facts);
   if (/riddle/.test(t)) { const [q, a, k] = pick(riddles); pending = { type: 'riddle', answer: a, key: k }; return `🤔 Riddle time!\n\n<b>${q}</b>\n\nType your answer!`; }
   if (/story/.test(t)) {
     const b = storyBits;
-    return `📖 <b>Once upon a time</b>, there was ${pick(b.hero)} who lived ${pick(b.place)}.\n\nOne day, ${pick(b.problem)}! Everyone panicked. 😱\n\nBut our hero didn't give up. They trained every day, found a magic map, and went on a big adventure. After many tricky battles, they fixed everything...\n\n...${pick(b.ending)}.\n\n<b>The End!</b> Say "story" for a new one.`;
+    const hero = pick(b.hero), friend = pick(b.friend), villain = pick(b.villain), item = pick(b.item), problem = pick(b.problem);
+    const [ob1, ob2] = [...b.obstacle].sort(() => Math.random() - .5);
+    return `📖 <b>Chapter 1: The Trouble Begins</b>\n\nOnce upon a time, there was ${hero} who lived ${pick(b.place)}. Every day was peaceful and happy, full of games, snacks and adventures with friends.\n\nBut one morning, everything changed. ${cap(problem)}! Everyone ran around screaming. 😱 Then a note was found pinned to the town gate. It said: <i>"This was me. Signed, ${villain}."</i>\n\n` +
+      `🤝 <b>Chapter 2: A New Friend</b>\n\nOur hero packed a bag and set off right away. On the road, they met ${friend}, who said, "I know where ${the(villain)} is hiding. I'll help you, but it won't be easy!" Together they found ${item} hidden inside an old hollow tree. It glowed brightly, like it had been waiting for them.\n\n` +
+      `🧗 <b>Chapter 3: The Dangerous Journey</b>\n\nFirst, they had to cross ${ob1}. It was super tricky, and the hero almost fell, but ${the(friend)} grabbed them just in time! 😅 Next came ${ob2}. This time it was the hero who had a clever idea and used ${the(item)} to get them both through safely.\n\n` +
+      `🔥 <b>Chapter 4: The Big Battle</b>\n\nAt last they reached the secret lair. ${cap(the(villain))} laughed and said, "You'll never defeat me!" The battle was loud and wild, with flashes of light and booming crashes. Just when things looked hopeless, our hero remembered what their friend had said: never give up! With one final move, they won! 🏆\n\n` +
+      `🌈 <b>Chapter 5: Home Again</b>\n\nEverything went back to normal, and the town threw a giant parade for our hero and ${the(friend)}... ${pick(b.ending)}.\n\n<b>The End!</b> ✨\n\nSay <b>story</b> and I'll make up a brand new one with different heroes, villains and adventures!`;
   }
   if ((m = t.match(/\b(rock|paper|scissors)\b/))) {
     const me = pick(['rock', 'paper', 'scissors']), you = m[1];
@@ -239,13 +266,13 @@ function reply(raw){
   if (/love you|you'?re (cool|awesome|great|the best)/.test(t)) return "Aww thanks! 🥰 You're awesome too!";
   if (/help|what can you do/.test(t)) return helpText();
   if (/\?$/.test(t)) return pick([
-    "Hmm, that's a tricky question! 🤔 I'm still learning. Try asking me for a <b>joke</b>, a <b>fact</b>, some <b>maths</b>, or a <b>story</b>!",
-    "Great question! I don't know that one yet 🐉 but I can do maths, riddles, stories and games. Type <b>help</b> to see!"
+    "Hmm, that's a tricky question! 🤔 I scratched my scaly head and thought really hard, but I don't know that one yet. I'm a young dragon and I'm still learning new things every day.\n\nHere's what I'm really good at: telling <b>jokes</b>, sharing cool <b>facts</b>, making up long <b>stories</b>, giving <b>riddles</b> and doing <b>maths</b>. Want to try one of those?",
+    "Great question! 🐉 I wish I knew the answer, but it's not in my dragon brain yet. Maybe you can ask a grown-up or look it up in a book, and then come back and teach me!\n\nIn the meantime, I can do maths, riddles, stories, jokes and games. Type <b>help</b> to see everything."
   ]);
   return pick([
-    "Cool! 😄 Tell me more, or type <b>help</b> to see what I can do.",
-    "Interesting! 🐉 Want a <b>joke</b>, a <b>fact</b> or a <b>story</b>?",
-    "Hmm, I'm not sure what you mean. Try <b>help</b>!"
+    "Cool! 😄 That sounds interesting. Tell me more about it! I love hearing what people are thinking about.\n\nOr, if you want, I can tell you a <b>joke</b>, share a <b>fact</b>, or make up a <b>story</b> just for you. Type <b>help</b> to see all my tricks.",
+    "Ooh, interesting! 🐉 I'm not totally sure what to say about that, but I'm listening.\n\nWant to do something fun? I can make up an epic adventure <b>story</b> with five chapters, give you a tricky <b>riddle</b>, or play <b>rock paper scissors</b>. You pick!",
+    "Hmm, I'm not sure what you mean. 🤔 My dragon ears might need cleaning! Could you say it a different way?\n\nIf you're not sure what to ask, type <b>help</b> and I'll show you the whole list of things I can do."
   ]);
 }
 function gameLink(g){ return `<a href="../${g[1]}/index.html" style="color:var(--accent);font-weight:700">${g[0]}</a>`; }
