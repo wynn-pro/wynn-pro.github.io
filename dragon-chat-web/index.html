@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dragon Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#13111c; --side:#1c1929; --panel:#24203a; --line:#332d52;
+    --text:#f1eefc; --muted:#a59fc4; --accent:#ff8a1f; --accent2:#ffd84d;
+    --me:#3b2f7a; --bot:#24203a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Nunito,system-ui,sans-serif}
+  .app{display:flex;height:100vh;height:100dvh}
+  aside{width:260px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:Fredoka;font-size:22px;font-weight:700}
+  .brand span{color:var(--accent)}
+  .newbtn{background:var(--accent);color:#1a1000;border:0;border-radius:12px;padding:11px;font-family:Fredoka;font-size:16px;font-weight:600;cursor:pointer}
+  .newbtn:hover{filter:brightness(1.1)}
+  .chats{flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px}
+  .chatitem{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--muted);font-size:14px}
+  .chatitem:hover{background:var(--panel)}
+  .chatitem.active{background:var(--panel);color:var(--text)}
+  .chatitem .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chatitem .x{opacity:0;border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px}
+  .chatitem:hover .x{opacity:1}
+  .home{color:var(--muted);text-decoration:none;font-size:14px;padding:8px 10px;border-radius:10px}
+  .home:hover{background:var(--panel);color:var(--text)}
+  main{flex:1;display:flex;flex-direction:column;min-width:0}
+  header{display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+  header button{background:none;border:0;color:var(--text);font-size:22px;cursor:pointer}
+  .msgs{flex:1;overflow:auto;padding:24px 16px}
+  .inner{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .row.me{flex-direction:row-reverse}
+  .av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:20px;flex:none;background:var(--panel)}
+  .row.bot .av{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .bubble{padding:12px 16px;border-radius:16px;line-height:1.55;max-width:85%;white-space:pre-wrap;word-wrap:break-word}
+  .row.me .bubble{background:var(--me);border-top-right-radius:4px}
+  .row.bot .bubble{background:var(--bot);border-top-left-radius:4px;border:1px solid var(--line)}
+  .bubble b{color:var(--accent2)}
+  .dots span{display:inline-block;width:8px;height:8px;margin:0 2px;border-radius:50%;background:var(--muted);animation:bob 1s infinite}
+  .dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-5px);opacity:1}}
+  .welcome{text-align:center;margin-top:8vh}
+  .welcome .big{font-size:64px}
+  .welcome h1{font-family:Fredoka;margin:8px 0 4px;font-size:34px}
+  .welcome p{color:var(--muted);margin:0 0 24px}
+  .ideas{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;max-width:640px;margin:0 auto}
+  .idea{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;color:var(--text);cursor:pointer;font:inherit;font-size:14px}
+  .idea:hover{border-color:var(--accent)}
+  .idea b{display:block;font-family:Fredoka;font-size:15px;margin-bottom:2px}
+  form{padding:12px 16px 18px}
+  .box{max-width:760px;margin:0 auto;display:flex;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:8px 8px 8px 16px}
+  .box:focus-within{border-color:var(--accent)}
+  textarea{flex:1;background:none;border:0;color:var(--text);font:inherit;font-size:16px;resize:none;outline:none;max-height:160px;padding:8px 0}
+  .send{width:42px;height:42px;border-radius:12px;border:0;background:var(--accent);color:#1a1000;font-size:20px;cursor:pointer;align-self:flex-end}
+  .send:disabled{opacity:.4;cursor:default}
+  .hint{text-align:center;color:var(--muted);font-size:12px;margin-top:8px}
+  @media (max-width:760px){
+    aside{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:transform .2s}
+    aside.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.5)}
+    header{display:flex}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">🐉 Dragon <span>Chat</span></div>
+    <button class="newbtn" id="newChat">＋ New chat</button>
+    <div class="chats" id="chats"></div>
+    <a class="home" href="../index.html">🏠 Back to Wynn's games</a>
+  </aside>
+  <main>
+    <header><button id="menu" aria-label="Menu">☰</button><div class="brand" style="font-size:18px">🐉 Dragon <span>Chat</span></div></header>
+    <div class="msgs" id="msgs"><div class="inner" id="inner"></div></div>
+    <form id="form">
+      <div class="box">
+        <textarea id="input" rows="1" placeholder="Message Dragon Chat..." autocomplete="off"></textarea>
+        <button class="send" id="send" disabled aria-label="Send">➤</button>
+      </div>
+      <div class="hint">Dragon Chat is a robot made by Wynn. It can make mistakes!</div>
+    </form>
+  </main>
+</div>
+
+<script>
+/* ---------- storage ---------- */
+const KEY = 'dragonchat.v1';
+let store = { chats: [], current: null, name: null };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.chats) store = s; } catch (e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+const $ = id => document.getElementById(id);
+const inner = $('inner'), msgsEl = $('msgs'), input = $('input'), sendBtn = $('send');
+let busy = false;
+
+function cur(){ return store.chats.find(c => c.id === store.current); }
+function newChat(){
+  const c = { id: Date.now().toString(36), title: 'New chat', msgs: [] };
+  store.chats.unshift(c); store.current = c.id; save(); render();
+}
+
+/* ---------- brain ---------- */
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const jokes = [
+  "Why did the dragon stop telling jokes? 🐉\nBecause they all fell <b>flat</b>... like his pancakes after he breathed fire on them!",
+  "Why don't skeletons fight each other? 💀\nThey don't have the <b>guts</b>.",
+  "What do you call a sleeping dinosaur? 🦖\nA <b>dino-snore</b>!",
+  "Why was the computer cold? 🥶\nIt left its <b>Windows</b> open.",
+  "What did the ocean say to the beach? 🌊\nNothing, it just <b>waved</b>.",
+  "Why can't you trust atoms? ⚛️\nThey <b>make up</b> everything!",
+  "How does a penguin build its house? 🐧\n<b>Igloos</b> it together!",
+  "Why did the math book look sad? 📘\nIt had too many <b>problems</b>.",
+  "What do you call a fish with no eyes? 🐟\nA <b>fsh</b>."
+];
+const facts = [
+  "🐙 An octopus has <b>three hearts</b> and blue blood.",
+  "🍯 Honey never goes bad. People found 3000-year-old honey in Egypt that was still OK to eat!",
+  "🦈 Sharks are older than trees. They've been around for about <b>400 million years</b>.",
+  "🌍 A day on Venus is longer than a year on Venus.",
+  "🐌 Some snails can sleep for <b>3 years</b>.",
+  "⚡ Lightning is about 5 times hotter than the surface of the Sun.",
+  "🦒 Giraffes only need about 30 minutes of sleep a day.",
+  "🐝 Bees can recognise human faces.",
+  "🧠 Your brain uses about 20% of all your body's energy.",
+  "🍌 Bananas are berries, but strawberries are not!"
+];
+// [question, answer shown, keyword to check]
+const riddles = [
+  ["What has keys but can't open locks?", "a piano 🎹", "piano"],
+  ["What gets wetter the more it dries?", "a towel 🧺", "towel"],
+  ["What has hands but can't clap?", "a clock ⏰", "clock"],
+  ["What can you catch but not throw?", "a cold 🤧", "cold"],
+  ["The more you take, the more you leave behind. What are they?", "footsteps 👣", "step"],
+  ["What has one eye but can't see?", "a needle 🪡", "needle"]
+];
+const games = [
+  ["Dragon Blocks", "dragon-blocks-web"], ["99 Nights", "99-nights-web"], ["Castle Defense", "castle-defense-web"],
+  ["Speedway 5 Billion", "speedway-5-billion-web"], ["Neon Flip", "neon-flip"], ["Frostspire", "frostspire-web"],
+  ["Island Builder", "island-builder-web"], ["Block Blaster", "block-blaster-web"], ["Star Snackers", "star-snackers-web"],
+  ["Battleship Bay", "battleship"], ["Pip's Quest", "pip-quest-web"], ["Hedgehog Hustle", "hedgehog-hustle-web"]
+];
+const storyBits = {
+  hero: ["a brave little dragon", "a ninja hamster", "a robot who loved pizza", "a wizard who was scared of the dark", "a kid named Wynn"],
+  place: ["on a floating island", "deep under the ocean", "inside a giant volcano", "in a city made of candy", "on the Moon"],
+  problem: ["a giant slime ate all the gold", "the sun stopped shining", "every cat in the world went missing", "someone stole the king's crown", "the wifi broke forever"],
+  ending: ["and they all had a huge party with cake 🎂", "and became the most famous hero ever ⭐", "and found a secret treasure chest full of gems 💎", "and made a new best friend 🤝"]
+};
+
+// safe maths: only numbers and + - * / % ^ ( )
+function mathAnswer(text){
+  let t = text.toLowerCase()
+    .replace(/what('s| is)|calculate|work out|how much is|equals|=|\?/g, ' ')
+    .replace(/plus/g, '+').replace(/minus/g, '-').replace(/times|multiplied by/g, '*')
+    .replace(/(\d)\s*x\s*(?=\d)/g, '$1*')
+    .replace(/divided by/g, '/').replace(/squared/g, '^2').replace(/to the power of/g, '^')
+    .replace(/×/g, '*').replace(/÷/g, '/').trim();
+  if (!/^[\d\s+\-*/%^().]+$/.test(t) || !/\d/.test(t) || !/[+\-*/%^]/.test(t)) return null;
+  let pos = 0; const s = t.replace(/\s+/g, '');
+  const peek = () => s[pos];
+  function num(){ const st = pos; while (/[\d.]/.test(peek() || '')) pos++; if (st === pos) throw 0; return parseFloat(s.slice(st, pos)); }
+  function atom(){ if (peek() === '-') { pos++; return -atom(); } if (peek() === '(') { pos++; const v = expr(); if (peek() !== ')') throw 0; pos++; return v; } return num(); }
+  function power(){ const b = atom(); if (peek() === '^') { pos++; return Math.pow(b, power()); } return b; }
+  function term(){ let v = power(); while ('*/%'.includes(peek() || '#')) { const o = s[pos++]; const r = power(); v = o === '*' ? v * r : o === '/' ? v / r : v % r; } return v; }
+  function expr(){ let v = term(); while ('+-'.includes(peek() || '#')) { const o = s[pos++]; const r = term(); v = o === '+' ? v + r : v - r; } return v; }
+  try {
+    const v = expr(); if (pos !== s.length || !isFinite(v)) return null;
+    const shown = s.replace(/\*/g, ' × ').replace(/\//g, ' ÷ ').replace(/\+/g, ' + ').replace(/(\d|\))-/g, '$1 - ');
+    return `🧮 ${shown} = <b>${Math.round(v * 1e6) / 1e6}</b>`;
+  } catch (e) { return null; }
+}
+
+let pending = null; // waiting for a riddle answer
+
+function reply(raw){
+  const t = raw.toLowerCase().trim();
+  const name = store.name;
+
+  if (pending && pending.type === 'riddle') {
+    const r = pending; pending = null;
+    if (t.includes(r.key)) return `✅ Yes! It's <b>${r.answer}</b>. You're smart! Say "riddle" for another one!`;
+    return `Nice try! The answer is <b>${r.answer}</b>. Say "riddle" for another one!`;
+  }
+
+  let m;
+  if ((m = t.match(/(?:my name is|i'm called|call me)\s+([a-z][a-z\- ]{0,20})/i))) {
+    store.name = m[1].trim().replace(/\b\w/g, c => c.toUpperCase()); save();
+    return `Nice to meet you, <b>${esc(store.name)}</b>! 🐉 I'll remember your name.`;
+  }
+  if (/what('s| is) my name/.test(t)) return name ? `Your name is <b>${esc(name)}</b>! 😄` : `I don't know yet! Tell me by saying "my name is ..."`;
+  const hi = name ? ' ' + esc(name) : '';
+
+  const math = mathAnswer(raw); if (math) return math;
+
+  if (/^(hi|hello|hey|yo|sup|hiya|good (morning|afternoon|evening))\b/.test(t))
+    return pick([`Hi${hi}! 👋 What do you want to talk about?`, `Hello${hi}! 🐉 I'm Dragon Chat. Ask me anything!`, `Hey there${hi}! Want a joke, a fact, or a story?`]);
+  if (/how are you|how r u|how's it going/.test(t)) return pick(["I'm great! My fire is extra hot today 🔥 How are you?", "Super good! I just ate a cloud. ☁️ How about you?"]);
+  if (/(i'?m|i am) (good|great|fine|ok|happy|awesome)/.test(t)) return "Yay! That makes me happy too 😄";
+  if (/(i'?m|i am) (sad|bored|tired|angry|upset)/.test(t)) {
+    if (t.includes('bored')) return "Bored? Let's fix that! 🎮 Try one of Wynn's games: " + gameLink(pick(games)) + "\nOr say \"story\" and I'll make one up!";
+    return "Oh no 😢 I'm sorry. Here's something to cheer you up:\n\n" + pick(jokes);
+  }
+  if (/who (are|made|created|built) you|what are you|your name/.test(t)) return "I'm <b>Dragon Chat</b> 🐉, a chat robot made by <b>Wynn</b>! I can tell jokes, share facts, do maths, tell stories, play games and suggest Wynn's games.";
+  if (/joke|funny|make me laugh/.test(t)) return pick(jokes);
+  if (/fact|tell me something|did you know/.test(t)) return pick(facts);
+  if (/riddle/.test(t)) { const [q, a, k] = pick(riddles); pending = { type: 'riddle', answer: a, key: k }; return `🤔 Riddle time!\n\n<b>${q}</b>\n\nType your answer!`; }
+  if (/story/.test(t)) {
+    const b = storyBits;
+    return `📖 <b>Once upon a time</b>, there was ${pick(b.hero)} who lived ${pick(b.place)}.\n\nOne day, ${pick(b.problem)}! Everyone panicked. 😱\n\nBut our hero didn't give up. They trained every day, found a magic map, and went on a big adventure. After many tricky battles, they fixed everything...\n\n...${pick(b.ending)}.\n\n<b>The End!</b> Say "story" for a new one.`;
+  }
+  if ((m = t.match(/\b(rock|paper|scissors)\b/))) {
+    const me = pick(['rock', 'paper', 'scissors']), you = m[1];
+    const e = { rock: '🪨', paper: '📄', scissors: '✂️' };
+    const win = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+    const res = you === me ? "It's a <b>tie</b>! 🤝" : win[you] === me ? "<b>You win!</b> 🎉" : "<b>I win!</b> 🐉🔥";
+    return `You: ${e[you]}  Me: ${e[me]}\n${res}`;
+  }
+  if (/recommend|suggest|which game|best game|what should i play/.test(t)) { const g = pick(games); return `I think you should play ${gameLink(g)}! 🎮 It's one of Wynn's games.`; }
+  if (/play a game|let'?s play|\bgame/.test(t))
+    return "Let's play! 🎮 Pick one:\n• Type <b>rock</b>, <b>paper</b> or <b>scissors</b>\n• Type <b>riddle</b> for a brain teaser\n• Type <b>roll a dice</b> 🎲\n• Or ask me to <b>recommend a game</b> from Wynn's site!";
+  if (/dice|roll/.test(t)) return `🎲 You rolled a <b>${1 + Math.floor(Math.random() * 6)}</b>!`;
+  if (/coin/.test(t)) return `🪙 It's <b>${Math.random() < .5 ? 'heads' : 'tails'}</b>!`;
+  if (/\btime\b/.test(t) && /what|tell/.test(t)) return `🕒 It's <b>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</b> right now.`;
+  if (/\bdate\b|what day/.test(t)) return `📅 Today is <b>${new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</b>.`;
+  if ((m = t.match(/random number(?: between| from)? (\d+) (?:and|to) (\d+)/))) { const lo = Math.min(+m[1], +m[2]), hi2 = Math.max(+m[1], +m[2]); return `🎰 Your number is <b>${lo + Math.floor(Math.random() * (hi2 - lo + 1))}</b>!`; }
+  if (/random number/.test(t)) return `🎰 Your number is <b>${1 + Math.floor(Math.random() * 100)}</b>!`;
+  if (/python/.test(t)) return "🐍 Python is a great coding language! Here's a tiny program:\n\n<b>name = input(\"What's your name? \")\nprint(\"Hello, \" + name + \"!\")</b>\n\nIt asks for your name and says hello!";
+  if (/favou?rite colou?r/.test(t)) return "My favourite colour is <b>dragon orange</b> 🧡🔥";
+  if (/favou?rite food/.test(t)) return "I love <b>spicy pizza</b> 🍕... I cook it with my own fire!";
+  if (/favou?rite animal/.test(t)) return "Dragons, obviously! 🐉 But axolotls are a close second.";
+  if (/dragon/.test(t)) return "🐉 Dragons are the best! Did you know Wynn's logo is a dragon too? Try " + gameLink(games[0]) + "!";
+  if (/thank/.test(t)) return pick(["You're welcome! 😊", "Any time! 🐉", "No problem!"]);
+  if (/^(bye|goodbye|see ya|see you|cya)/.test(t)) return `Bye${hi}! 👋 Come back soon!`;
+  if (/love you|you'?re (cool|awesome|great|the best)/.test(t)) return "Aww thanks! 🥰 You're awesome too!";
+  if (/help|what can you do/.test(t)) return helpText();
+  if (/\?$/.test(t)) return pick([
+    "Hmm, that's a tricky question! 🤔 I'm still learning. Try asking me for a <b>joke</b>, a <b>fact</b>, some <b>maths</b>, or a <b>story</b>!",
+    "Great question! I don't know that one yet 🐉 but I can do maths, riddles, stories and games. Type <b>help</b> to see!"
+  ]);
+  return pick([
+    "Cool! 😄 Tell me more, or type <b>help</b> to see what I can do.",
+    "Interesting! 🐉 Want a <b>joke</b>, a <b>fact</b> or a <b>story</b>?",
+    "Hmm, I'm not sure what you mean. Try <b>help</b>!"
+  ]);
+}
+function gameLink(g){ return `<a href="../${g[1]}/index.html" style="color:var(--accent);font-weight:700">${g[0]}</a>`; }
+function helpText(){
+  return "Here's what I can do 🐉\n\n😂 <b>joke</b> – tell a joke\n🧠 <b>fact</b> – a cool fact\n🤔 <b>riddle</b> – a brain teaser\n📖 <b>story</b> – make up a story\n🧮 <b>12 * 7</b> – do maths\n✊ <b>rock / paper / scissors</b>\n🎲 <b>roll a dice</b> or <b>flip a coin</b>\n🎮 <b>recommend a game</b>\n📛 <b>my name is ...</b> – I'll remember you\n🕒 <b>what time is it</b>";
+}
+
+/* ---------- UI ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function addRow(who, html){
+  const row = document.createElement('div'); row.className = 'row ' + who;
+  row.innerHTML = `<div class="av">${who === 'bot' ? '🐉' : '🧒'}</div><div class="bubble">${html}</div>`;
+  inner.appendChild(row); msgsEl.scrollTop = msgsEl.scrollHeight; return row;
+}
+function renderSide(){
+  const box = $('chats'); box.innerHTML = '';
+  store.chats.forEach(c => {
+    const d = document.createElement('div'); d.className = 'chatitem' + (c.id === store.current ? ' active' : '');
+    d.innerHTML = `<span>💬</span><span class="t">${esc(c.title)}</span><button class="x" title="Delete">🗑</button>`;
+    d.onclick = () => { store.current = c.id; save(); render(); $('side').classList.remove('open'); };
+    d.querySelector('.x').onclick = e => {
+      e.stopPropagation(); store.chats = store.chats.filter(x => x.id !== c.id);
+      if (store.current === c.id) store.current = store.chats[0] ? store.chats[0].id : null;
+      if (!store.current) newChat(); else { save(); render(); }
+    };
+    box.appendChild(d);
+  });
+}
+function render(){
+  renderSide(); inner.innerHTML = ''; pending = null;
+  const c = cur();
+  if (!c || !c.msgs.length) {
+    inner.innerHTML = `<div class="welcome"><div class="big">🐉</div><h1>Hi${store.name ? ' ' + esc(store.name) : ''}! I'm Dragon Chat</h1><p>Ask me anything, or try one of these:</p>
+      <div class="ideas">
+        <button class="idea" data-q="Tell me a joke"><b>😂 Tell me a joke</b>Something silly</button>
+        <button class="idea" data-q="Tell me a story"><b>📖 Make a story</b>A brand new adventure</button>
+        <button class="idea" data-q="Give me a riddle"><b>🤔 Riddle me</b>Test your brain</button>
+        <button class="idea" data-q="What is 25 * 4 + 10?"><b>🧮 Do maths</b>What is 25 × 4 + 10?</button>
+      </div></div>`;
+    inner.querySelectorAll('.idea').forEach(b => b.onclick = () => send(b.dataset.q));
+    return;
+  }
+  c.msgs.forEach(m => addRow(m.who, m.who === 'me' ? esc(m.text) : m.text));
+}
+function send(text){
+  text = text.trim(); if (!text || busy) return;
+  let c = cur(); if (!c) { newChat(); c = cur(); }
+  if (!c.msgs.length) { inner.innerHTML = ''; c.title = text.slice(0, 32); }
+  c.msgs.push({ who: 'me', text }); addRow('me', esc(text)); save(); renderSide();
+  input.value = ''; autosize(); sendBtn.disabled = true; busy = true;
+  const typing = addRow('bot', '<span class="dots"><span></span><span></span><span></span></span>');
+  const ans = reply(text);
+  setTimeout(() => {
+    typing.querySelector('.bubble').innerHTML = ans; msgsEl.scrollTop = msgsEl.scrollHeight;
+    c.msgs.push({ who: 'bot', text: ans }); save(); busy = false;
+  }, 450 + Math.min(1200, ans.length * 6));
+}
+function autosize(){ input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; }
+
+$('form').onsubmit = e => { e.preventDefault(); send(input.value); };
+input.oninput = () => { autosize(); sendBtn.disabled = !input.value.trim(); };
+input.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); } };
+$('newChat').onclick = () => { newChat(); $('side').classList.remove('open'); input.focus(); };
+$('menu').onclick = () => $('side').classList.toggle('open');
+
+if (!cur()) newChat(); else render();
+input.focus();
+</script>
+</body>
+</html>

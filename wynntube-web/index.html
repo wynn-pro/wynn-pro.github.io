@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WynnTube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #0a84ff; --blue-dark: #0057d9; --yellow: #ffd23f; --pink: #ff5d8f;
+    --green: #2ed47a; --ink: #12223b; --muted: #5b6b82; --bg: #f3f8ff;
+    --card: #ffffff; --line: #d8e4f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #eef4ff; --muted: #9fb0c8; --bg: #0e1626; --card: #172238; --line: #26344f; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--ink); }
+  h1, h2, h3, button, .logo { font-family: 'Fredoka', sans-serif; }
+  button { cursor: pointer; }
+
+  /* top bar */
+  header {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px; background: var(--card); border-bottom: 4px solid var(--blue);
+  }
+  .logo { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 700;
+          color: var(--ink); text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .logo .mark { width: 40px; height: 30px; border-radius: 10px; background: var(--blue);
+                display: grid; place-items: center; color: var(--yellow); font-size: 1rem;
+                box-shadow: 0 3px 0 var(--blue-dark); }
+  .logo b { color: var(--blue); }
+  .search { flex: 1; display: flex; max-width: 560px; margin: 0 auto; }
+  .search input { flex: 1; min-width: 0; padding: 9px 14px; font: inherit; font-size: 1rem;
+                  border: 2px solid var(--line); border-right: 0; border-radius: 999px 0 0 999px;
+                  background: var(--bg); color: var(--ink); outline: none; }
+  .search input:focus { border-color: var(--blue); }
+  .search button { padding: 0 18px; border: 2px solid var(--blue); background: var(--blue); color: #fff;
+                   border-radius: 0 999px 999px 0; font-size: 1rem; }
+  .upload-btn { background: var(--yellow); color: #12223b; border: 3px solid #12223b; border-radius: 999px;
+                padding: 6px 14px; font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+  .home-link { color: var(--muted); text-decoration: none; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 640px) {
+    header { flex-wrap: wrap; }
+    .search { order: 3; flex-basis: 100%; }
+    .home-link { display: none; }
+  }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 18px 16px 60px; }
+
+  /* category chips */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 18px; }
+  .chip { flex: none; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--line);
+          background: var(--card); color: var(--ink); font-weight: 600; font-size: 0.95rem; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* video grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px 16px; }
+  .vcard { cursor: pointer; }
+  .thumb { position: relative; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #000; }
+  .thumb canvas, .thumb video { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .thumb .dur { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.8); color: #fff;
+                font-size: .8rem; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
+  .vcard:hover .thumb { outline: 3px solid var(--blue); }
+  .meta { display: flex; gap: 10px; margin-top: 10px; }
+  .avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+            font-size: 1.2rem; background: var(--line); }
+  .meta h3 { font-size: 1rem; line-height: 1.25; font-weight: 600; }
+  .meta p { color: var(--muted); font-size: .88rem; margin-top: 3px; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; font-size: 1.1rem; }
+
+  /* watch page */
+  .watch { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; }
+  @media (max-width: 1000px) { .watch { grid-template-columns: 1fr; } }
+  .player { position: relative; aspect-ratio: 16/9; background: #000; border-radius: 14px; overflow: hidden; }
+  .player canvas, .player video { width: 100%; height: 100%; display: block; object-fit: contain; }
+  .controls { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px 10px;
+              background: linear-gradient(transparent, rgba(0,0,0,.75)); color: #fff;
+              display: flex; flex-direction: column; gap: 6px; opacity: 1; transition: opacity .3s; }
+  .player.hide-ui .controls { opacity: 0; }
+  .bar { height: 6px; background: rgba(255,255,255,.3); border-radius: 3px; cursor: pointer; position: relative; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--yellow); border-radius: 3px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .row button { background: none; border: 0; color: #fff; font-size: 1.3rem; }
+  .row .time { font-size: .9rem; font-weight: 700; }
+  .row .grow { flex: 1; }
+  .big-play { position: absolute; inset: 0; margin: auto; width: 80px; height: 56px; border-radius: 16px;
+              border: 0; background: var(--blue); color: var(--yellow); font-size: 1.8rem; display: none; }
+  .player.paused .big-play { display: block; }
+
+  .title { font-size: 1.35rem; margin: 14px 0 10px; }
+  .chan-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .chan-row .avatar { width: 44px; height: 44px; font-size: 1.5rem; }
+  .chan-row .who b { display: block; }
+  .chan-row .who span { color: var(--muted); font-size: .88rem; }
+  .sub-btn { margin-left: 4px; background: var(--ink); color: var(--bg); border: 0; border-radius: 999px;
+             padding: 8px 16px; font-weight: 700; font-size: .95rem; }
+  .sub-btn.on { background: var(--line); color: var(--ink); }
+  .actions { margin-left: auto; display: flex; gap: 8px; }
+  .pill { background: var(--card); border: 2px solid var(--line); color: var(--ink); border-radius: 999px;
+          padding: 7px 14px; font-weight: 600; font-size: .95rem; }
+  .pill.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .desc { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-top: 14px; font-size: .95rem; }
+  .desc b { display: block; margin-bottom: 4px; }
+
+  .comments h2 { font-size: 1.15rem; margin: 22px 0 12px; }
+  .c-form { display: flex; gap: 10px; margin-bottom: 18px; }
+  .c-form input { flex: 1; min-width: 0; border: 0; border-bottom: 2px solid var(--line); background: none;
+                  color: var(--ink); font: inherit; padding: 6px 2px; outline: none; }
+  .c-form input:focus { border-color: var(--blue); }
+  .c-form button { background: var(--blue); color: #fff; border: 0; border-radius: 999px; padding: 6px 16px; font-weight: 700; }
+  .comment { display: flex; gap: 10px; margin-bottom: 14px; }
+  .comment b { font-size: .9rem; }
+  .comment p { font-size: .95rem; }
+
+  .side h2 { font-size: 1.1rem; margin-bottom: 10px; }
+  .side .vcard { display: flex; gap: 10px; margin-bottom: 12px; }
+  .side .thumb { width: 168px; flex: none; border-radius: 10px; }
+  .side .meta { margin-top: 0; }
+  .side .meta h3 { font-size: .92rem; }
+
+  /* upload dialog */
+  dialog { margin: auto; border: 0; border-radius: 18px; padding: 22px; width: min(440px, calc(100% - 32px));
+           background: var(--card); color: var(--ink); }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
+  dialog h2 { margin-bottom: 12px; }
+  dialog label { display: block; font-weight: 700; margin: 10px 0 4px; }
+  dialog input, dialog select { width: 100%; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px;
+                                font: inherit; background: var(--bg); color: var(--ink); }
+  dialog .btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  dialog .note { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+  .primary { background: var(--blue); color: #fff; border: 0; border-radius: 999px; padding: 8px 18px; font-weight: 700; }
+  .ghost { background: none; color: var(--ink); border: 2px solid var(--line); border-radius: 999px; padding: 8px 18px; font-weight: 700; }
+  .del-btn { background: none; border: 2px solid var(--pink); color: var(--pink); border-radius: 999px; padding: 7px 14px; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" id="logo"><span class="mark">▶</span><span>Wynn<b>Tube</b></span></a>
+  <form class="search" id="searchForm">
+    <input id="q" type="search" placeholder="Search videos" aria-label="Search videos">
+    <button aria-label="Search">🔍</button>
+  </form>
+  <button class="upload-btn" id="uploadBtn">＋ Upload</button>
+  <a class="home-link" href="../index.html">🏠 Wynn Studios</a>
+</header>
+
+<main id="app"></main>
+
+<dialog id="upDlg">
+  <form method="dialog" id="upForm">
+    <h2>📤 Upload a video</h2>
+    <label for="upFile">Video file</label>
+    <input id="upFile" type="file" accept="video/*" required>
+    <label for="upTitle">Title</label>
+    <input id="upTitle" maxlength="80" placeholder="My awesome video" required>
+    <label for="upChan">Channel name</label>
+    <input id="upChan" maxlength="30" placeholder="Wynn">
+    <label for="upCat">Category</label>
+    <select id="upCat"></select>
+    <p class="note">Your video is saved only in this browser on this computer.</p>
+    <div class="btns">
+      <button type="button" class="ghost" id="upCancel">Cancel</button>
+      <button class="primary" id="upGo">Upload</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===================== Built-in cartoon videos (drawn live) ===================== */
+const CATS = ['All', 'Space', 'Animals', 'Racing', 'Gaming', 'Nature', 'My videos'];
+
+const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647);
+
+const CARTOONS = [
+  { id: 'rocket', title: 'Rocket Launch to the Moon 🚀', chan: 'Space Kid', av: '👨‍🚀', cat: 'Space', dur: 24, views: 128400, days: 3,
+    desc: 'Countdown, lift-off and a moon landing. Watch till the end!',
+    draw(c, t, W, H) {
+      c.fillStyle = '#0b1030'; c.fillRect(0, 0, W, H);
+      const r = rnd(7);
+      for (let i = 0; i < 90; i++) { c.fillStyle = `rgba(255,255,255,${.4 + .6 * Math.abs(Math.sin(t * 2 + i))})`;
+        c.fillRect(r() * W, ((r() * H) + t * 30 * (t > 5 ? 1 : 0)) % H, 2, 2); }
+      c.fillStyle = '#e8e2c8'; c.beginPath(); c.arc(W * .8, H * .2 + Math.max(0, t - 12) * 8, 50, 0, 7); c.fill();
+      if (t < 5) { c.fillStyle = '#fff'; c.font = 'bold 120px Fredoka'; c.textAlign = 'center';
+        c.fillText(Math.ceil(5 - t), W / 2, H / 2 + 40); }
+      const y = t < 5 ? H * .65 : H * .65 - Math.min((t - 5) * 40, H * .35);
+      c.save(); c.translate(W / 2, y);
+      if (t >= 5) { c.fillStyle = `hsl(${30 + 20 * Math.sin(t * 30)},100%,55%)`;
+        c.beginPath(); c.moveTo(-18, 60); c.lineTo(0, 100 + 20 * Math.sin(t * 40)); c.lineTo(18, 60); c.fill(); }
+      c.fillStyle = '#fff'; c.fillRect(-20, -40, 40, 100);
+      c.fillStyle = '#ff5d8f'; c.beginPath(); c.moveTo(-20, -40); c.lineTo(0, -80); c.lineTo(20, -40); c.fill();
+      c.fillRect(-36, 30, 16, 30); c.fillRect(20, 30, 16, 30);
+      c.fillStyle = '#0a84ff'; c.beginPath(); c.arc(0, 0, 10, 0, 7); c.fill(); c.restore();
+      if (t > 20) { c.fillStyle = '#ffd23f'; c.font = 'bold 48px Fredoka'; c.textAlign = 'center'; c.fillText('WE MADE IT! 🌕', W / 2, H * .9); }
+    } },
+  { id: 'fish', title: 'Relaxing Fish Tank 10 Hours (not really) 🐠', chan: 'Ocean Buddies', av: '🐙', cat: 'Animals', dur: 30, views: 9800, days: 12,
+    desc: 'Chill out with some happy fish and bubbles.',
+    draw(c, t, W, H) {
+      const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3fc1ff'); g.addColorStop(1, '#0a3a7a');
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#e8c98a'; c.fillRect(0, H * .88, W, H * .12);
+      for (let i = 0; i < 6; i++) { c.strokeStyle = '#2ed47a'; c.lineWidth = 8; c.beginPath();
+        const x = 60 + i * 160; c.moveTo(x, H * .9);
+        c.quadraticCurveTo(x + 20 * Math.sin(t + i), H * .7, x + 10 * Math.sin(t * 1.3 + i), H * .55); c.stroke(); }
+      const cols = ['#ff8c42', '#ffd23f', '#ff5d8f', '#b07cff', '#fff'];
+      for (let i = 0; i < 7; i++) { const dir = i % 2 ? 1 : -1, sp = 60 + i * 15;
+        let x = ((t * sp * dir + i * 200) % (W + 200) + W + 200) % (W + 200) - 100;
+        const y = 80 + i * 55 + 15 * Math.sin(t * 2 + i);
+        c.save(); c.translate(x, y); c.scale(dir, 1); c.fillStyle = cols[i % 5];
+        c.beginPath(); c.ellipse(0, 0, 34, 20, 0, 0, 7); c.fill();
+        c.beginPath(); c.moveTo(-30, 0); c.lineTo(-52, -16 + 6 * Math.sin(t * 9)); c.lineTo(-52, 16 - 6 * Math.sin(t * 9)); c.fill();
+        c.fillStyle = '#000'; c.beginPath(); c.arc(18, -5, 4, 0, 7); c.fill(); c.restore(); }
+      c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 2;
+      for (let i = 0; i < 25; i++) { const x = (i * 97) % W + 8 * Math.sin(t * 3 + i), y = H - ((t * 80 + i * 70) % H);
+        c.beginPath(); c.arc(x, y, 4 + (i % 4), 0, 7); c.stroke(); }
+    } },
+  { id: 'race', title: 'EPIC Car Race – Who Wins?? 🏎️', chan: 'Turbo Wynn', av: '🏁', cat: 'Racing', dur: 20, views: 503000, days: 1,
+    desc: 'Red vs Blue vs Yellow. Comment who you think will win!',
+    draw(c, t, W, H) {
+      c.fillStyle = '#7cc8f5'; c.fillRect(0, 0, W, H * .35);
+      c.fillStyle = '#5fcf4a'; c.fillRect(0, H * .35, W, H * .65);
+      c.fillStyle = '#444'; c.fillRect(0, H * .42, W, H * .5);
+      c.fillStyle = '#fff'; for (let i = 0; i < 20; i++) { const x = ((i * 120 - t * 500) % (W + 120) + W + 120) % (W + 120) - 60;
+        c.fillRect(x, H * .58, 60, 6); c.fillRect(x, H * .74, 60, 6); }
+      const fx = W - 80; c.fillStyle = '#fff'; c.fillRect(fx, H * .42, 16, H * .5);
+      const cars = [['#ff4747', .5, 1.06], ['#0a84ff', .66, 1.0], ['#ffd23f', .82, .97]];
+      cars.forEach(([col, ly, sp], i) => {
+        const p = Math.min(1, (t / 18) * sp + .03 * Math.sin(t * 1.7 + i * 2)); const x = 40 + p * (fx - 140);
+        const y = H * ly; c.fillStyle = col; c.fillRect(x, y - 18, 100, 30); c.fillRect(x + 25, y - 36, 50, 20);
+        c.fillStyle = '#111'; c.beginPath(); c.arc(x + 22, y + 12, 12, 0, 7); c.arc(x + 78, y + 12, 12, 0, 7); c.fill(); });
+      if (t > 18) { c.fillStyle = '#ff4747'; c.font = 'bold 56px Fredoka'; c.textAlign = 'center'; c.fillText('RED WINS! 🏆', W / 2, H * .25); }
+    } },
+  { id: 'blocks', title: 'I Built a GIANT Tower in 20 Seconds 🧱', chan: 'Block Boss', av: '🟩', cat: 'Gaming', dur: 22, views: 74200, days: 6,
+    desc: 'Speed-building challenge. Can you beat my time?',
+    draw(c, t, W, H) {
+      c.fillStyle = '#9ad7ff'; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#6b4a2b'; c.fillRect(0, H - 60, W, 60); c.fillStyle = '#4caf50'; c.fillRect(0, H - 70, W, 14);
+      const cols = ['#ff5d8f', '#ffd23f', '#2ed47a', '#0a84ff', '#ff8c42', '#b07cff'];
+      const n = Math.floor(t * 2.2), s = 34;
+      for (let i = 0; i < n; i++) { const row = Math.floor(i / 3), col = i % 3; const x = W / 2 - s * 1.5 + col * s;
+        let y = H - 70 - (row + 1) * s;
+        if (i === n - 1) { const f = (t * 2.2) % 1; y = y - (1 - f) * 200; }
+        c.fillStyle = cols[row % 6]; c.fillRect(x, y, s - 2, s - 2); }
+      c.fillStyle = '#12223b'; c.font = 'bold 34px Fredoka'; c.textAlign = 'left';
+      c.fillText('⏱ ' + t.toFixed(1) + 's', 20, 46); c.fillText('🧱 ' + n, 20, 90);
+    } },
+  { id: 'fireworks', title: 'Best Fireworks Show EVER 🎆', chan: 'Sky Party', av: '✨', cat: 'Nature', dur: 26, views: 31100, days: 30,
+    desc: 'Boom! Turn up your volume (there is no sound, use your imagination).',
+    draw(c, t, W, H) {
+      c.fillStyle = '#070b1a'; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#111a33'; for (let i = 0; i < 10; i++) c.fillRect(i * W / 10, H - 40 - (i * 37 % 90), W / 10 - 4, 200);
+      for (let k = 0; k < 8; k++) { const st = k * 3 % 26 + (k % 3) * .7; const age = ((t - st) % 4 + 4) % 4;
+        const r = rnd(k + 3); const cx = 100 + r() * (W - 200), cy = 80 + r() * (H * .4); const hue = r() * 360;
+        if (age < 1) { c.fillStyle = '#fff'; c.fillRect(cx, H - (H - cy) * age, 3, 10); }
+        else if (age < 3) { const a = age - 1;
+          for (let i = 0; i < 40; i++) { const ang = i / 40 * 6.283, d = a * 110;
+            c.fillStyle = `hsla(${hue},100%,65%,${1 - a / 2})`;
+            c.beginPath(); c.arc(cx + Math.cos(ang) * d, cy + Math.sin(ang) * d + a * a * 20, 3, 0, 7); c.fill(); } } }
+    } },
+  { id: 'puppy', title: 'Puppy Chases a Ball (So Cute!) 🐶', chan: 'Ocean Buddies', av: '🐙', cat: 'Animals', dur: 18, views: 1200000, days: 60,
+    desc: 'Our puppy Biscuit loves her red ball.',
+    draw(c, t, W, H) {
+      c.fillStyle = '#bfe9ff'; c.fillRect(0, 0, W, H); c.fillStyle = '#7ed957'; c.fillRect(0, H * .65, W, H);
+      c.fillStyle = '#fff6c0'; c.beginPath(); c.arc(W * .1, H * .15, 40, 0, 7); c.fill();
+      const bx = W / 2 + Math.sin(t * .8) * W * .38, by = H * .78 - Math.abs(Math.sin(t * 4)) * 70;
+      c.fillStyle = '#ff4747'; c.beginPath(); c.arc(bx, by, 16, 0, 7); c.fill();
+      const px = W / 2 + Math.sin(t * .8 - .5) * W * .38, dir = Math.cos(t * .8 - .5) > 0 ? 1 : -1, hop = Math.abs(Math.sin(t * 8)) * 8;
+      c.save(); c.translate(px, H * .76 - hop); c.scale(dir, 1); c.fillStyle = '#c98a4a';
+      c.beginPath(); c.ellipse(0, 0, 50, 26, 0, 0, 7); c.fill();
+      c.beginPath(); c.arc(48, -24, 24, 0, 7); c.fill();
+      c.fillStyle = '#8a5a2b'; c.beginPath(); c.ellipse(36, -40, 10, 18, -.4, 0, 7); c.fill();
+      c.fillStyle = '#000'; c.beginPath(); c.arc(56, -30, 4, 0, 7); c.arc(70, -20, 5, 0, 7); c.fill();
+      c.strokeStyle = '#c98a4a'; c.lineWidth = 8; c.beginPath(); c.moveTo(-48, -6); c.lineTo(-66, -26 + 10 * Math.sin(t * 20)); c.stroke();
+      c.fillRect(-36, 18, 10, 22 + 4 * Math.sin(t * 16)); c.fillRect(26, 18, 10, 22 - 4 * Math.sin(t * 16)); c.restore();
+    } },
+  { id: 'snow', title: 'Cozy Snowy Night ❄️', chan: 'Sky Party', av: '✨', cat: 'Nature', dur: 28, views: 4400, days: 2,
+    desc: 'Snow falling on a little cabin. Perfect for bedtime.',
+    draw(c, t, W, H) {
+      c.fillStyle = '#1b2a4a'; c.fillRect(0, 0, W, H); c.fillStyle = '#eef4ff'; c.fillRect(0, H * .78, W, H);
+      c.fillStyle = '#7a4a2a'; c.fillRect(W * .4, H * .5, 180, 130);
+      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(W * .4 - 20, H * .5); c.lineTo(W * .4 + 90, H * .32); c.lineTo(W * .4 + 200, H * .5); c.fill();
+      c.fillStyle = `rgba(255,210,63,${.8 + .2 * Math.sin(t * 5)})`; c.fillRect(W * .4 + 30, H * .58, 40, 40); c.fillRect(W * .4 + 110, H * .58, 40, 40);
+      for (let i = 0; i < 4; i++) { const x = 80 + i * 60 + (i > 1 ? W * .55 : 0);
+        c.fillStyle = '#1f6b3a'; c.beginPath(); c.moveTo(x, H * .45); c.lineTo(x - 40, H * .8); c.lineTo(x + 40, H * .8); c.fill(); }
+      c.fillStyle = '#fff'; const r = rnd(11);
+      for (let i = 0; i < 140; i++) { const sx = r() * W, sp = 20 + r() * 50, sz = 1 + r() * 3;
+        c.beginPath(); c.arc((sx + 20 * Math.sin(t + i)) % W, (r() * H + t * sp) % H, sz, 0, 7); c.fill(); }
+    } },
+  { id: 'planets', title: 'All 8 Planets Explained Fast 🪐', chan: 'Space Kid', av: '👨‍🚀', cat: 'Space', dur: 24, views: 66000, days: 20,
+    desc: 'Mercury to Neptune in under half a minute.',
+    draw(c, t, W, H) {
+      c.fillStyle = '#05081a'; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(W / 2, H / 2, 34, 0, 7); c.fill();
+      const P = [['Mercury', '#b5a49a', 4], ['Venus', '#e8c27a', 6], ['Earth', '#3fa7ff', 6], ['Mars', '#ff6a3d', 5],
+                 ['Jupiter', '#d9a46a', 13], ['Saturn', '#e8d08a', 11], ['Uranus', '#8ee6f0', 8], ['Neptune', '#4b6bff', 8]];
+      const focus = Math.min(7, Math.floor(t / 3));
+      P.forEach(([n, col, s], i) => { const rad = 55 + i * 26, a = t * (1.6 / (1 + i * .5)) + i;
+        c.strokeStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.ellipse(W / 2, H / 2, rad * 1.6, rad * .8, 0, 0, 7); c.stroke();
+        const x = W / 2 + Math.cos(a) * rad * 1.6, y = H / 2 + Math.sin(a) * rad * .8;
+        c.fillStyle = col; c.beginPath(); c.arc(x, y, s * (i === focus ? 1.8 : 1), 0, 7); c.fill();
+        if (i === focus) { c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, s * 1.8 + 6, 0, 7); c.stroke(); } });
+      c.fillStyle = '#fff'; c.font = 'bold 40px Fredoka'; c.textAlign = 'left'; c.fillText(`${focus + 1}. ${P[focus][0]}`, 24, 54);
+    } },
+];
+
+/* ===================== Storage helpers ===================== */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('wt_' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('wt_' + k, JSON.stringify(v)); } catch {} },
+};
+let DB = null;
+function openDB() {
+  return new Promise(res => {
+    try { const r = indexedDB.open('wynntube', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('videos', { keyPath: 'id' });
+      r.onsuccess = () => res(DB = r.result); r.onerror = () => res(null);
+    } catch { res(null); }
+  });
+}
+function dbAll() { return new Promise(res => { if (!DB) return res([]);
+  const q = DB.transaction('videos').objectStore('videos').getAll(); q.onsuccess = () => res(q.result); q.onerror = () => res([]); }); }
+function dbPut(v) { return new Promise(res => { if (!DB) return res();
+  const tx = DB.transaction('videos', 'readwrite'); tx.objectStore('videos').put(v); tx.oncomplete = res; tx.onerror = res; }); }
+function dbDel(id) { return new Promise(res => { if (!DB) return res();
+  const tx = DB.transaction('videos', 'readwrite'); tx.objectStore('videos').delete(id); tx.oncomplete = res; tx.onerror = res; }); }
+
+let uploads = [];       // {id,title,chan,cat,blob,date,dur,url}
+const urlCache = {};
+function allVideos() {
+  const ups = uploads.map(u => ({ ...u, av: '🎬', mine: true, views: 0, days: Math.floor((Date.now() - u.date) / 864e5), desc: 'Uploaded by ' + u.chan }));
+  return [...ups, ...CARTOONS];
+}
+const viewsOf = v => v.views + (LS.get('views', {})[v.id] || 0);
+
+/* ===================== Formatting ===================== */
+const fmtViews = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.0', '') + 'K' : String(n);
+const fmtTime = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const fmtAgo = d => d <= 0 ? 'today' : d === 1 ? '1 day ago' : d < 30 ? d + ' days ago' : Math.floor(d / 30) + ' month' + (d >= 60 ? 's' : '') + ' ago';
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/* ===================== Rendering loop for cartoons ===================== */
+const live = new Set();   // {canvas, video, getT}
+function loop(now) {
+  for (const L of live) {
+    if (!L.canvas.isConnected) { live.delete(L); continue; }
+    const c = L.canvas.getContext('2d'); c.save(); L.video.draw(c, L.getT(now), L.canvas.width, L.canvas.height); c.restore();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function thumbEl(v) {
+  const box = document.createElement('div'); box.className = 'thumb';
+  if (v.mine) {
+    const vid = document.createElement('video'); vid.muted = true; vid.preload = 'metadata';
+    vid.src = (urlCache[v.id] ||= URL.createObjectURL(v.blob)) + '#t=0.5'; box.appendChild(vid);
+  } else {
+    const cv = document.createElement('canvas'); cv.width = 800; cv.height = 450; box.appendChild(cv);
+    let hoverStart = null;
+    box.addEventListener('mouseenter', () => hoverStart = performance.now());
+    box.addEventListener('mouseleave', () => hoverStart = null);
+    const still = v.dur * .6;
+    live.add({ canvas: cv, video: v, getT: now => hoverStart == null ? still : ((now - hoverStart) / 1000) % v.dur });
+  }
+  const d = document.createElement('span'); d.className = 'dur'; d.textContent = fmtTime(v.dur); box.appendChild(d);
+  return box;
+}
+
+function cardEl(v) {
+  const a = document.createElement('div'); a.className = 'vcard'; a.tabIndex = 0;
+  a.appendChild(thumbEl(v));
+  const m = document.createElement('div'); m.className = 'meta';
+  m.innerHTML = `<div class="avatar">${v.av}</div><div><h3>${esc(v.title)}</h3><p>${esc(v.chan)}</p><p>${fmtViews(viewsOf(v))} views · ${fmtAgo(v.days)}</p></div>`;
+  a.appendChild(m);
+  const go = () => location.hash = '#watch/' + v.id;
+  a.onclick = go; a.onkeydown = e => { if (e.key === 'Enter') go(); };
+  return a;
+}
+
+/* ===================== Pages ===================== */
+const app = document.getElementById('app');
+let curCat = 'All';
+
+function renderHome(query = '') {
+  app.innerHTML = '';
+  const chips = document.createElement('div'); chips.className = 'chips';
+  CATS.forEach(cat => { const b = document.createElement('button'); b.className = 'chip' + (cat === curCat ? ' on' : '');
+    b.textContent = cat; b.onclick = () => { curCat = cat; renderHome(query); }; chips.appendChild(b); });
+  app.appendChild(chips);
+  const q = query.toLowerCase();
+  const list = allVideos().filter(v => (curCat === 'All' || v.cat === curCat || (curCat === 'My videos' && v.mine))
+    && (!q || (v.title + ' ' + v.chan + ' ' + v.cat).toLowerCase().includes(q)));
+  if (!list.length) {
+    app.insertAdjacentHTML('beforeend', `<p class="empty">${curCat === 'My videos' && !q ? 'No videos yet — press <b>＋ Upload</b> to add your own!' : 'No videos found 😢'}</p>`);
+    return;
+  }
+  const g = document.createElement('div'); g.className = 'grid'; list.forEach(v => g.appendChild(cardEl(v))); app.appendChild(g);
+}
+
+function renderWatch(id) {
+  const v = allVideos().find(x => x.id === id);
+  if (!v) { location.hash = ''; return; }
+  const views = LS.get('views', {}); views[id] = (views[id] || 0) + 1; LS.set('views', views);
+
+  app.innerHTML = `
+    <div class="watch">
+      <div>
+        <div class="player paused" id="player">
+          <button class="big-play" id="bigPlay" aria-label="Play">▶</button>
+          <div class="controls">
+            <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+            <div class="row">
+              <button id="pp" aria-label="Play or pause">▶</button>
+              <span class="time" id="time">0:00 / ${fmtTime(v.dur)}</span>
+              <span class="grow"></span>
+              <button id="fs" aria-label="Full screen">⛶</button>
+            </div>
+          </div>
+        </div>
+        <h1 class="title">${esc(v.title)}</h1>
+        <div class="chan-row">
+          <div class="avatar">${v.av}</div>
+          <div class="who"><b>${esc(v.chan)}</b><span id="subCount"></span></div>
+          <button class="sub-btn" id="sub"></button>
+          <div class="actions">
+            <button class="pill" id="like"></button>
+            ${v.mine ? '<button class="del-btn" id="del">🗑 Delete</button>' : ''}
+          </div>
+        </div>
+        <div class="desc"><b>${fmtViews(viewsOf(v))} views · ${fmtAgo(v.days)}</b>${esc(v.desc)}</div>
+        <section class="comments">
+          <h2 id="cCount"></h2>
+          <form class="c-form" id="cForm">
+            <div class="avatar">🙂</div>
+            <input id="cText" maxlength="200" placeholder="Add a comment..." aria-label="Add a comment">
+            <button>Comment</button>
+          </form>
+          <div id="cList"></div>
+        </section>
+      </div>
+      <aside class="side"><h2>Up next</h2><div id="next"></div></aside>
+    </div>`;
+
+  // ---- player ----
+  const player = document.getElementById('player'), pp = document.getElementById('pp'), fill = document.getElementById('fill'),
+        timeEl = document.getElementById('time'), bar = document.getElementById('bar');
+  let api;
+  if (v.mine) {
+    const vid = document.createElement('video'); vid.src = urlCache[v.id] ||= URL.createObjectURL(v.blob); vid.playsInline = true;
+    player.prepend(vid);
+    api = { play: () => vid.play(), pause: () => vid.pause(), get paused() { return vid.paused; },
+            get t() { return vid.currentTime; }, get dur() { return vid.duration || v.dur || 0; }, seek: f => vid.currentTime = f * (vid.duration || 0) };
+    vid.onended = () => sync();
+    vid.onclick = () => toggle();
+  } else {
+    const cv = document.createElement('canvas'); cv.width = 1280; cv.height = 720; player.prepend(cv);
+    let t = 0, last = null, paused = true;
+    live.add({ canvas: cv, video: v, getT: now => { if (!paused && last != null) { t += (now - last) / 1000; if (t >= v.dur) { t = v.dur; paused = true; sync(); } }
+      last = now; return t; } });
+    api = { play() { if (t >= v.dur) t = 0; paused = false; }, pause() { paused = true; }, get paused() { return paused; },
+            get t() { return t; }, dur: v.dur, seek: f => t = f * v.dur };
+    cv.onclick = () => toggle();
+  }
+  function sync() { const p = api.paused; player.classList.toggle('paused', p); pp.textContent = p ? '▶' : '⏸'; }
+  function toggle() { api.paused ? api.play() : api.pause(); setTimeout(sync, 0); }
+  pp.onclick = toggle; document.getElementById('bigPlay').onclick = toggle;
+  bar.onclick = e => { const r = bar.getBoundingClientRect(); api.seek((e.clientX - r.left) / r.width); };
+  document.getElementById('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : player.requestFullscreen?.();
+  let hideT; player.onmousemove = () => { player.classList.remove('hide-ui'); clearTimeout(hideT);
+    hideT = setTimeout(() => !api.paused && player.classList.add('hide-ui'), 2000); };
+  (function tick() { if (!player.isConnected) return;
+    const d = api.dur || 1; fill.style.width = Math.min(100, api.t / d * 100) + '%';
+    timeEl.textContent = fmtTime(api.t) + ' / ' + fmtTime(d); requestAnimationFrame(tick); })();
+  toggle();
+  window.onkeydown = e => { if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space' || e.key === 'k') { e.preventDefault(); toggle(); } };
+
+  // ---- subscribe ----
+  const subs = LS.get('subs', {}); const subBtn = document.getElementById('sub'), subCount = document.getElementById('subCount');
+  const baseSubs = Math.round(viewsOf(v) / 9) + 3;
+  const drawSub = () => { const on = !!subs[v.chan]; subBtn.textContent = on ? 'Subscribed ✔' : 'Subscribe';
+    subBtn.classList.toggle('on', on); subCount.textContent = fmtViews(baseSubs + (on ? 1 : 0)) + ' subscribers'; };
+  subBtn.onclick = () => { subs[v.chan] = !subs[v.chan]; LS.set('subs', subs); drawSub(); }; drawSub();
+
+  // ---- like ----
+  const likes = LS.get('likes', {}); const likeBtn = document.getElementById('like');
+  const baseLikes = Math.round(viewsOf(v) / 25);
+  const drawLike = () => { const on = !!likes[id]; likeBtn.textContent = '👍 ' + fmtViews(baseLikes + (on ? 1 : 0)); likeBtn.classList.toggle('on', on); };
+  likeBtn.onclick = () => { likes[id] = !likes[id]; LS.set('likes', likes); drawLike(); }; drawLike();
+
+  // ---- delete my video ----
+  const del = document.getElementById('del');
+  if (del) del.onclick = async () => { if (!confirm('Delete this video?')) return;
+    await dbDel(id); uploads = uploads.filter(u => u.id !== id); location.hash = ''; };
+
+  // ---- comments ----
+  const starter = { rocket: [['Space Kid', 'Thanks for watching! 🚀']], race: [['RacerBoy', 'Blue was robbed!!'], ['Turbo Wynn', 'Rematch next week 🏁']],
+                    puppy: [['DogLover', 'Biscuit is the best 😍']] };
+  const all = LS.get('comments', {});
+  const drawC = () => { const list = [...(all[id] || []), ...(starter[id] || []).map(([n, t]) => ({ n, t }))];
+    document.getElementById('cCount').textContent = list.length + ' Comments';
+    document.getElementById('cList').innerHTML = list.map(c => `<div class="comment"><div class="avatar">${c.n === 'You' ? '🙂' : '😀'}</div><div><b>@${esc(c.n)}</b><p>${esc(c.t)}</p></div></div>`).join(''); };
+  document.getElementById('cForm').onsubmit = e => { e.preventDefault(); const inp = document.getElementById('cText');
+    const txt = inp.value.trim(); if (!txt) return; (all[id] ||= []).unshift({ n: 'You', t: txt }); LS.set('comments', all); inp.value = ''; drawC(); };
+  drawC();
+
+  // ---- up next ----
+  const next = document.getElementById('next');
+  allVideos().filter(x => x.id !== id).sort((a, b) => (b.cat === v.cat) - (a.cat === v.cat)).forEach(x => next.appendChild(cardEl(x)));
+  scrollTo(0, 0);
+}
+
+function route() {
+  window.onkeydown = null;
+  const h = location.hash;
+  if (h.startsWith('#watch/')) renderWatch(decodeURIComponent(h.slice(7)));
+  else if (h.startsWith('#search/')) { const q = decodeURIComponent(h.slice(8)); document.getElementById('q').value = q; renderHome(q); }
+  else renderHome();
+}
+
+/* ===================== Header + upload ===================== */
+document.getElementById('logo').onclick = () => { curCat = 'All'; document.getElementById('q').value = ''; location.hash = ''; route(); };
+document.getElementById('searchForm').onsubmit = e => { e.preventDefault(); const q = document.getElementById('q').value.trim();
+  curCat = 'All'; location.hash = q ? '#search/' + encodeURIComponent(q) : ''; route(); };
+
+const dlg = document.getElementById('upDlg');
+const catSel = document.getElementById('upCat');
+CATS.slice(1, -1).forEach(c => catSel.add(new Option(c, c)));
+document.getElementById('uploadBtn').onclick = () => {
+  if (!DB) { alert('Uploading needs browser storage, which is turned off here.'); return; }
+  document.getElementById('upForm').reset(); document.getElementById('upChan').value = LS.get('chan', ''); dlg.showModal(); };
+document.getElementById('upCancel').onclick = () => dlg.close();
+document.getElementById('upFile').onchange = e => { const f = e.target.files[0]; const t = document.getElementById('upTitle');
+  if (f && !t.value) t.value = f.name.replace(/\.[^.]+$/, ''); };
+document.getElementById('upForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = document.getElementById('upFile').files[0]; if (!f) return;
+  const chan = document.getElementById('upChan').value.trim() || 'Me'; LS.set('chan', chan);
+  const dur = await new Promise(res => { const tv = document.createElement('video'); tv.preload = 'metadata';
+    tv.onloadedmetadata = () => res(tv.duration || 0); tv.onerror = () => res(0); tv.src = URL.createObjectURL(f); });
+  const v = { id: 'up' + Date.now(), title: document.getElementById('upTitle').value.trim() || f.name, chan,
+              cat: catSel.value, blob: f, date: Date.now(), dur };
+  await dbPut(v); uploads.unshift(v); dlg.close(); location.hash = '#watch/' + v.id;
+};
+
+window.addEventListener('hashchange', route);
+openDB().then(dbAll).then(list => { uploads = list.sort((a, b) => b.date - a.date); route(); });
+</script>
+</body>
+</html>
