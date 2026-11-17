@@ -74,6 +74,28 @@
   .ep .info { padding: 10px 12px 12px; }
   .ep h3 { font-size: 1rem; margin-bottom: 2px; }
   .ep p { font-size: .82rem; color: var(--muted); }
+  .ep h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* video player */
+  .player { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.85); display: grid;
+            place-items: center; padding: 16px; overflow-y: auto; }
+  .player[hidden] { display: none; }
+  .pbox { width: min(960px, 100%); background: var(--card); border-radius: 20px; padding: 14px; }
+  .ptop { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ptop h2 { flex: 1; font-size: 1.15rem; }
+  .pclose { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--line); color: var(--ink); font-size: 1.1rem; }
+  .pvideo { aspect-ratio: 16/9; background: #000; border-radius: 14px; overflow: hidden; }
+  .pvideo iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .pctrl { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .pctrl .btn { font-size: .9rem; padding: 8px 14px; }
+  .heartbtn.on { background: #ff5d8f; }
+  .pnext { display: grid; grid-auto-flow: column; grid-auto-columns: 160px; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+  .pnext button { background: var(--bg); border: 2px solid transparent; border-radius: 12px; padding: 6px;
+                  color: var(--ink); text-align: left; font-family: 'Nunito'; font-size: .78rem; }
+  .pnext button.on { border-color: var(--accent); }
+  .pnext img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; display: block; margin-bottom: 4px; }
+  .pnext span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .heart { position: absolute; right: 8px; top: 8px; background: rgba(0,0,0,.45); border: 0; color: #fff;
            width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; z-index: 2; }
   .heart.on { background: #ff5d8f; }
@@ -115,6 +137,23 @@
 
 <main id="app"></main>
 <div class="timer" id="timer">⏱ 0 min on Wynn View today</div>
+
+<div id="player" class="player" hidden onclick="if (event.target === this) closePlayer()">
+  <div class="pbox">
+    <div class="ptop">
+      <h2 id="pt"></h2>
+      <button class="pclose" onclick="closePlayer()" aria-label="Close">✕</button>
+    </div>
+    <div class="pvideo" id="pv"></div>
+    <div class="pctrl">
+      <button class="btn ghost" onclick="step(-1)">⏮ Back</button>
+      <button class="btn ghost heartbtn" id="pfav">♥ My List</button>
+      <button class="btn play" onclick="step(1)">Next ⏭</button>
+      <a class="btn ghost" id="pyt" href="#" target="_blank" rel="noopener">Won't play? Open on YouTube ↗</a>
+    </div>
+    <div class="pnext" id="pnext"></div>
+  </div>
+</div>
 
 <script>
 // Each show uses a colour + emoji (no copyrighted art). Episodes open the real video on YouTube.
@@ -333,8 +372,9 @@ const SHOWS = {
 
 const EPS = [];
 for (const [key, s] of Object.entries(SHOWS)) {
-  s.eps.forEach(([title, desc, emoji], i) => EPS.push({ id: key + i, show: key, title, desc, emoji }));
+  s.eps.forEach(([vid, title], i) => EPS.push({ id: key + i, show: key, vid, title }));
 }
+const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
 function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
@@ -348,21 +388,19 @@ const app = document.getElementById('app');
 const qBox = document.getElementById('q');
 let page = 'home', heroI = 0, heroTimer;
 
-function ytUrl(ep) {
-  const name = ep.show === 'ninjago' ? 'LEGO Ninjago' : SHOWS[ep.show].name;
-  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(name + ' ' + ep.title + ' official');
-}
+function ytUrl(ep) { return 'https://www.youtube.com/watch?v=' + ep.vid; }
 
 function card(ep) {
   const s = SHOWS[ep.show];
   return `<div class="ep">
     <button class="heart ${favs.includes(ep.id) ? 'on' : ''}" data-fav="${ep.id}" onclick="fav('${ep.id}')" title="Add to My List">♥</button>
     <div class="thumb" style="background:${s.color}" onclick="watch('${ep.id}')">
-      <span class="tag">${s.emoji} ${s.name}</span>${ep.emoji}
+      <img src="https://i.ytimg.com/vi/${ep.vid}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">
+      <span class="tag">${s.emoji} ${s.name}</span>
       <span class="playi">▶</span>
       ${seen.includes(ep.id) ? '<span class="seen"></span>' : ''}
     </div>
-    <div class="info"><h3>${ep.title}</h3><p>${ep.desc}</p></div>
+    <div class="info"><h3>${esc(ep.title)}</h3><p>${esc(s.src)}</p></div>
   </div>`;
 }
 
@@ -398,7 +436,8 @@ function render(showKey) {
     const s = SHOWS[showKey];
     app.innerHTML = `<section class="hero" style="background:${s.color}"><div class="big">${s.emoji}</div>
       <h1>${s.name}</h1><p>${s.blurb}</p>
-      <div class="row"><a class="btn play" href="${s.channel}" target="_blank" rel="noopener">📺 Official channel</a></div></section>
+      <div class="row"><button class="btn play" onclick="watch('${showKey}0')">▶ Play all</button>
+      <a class="btn ghost" href="https://www.youtube.com/playlist?list=${s.list}" target="_blank" rel="noopener">📺 More on YouTube</a></div></section>
       <section class="shelf"><h2>Episodes</h2><div class="grid">${EPS.filter(e => e.show === showKey).map(card).join('')}</div></section>`;
     return;
   }
@@ -418,7 +457,7 @@ function render(showKey) {
   app.innerHTML = hero()
     + shelf('▶ Keep watching', recent)
     + Object.entries(SHOWS).map(([k, s]) => shelf(s.emoji + ' ' + s.name, EPS.filter(e => e.show === k), s.eps.length + ' episodes')).join('')
-    + "<p class=\"note\">Videos open on YouTube. Bluey, Peppa Pig, Ninjago, Paw Patrol and Pokémon belong to their creators — this is just Wynn's favourites page.</p>";
+    + "<p class=\"note\">Videos come from each show's official YouTube channel. Bluey, Peppa Pig, Ninjago, Paw Patrol and Pokémon belong to their creators — this is just Wynn's favourites page.</p>";
   heroTimer = setInterval(() => setHero((heroI + 1) % Object.keys(SHOWS).length), 6000);
 }
 
@@ -435,16 +474,50 @@ function fav(id) {
   document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => b.classList.toggle('on', favs.includes(id)));
   if (page === 'list' && !qBox.value) render();
 }
+// ---- in-page video player ----
+const player = document.getElementById('player');
+let playing = null;
 function watch(id) {
   const ep = EPS.find(e => e.id === id);
+  if (!ep) return;
+  playing = ep;
+  const s = SHOWS[ep.show];
   seen = [...seen.filter(x => x !== id), id].slice(-12);
   save('wv-seen', seen);
-  window.open(ytUrl(ep), '_blank', 'noopener');
   document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => {
     const t = b.nextElementSibling;
     if (t && !t.querySelector('.seen')) t.insertAdjacentHTML('beforeend', '<span class="seen"></span>');
   });
+  document.getElementById('pv').innerHTML =
+    `<iframe src="https://www.youtube-nocookie.com/embed/${ep.vid}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+      title="${esc(ep.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+      referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  document.getElementById('pt').textContent = `${s.emoji} ${ep.title}`;
+  document.getElementById('pyt').href = ytUrl(ep);
+  const favBtn = document.getElementById('pfav');
+  favBtn.classList.toggle('on', favs.includes(ep.id));
+  const showEps = EPS.filter(e => e.show === ep.show);
+  document.getElementById('pnext').innerHTML = showEps.map(e =>
+    `<button class="${e.id === ep.id ? 'on' : ''}" onclick="watch('${e.id}')">
+       <img src="https://i.ytimg.com/vi/${e.vid}/default.jpg" alt=""><span>${esc(e.title)}</span></button>`).join('');
+  player.hidden = false;
+  document.body.style.overflow = 'hidden';
 }
+function step(d) {
+  if (!playing) return;
+  const list = EPS.filter(e => e.show === playing.show);
+  const i = list.findIndex(e => e.id === playing.id);
+  watch(list[(i + d + list.length) % list.length].id);
+}
+function closePlayer() {
+  player.hidden = true;
+  document.getElementById('pv').innerHTML = '';
+  document.body.style.overflow = '';
+  playing = null;
+  if (page === 'home' && !qBox.value) render();
+}
+document.getElementById('pfav').onclick = () => { if (playing) { fav(playing.id); document.getElementById('pfav').classList.toggle('on', favs.includes(playing.id)); } };
+document.addEventListener('keydown', e => { if (!player.hidden && e.key === 'Escape') closePlayer(); });
 
 document.querySelectorAll('#nav button').forEach(b => b.onclick = () => go(b.dataset.p));
 qBox.addEventListener('input', () => render());

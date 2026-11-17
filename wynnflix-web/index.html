@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WynnFlix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Bungee&family=Chewy&family=Cinzel+Decorative:wght@700;900&family=Creepster&family=Fredoka:wght@500;700&family=Lilita+One&family=Luckiest+Guy&family=Nunito:wght@400;700;800&family=Orbitron:wght@800;900&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0b0b12;
@@ -16,6 +16,7 @@
     --brand: #ff9f1c;
     --brand2: #ffd23f;
     --good: #46d18a;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -27,6 +28,12 @@
   }
   button { font-family: inherit; cursor: pointer; }
   a { color: inherit; }
+  svg.art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* film grain on top of every picture so it looks less "flat" */
+  .grain::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: var(--grain); mix-blend-mode: overlay; opacity: .35;
+  }
 
   /* ---------- Profile picker ---------- */
   #profiles {
@@ -35,7 +42,7 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 28px; padding: 16px;
   }
-  #profiles h1 { font-family: "Fredoka", sans-serif; font-size: clamp(28px, 6vw, 48px); margin: 0; }
+  #profiles h1 { font-family: "Fredoka", sans-serif; font-size: clamp(28px, 6vw, 48px); margin: 0; font-weight: 500; }
   .profile-list { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
   .profile {
     background: none; border: 0; color: var(--muted);
@@ -45,6 +52,7 @@
     width: 110px; height: 110px; border-radius: 14px;
     display: grid; place-items: center; font-size: 56px;
     border: 3px solid transparent; transition: .15s;
+    box-shadow: inset 0 -20px 40px #0004;
   }
   .profile:hover .face, .profile:focus-visible .face { border-color: var(--text); transform: scale(1.05); }
   .profile:hover, .profile:focus-visible { color: var(--text); outline: none; }
@@ -59,15 +67,14 @@
   }
   header.solid { background: #0b0b12; }
   .logo {
-    font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 30px; letter-spacing: 1px;
-    background: linear-gradient(90deg, var(--brand), var(--brand2));
+    font-family: "Bungee", sans-serif; font-size: 28px; letter-spacing: 1px;
+    background: linear-gradient(180deg, var(--brand2), var(--brand));
     -webkit-background-clip: text; background-clip: text; color: transparent;
     text-decoration: none; white-space: nowrap;
+    filter: drop-shadow(0 2px 6px #0008);
   }
   nav { display: flex; gap: 16px; }
-  nav button {
-    background: none; border: 0; color: var(--muted); font-size: 15px; padding: 4px 0;
-  }
+  nav button { background: none; border: 0; color: var(--muted); font-size: 15px; padding: 4px 0; }
   nav button.on, nav button:hover { color: var(--text); font-weight: 800; }
   .spacer { flex: 1; }
   #search {
@@ -82,76 +89,83 @@
 
   /* ---------- Hero ---------- */
   .hero {
-    position: relative; min-height: 78vh;
+    position: relative; min-height: 82vh;
     display: flex; align-items: flex-end;
-    padding: 110px 4vw 70px;
+    padding: 110px 4vw 90px;
     overflow: hidden; isolation: isolate;
   }
-  .hero-bg { position: absolute; inset: 0; z-index: -1; transition: background .6s; }
-  .hero-bg::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(90deg, #0b0b12 5%, #0b0b1288 50%, transparent), linear-gradient(0deg, #0b0b12, transparent 40%);
+  .hero-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+  .hero-bg svg.art { animation: kenburns 26s ease-in-out infinite alternate; transform-origin: 70% 60%; }
+  @keyframes kenburns { to { transform: scale(1.12) translateX(-2%); } }
+  .hero-bg::before {
+    content: ""; position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(90deg, #0b0b12ee 0%, #0b0b1288 35%, transparent 65%), linear-gradient(0deg, #0b0b12 0%, transparent 35%);
   }
-  .hero-emoji {
-    position: absolute; right: 8vw; top: 50%; transform: translateY(-50%); z-index: -1;
-    font-size: clamp(120px, 26vw, 320px);
-    animation: bob 4s ease-in-out infinite;
-    filter: drop-shadow(0 20px 40px #0008);
-  }
-  @keyframes bob { 50% { transform: translateY(-56%) rotate(-4deg); } }
-  .hero-info { max-width: 560px; }
-  .tag-original { font-weight: 800; letter-spacing: 3px; font-size: 13px; color: var(--brand2); }
+  .hero-info { max-width: 560px; position: relative; }
+  .tag-original { font-weight: 800; letter-spacing: 4px; font-size: 13px; color: var(--brand2); text-shadow: 0 1px 4px #000; }
   .hero h2 {
-    font-family: "Fredoka", sans-serif; font-size: clamp(38px, 7vw, 72px);
-    margin: 6px 0 10px; line-height: 1;
-    text-shadow: 0 4px 20px #0009;
+    font-size: clamp(42px, 7.5vw, 84px); font-weight: 400;
+    margin: 8px 0 14px; line-height: .95;
+    filter: drop-shadow(0 4px 10px #000c);
   }
+  .hero h2 span { -webkit-background-clip: text; background-clip: text; color: transparent; }
   .meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 15px; }
   .meta .match { color: var(--good); font-weight: 800; }
   .meta .age { border: 1px solid var(--muted); padding: 0 6px; border-radius: 4px; }
-  .hero p { font-size: 18px; line-height: 1.45; }
+  .meta .hd { border: 1px solid var(--muted); padding: 0 4px; border-radius: 3px; font-size: 11px; font-weight: 800; }
+  .hero .meta { color: #ddd; text-shadow: 0 1px 4px #000; }
+  .hero p { font-size: 18px; line-height: 1.45; text-shadow: 0 2px 6px #000; }
   .btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   .btn {
-    border: 0; border-radius: 8px; padding: 11px 24px;
+    border: 0; border-radius: 8px; padding: 11px 26px;
     font-size: 18px; font-weight: 800; display: inline-flex; gap: 8px; align-items: center;
     text-decoration: none;
   }
   .btn-play { background: var(--text); color: #111; }
   .btn-play:hover { background: #fff; }
-  .btn-more { background: #6d6d8a88; color: var(--text); }
+  .btn-more { background: #6d6d8a99; color: var(--text); backdrop-filter: blur(4px); }
   .btn-more:hover { background: #6d6d8acc; }
 
   /* ---------- Rows ---------- */
-  main { position: relative; margin-top: -40px; padding-bottom: 60px; }
-  .row { margin: 0 0 30px; }
-  .row h3 { font-family: "Fredoka", sans-serif; font-size: 22px; margin: 0 4vw 10px; }
+  main { position: relative; margin-top: -60px; padding-bottom: 60px; }
+  .row { margin: 0 0 26px; }
+  .row h3 { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 22px; margin: 0 4vw 6px; }
   .strip {
-    display: flex; gap: 10px; overflow-x: auto; padding: 8px 4vw 18px;
-    scroll-snap-type: x mandatory; scrollbar-width: none;
+    display: flex; gap: 10px; overflow-x: auto; padding: 10px 4vw 20px;
+    scroll-snap-type: x mandatory; scrollbar-width: none; align-items: flex-end;
   }
   .strip::-webkit-scrollbar { display: none; }
   .card {
-    flex: 0 0 auto; width: 230px; aspect-ratio: 16/9;
-    border-radius: 8px; border: 0; padding: 0; position: relative; overflow: hidden;
-    scroll-snap-align: start; color: var(--text); text-align: left;
-    transition: transform .2s, box-shadow .2s;
+    flex: 0 0 auto; width: 260px; aspect-ratio: 16/9;
+    border-radius: 6px; border: 0; padding: 0; position: relative; overflow: hidden;
+    scroll-snap-align: start; color: var(--text); text-align: left; background: #222;
+    transition: transform .25s, box-shadow .25s;
   }
-  .card:hover, .card:focus-visible { transform: scale(1.08); z-index: 2; box-shadow: 0 10px 30px #000c; outline: none; }
-  .card .big { position: absolute; right: 10px; top: 4px; font-size: 64px; }
-  .card .t {
-    position: absolute; left: 10px; bottom: 8px; right: 10px;
-    font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.05;
-    text-shadow: 0 2px 6px #000a;
+  .card:hover, .card:focus-visible { transform: scale(1.07); z-index: 2; box-shadow: 0 12px 32px #000d; outline: none; }
+  .mark {
+    position: absolute; left: 7px; top: 5px; z-index: 1;
+    font-family: "Bungee", sans-serif; font-size: 15px; color: var(--brand);
+    text-shadow: 0 1px 3px #000;
   }
-  .card .w-badge { position: absolute; left: 8px; top: 6px; font-size: 18px; }
-  .card .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--brand); }
-  .card.top10 { width: 270px; display: flex; overflow: visible; }
+  .tag {
+    position: absolute; right: 0; top: 0; z-index: 1;
+    background: var(--brand); color: #1a0d00; font-weight: 800; font-size: 10px; line-height: 1.05;
+    padding: 4px 5px; text-align: center; border-bottom-left-radius: 4px;
+  }
+  .ribbon {
+    position: absolute; left: 50%; top: 0; transform: translateX(-50%); z-index: 1;
+    background: var(--brand); color: #1a0d00; font-weight: 800; font-size: 11px;
+    padding: 2px 8px; border-radius: 0 0 4px 4px; white-space: nowrap;
+  }
+  .bar-bg { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 3px; background: #ffffff55; border-radius: 2px; z-index: 1; }
+  .bar { height: 100%; background: var(--brand); border-radius: 2px; }
+  .card.top10 { width: 250px; aspect-ratio: auto; height: 210px; display: flex; overflow: visible; background: none; }
   .card .num {
-    font-family: "Fredoka", sans-serif; font-size: 130px; font-weight: 700; line-height: .8;
-    color: var(--bg); -webkit-text-stroke: 3px #777; align-self: flex-end;
-    width: 90px; text-align: center;
+    font-family: "Bungee", sans-serif; font-size: 150px; line-height: .75;
+    color: var(--bg); -webkit-text-stroke: 3px #8a879e; align-self: flex-end;
+    width: 110px; text-align: right; margin-right: -14px; letter-spacing: -14px;
   }
-  .card.top10 .inner { position: relative; flex: 1; border-radius: 8px; overflow: hidden; }
+  .card .poster { position: relative; flex: 0 0 140px; height: 100%; border-radius: 6px; overflow: hidden; }
   .empty { color: var(--muted); margin: 0 4vw; font-size: 18px; }
 
   /* ---------- Modal ---------- */
@@ -162,39 +176,44 @@
   }
   .overlay.open { display: flex; }
   .modal {
-    background: var(--panel); border-radius: 12px; width: min(820px, 100%);
+    background: var(--panel); border-radius: 12px; width: min(860px, 100%);
     overflow: hidden; box-shadow: 0 20px 60px #000;
   }
-  .modal-top { position: relative; aspect-ratio: 16/8; display: flex; align-items: flex-end; padding: 24px; min-height: 240px; }
-  .modal-top .big { position: absolute; right: 6%; top: 10%; font-size: clamp(90px, 18vw, 170px); animation: bob 4s ease-in-out infinite; }
-  .modal-top::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--panel), transparent 60%); }
-  .modal-top > div { position: relative; z-index: 1; }
-  .modal-top h2 { font-family: "Fredoka", sans-serif; font-size: clamp(30px, 6vw, 50px); margin: 0 0 12px; }
+  .modal-top { position: relative; aspect-ratio: 16/9; display: flex; align-items: flex-end; padding: 28px; min-height: 260px; overflow: hidden; }
+  .modal-top::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(0deg, var(--panel) 2%, transparent 45%); }
+  .modal-top > div { position: relative; z-index: 2; }
   .close {
-    position: absolute; right: 14px; top: 14px; z-index: 2;
+    position: absolute; right: 14px; top: 14px; z-index: 3;
     width: 40px; height: 40px; border-radius: 50%; border: 0;
-    background: var(--panel); color: var(--text); font-size: 22px;
+    background: var(--panel); color: var(--text); font-size: 20px;
   }
   .round {
-    width: 46px; height: 46px; border-radius: 50%; border: 2px solid #ffffff88;
-    background: #2a2a3a88; color: var(--text); font-size: 20px;
+    width: 46px; height: 46px; border-radius: 50%; border: 2px solid #ffffff99;
+    background: #2a2a3acc; color: var(--text); font-size: 20px;
   }
-  .round.on { border-color: var(--good); color: var(--good); background: #46d18a22; }
-  .modal-body { padding: 0 24px 24px; }
-  .modal-body p { line-height: 1.5; font-size: 16px; }
-  .eps h4 { font-family: "Fredoka", sans-serif; font-size: 22px; margin: 22px 0 8px; }
+  .round.on { border-color: var(--good); color: var(--good); background: #10301fcc; }
+  .modal-body { padding: 4px 28px 28px; }
+  .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+  .modal-body p { line-height: 1.5; font-size: 16px; margin: 12px 0; }
+  .side { font-size: 14px; color: var(--muted); line-height: 1.6; padding-top: 4px; }
+  .side b { color: var(--text); font-weight: 400; }
+  .eps h4 { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 24px; margin: 22px 0 8px; }
   .ep {
-    display: flex; gap: 14px; align-items: center; width: 100%;
+    display: flex; gap: 16px; align-items: center; width: 100%;
     background: none; border: 0; border-top: 1px solid #ffffff1a;
-    padding: 14px 6px; color: var(--text); text-align: left; border-radius: 6px;
+    padding: 16px 8px; color: var(--text); text-align: left; border-radius: 6px;
   }
   .ep:hover { background: var(--panel2); }
-  .ep .n { font-size: 24px; color: var(--muted); width: 28px; text-align: center; }
-  .ep .thumb { width: 110px; flex: 0 0 auto; aspect-ratio: 16/9; border-radius: 6px; display: grid; place-items: center; font-size: 34px; position: relative; overflow: hidden; }
-  .ep .thumb .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--brand); }
-  .ep b { display: block; font-size: 16px; }
-  .ep span { color: var(--muted); font-size: 14px; }
-  .game-link { margin-top: 6px; display: inline-block; color: var(--brand2); font-weight: 800; }
+  .ep .n { font-size: 24px; color: var(--muted); width: 28px; text-align: center; flex: 0 0 auto; }
+  .ep .thumb { width: 140px; flex: 0 0 auto; aspect-ratio: 16/9; border-radius: 6px; position: relative; overflow: hidden; }
+  .ep .thumb .play {
+    position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; opacity: 0; transition: .2s;
+    font-size: 26px; background: #0006;
+  }
+  .ep:hover .thumb .play { opacity: 1; }
+  .ep b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .ep span.d { color: var(--muted); font-size: 14px; line-height: 1.4; }
+  .game-link { display: inline-block; color: var(--brand2); font-weight: 800; }
 
   /* ---------- Player ---------- */
   #player {
@@ -203,34 +222,38 @@
   }
   #player.open { display: flex; }
   #stage { position: relative; flex: 1; overflow: hidden; }
-  #stage .sky { position: absolute; inset: 0; }
-  #stage .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+  #scene { position: absolute; inset: 0; }
+  #scene svg.art { animation: kenburns 30s ease-in-out infinite alternate; transform-origin: 50% 70%; }
   #stage .star {
-    position: absolute; font-size: clamp(90px, 16vw, 180px); bottom: 14%; left: 10%;
+    position: absolute; font-size: clamp(90px, 16vw, 190px); bottom: 14%; left: 10%; line-height: 1;
     transition: left 3s ease-in-out;
+    filter: drop-shadow(0 0 18px var(--glow, #fff8)) drop-shadow(0 10px 8px #0009);
   }
   #stage .star.hop { animation: hop .6s ease-in-out infinite alternate; }
   @keyframes hop { to { transform: translateY(-30px) rotate(6deg); } }
-  #stage .pal { position: absolute; font-size: clamp(60px, 10vw, 110px); bottom: 15%; right: 12%; opacity: 0; transition: opacity .6s; }
-  #stage .float { position: absolute; left: 0; font-size: 40px; animation: drift linear infinite; }
-  @keyframes drift { from { transform: translateX(110vw); } to { transform: translateX(-20vw); } }
-  #sub {
-    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
-    background: #000c; padding: 8px 16px; border-radius: 6px;
-    font-size: clamp(16px, 2.6vw, 26px); text-align: center; max-width: 90%;
+  #stage .pal {
+    position: absolute; font-size: clamp(60px, 10vw, 120px); bottom: 15%; right: 12%; line-height: 1;
+    opacity: 0; transition: opacity .6s;
+    filter: drop-shadow(0 0 14px var(--glow, #fff8)) drop-shadow(0 8px 6px #0009);
   }
-  #ptitle { position: absolute; top: 16px; left: 70px; right: 16px; font-family: "Fredoka", sans-serif; font-size: 20px; text-shadow: 0 2px 6px #000; }
-  #back { position: absolute; top: 8px; left: 14px; background: none; border: 0; color: #fff; font-size: 34px; z-index: 2; }
-  #pause-big { position: absolute; inset: 0; display: none; place-items: center; font-size: 100px; background: #0006; pointer-events: none; }
+  #sub {
+    position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); z-index: 2;
+    color: #fff; font-weight: 700;
+    font-size: clamp(18px, 2.8vw, 30px); text-align: center; max-width: 90%;
+    text-shadow: 0 0 4px #000, 0 2px 4px #000, 0 0 10px #000;
+  }
+  #ptitle { position: absolute; top: 16px; left: 70px; right: 16px; z-index: 2; font-family: "Fredoka", sans-serif; font-size: 20px; text-shadow: 0 2px 6px #000; }
+  #back { position: absolute; top: 8px; left: 14px; background: none; border: 0; color: #fff; font-size: 34px; z-index: 3; text-shadow: 0 2px 6px #000; }
+  #pause-big { position: absolute; inset: 0; display: none; place-items: center; font-size: 100px; background: #0006; pointer-events: none; z-index: 2; }
   #player.paused #pause-big { display: grid; }
-  #player.paused .star, #player.paused .float { animation-play-state: paused; }
+  #player.paused .star, #player.paused svg.art { animation-play-state: paused; }
   .controls { background: #0b0b12; padding: 10px 4vw 16px; }
   #seek { width: 100%; accent-color: var(--brand); }
   .ctrl-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .ctrl-row button { background: none; border: 0; color: #fff; font-size: 22px; padding: 4px 8px; }
   .ctrl-row .time { color: var(--muted); font-variant-numeric: tabular-nums; }
   #next-up {
-    position: absolute; right: 20px; bottom: 20px; display: none; z-index: 2;
+    position: absolute; right: 20px; bottom: 20px; display: none; z-index: 3;
     background: var(--text); color: #111; font-weight: 800; border: 0; border-radius: 8px; padding: 12px 18px; font-size: 17px;
   }
 
@@ -243,21 +266,26 @@
 
   footer { color: var(--muted); text-align: center; padding: 30px 16px 40px; font-size: 14px; }
 
+  @media (prefers-reduced-motion: reduce) {
+    .hero-bg svg.art, #scene svg.art, #stage .star.hop { animation: none; }
+  }
   @media (max-width: 700px) {
     header { gap: 10px; padding: 10px 16px; }
-    .logo { font-size: 24px; }
+    .logo { font-size: 22px; }
     nav { display: none; }
     #search { width: 110px; }
     .strip { padding-left: 16px; padding-right: 16px; }
-    .row h3 { margin: 0 16px 8px; font-size: 19px; }
-    .card { width: 170px; }
-    .card .big { font-size: 46px; }
-    .card .t { font-size: 16px; }
-    .card.top10 { width: 210px; }
-    .card .num { font-size: 96px; width: 66px; }
-    .hero { min-height: 70vh; padding: 100px 16px 60px; }
+    .row h3 { margin: 0 16px 4px; font-size: 19px; }
+    .card { width: 190px; }
+    .card.top10 { width: 190px; height: 165px; }
+    .card .poster { flex-basis: 110px; }
+    .card .num { font-size: 110px; width: 80px; letter-spacing: -10px; }
+    .hero { min-height: 76vh; padding: 100px 16px 70px; }
     .hero p { font-size: 16px; }
-    .hero-emoji { opacity: .55; right: 2vw; top: 36%; }
+    .hero-bg::before { background: linear-gradient(0deg, #0b0b12 5%, #0b0b1299 45%, transparent 75%); }
+    .two-col { grid-template-columns: 1fr; gap: 0; }
+    .modal-top, .modal-body { padding-left: 18px; padding-right: 18px; }
+    .ep .thumb { width: 110px; }
     #ptitle { font-size: 16px; }
   }
 </style>
@@ -284,10 +312,9 @@
 </header>
 
 <section class="hero" id="hero">
-  <div class="hero-bg" id="hero-bg"></div>
-  <div class="hero-emoji" id="hero-emoji"></div>
+  <div class="hero-bg grain" id="hero-bg"></div>
   <div class="hero-info">
-    <div class="tag-original">🐉 WYNNFLIX ORIGINAL</div>
+    <div class="tag-original">W&nbsp; WYNNFLIX ORIGINAL</div>
     <h2 id="hero-title"></h2>
     <div class="meta" id="hero-meta"></div>
     <p id="hero-desc"></p>
@@ -305,11 +332,11 @@
 <!-- Details modal -->
 <div class="overlay" id="overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
-    <div class="modal-top" id="m-top">
+    <div class="modal-top grain" id="m-top">
+      <div id="m-art"></div>
       <button class="close" id="m-close" aria-label="Close">✕</button>
-      <div class="big" id="m-emoji"></div>
       <div>
-        <h2 id="m-title"></h2>
+        <h2 id="m-title" style="position:absolute;left:-9999px"></h2>
         <div class="btns">
           <button class="btn btn-play" id="m-play">▶ Play</button>
           <button class="round" id="m-list" title="Add to My List">＋</button>
@@ -318,9 +345,14 @@
       </div>
     </div>
     <div class="modal-body">
-      <div class="meta" id="m-meta"></div>
-      <p id="m-desc"></p>
-      <div id="m-game"></div>
+      <div class="two-col">
+        <div>
+          <div class="meta" id="m-meta"></div>
+          <p id="m-desc"></p>
+          <div id="m-game"></div>
+        </div>
+        <div class="side" id="m-side"></div>
+      </div>
       <div class="eps"><h4>Episodes</h4><div id="m-eps"></div></div>
     </div>
   </div>
@@ -328,10 +360,8 @@
 
 <!-- Video player -->
 <div id="player">
-  <div id="stage">
-    <div class="sky" id="sky"></div>
-    <div class="ground" id="ground"></div>
-    <div id="floats"></div>
+  <div id="stage" class="grain">
+    <div id="scene"></div>
     <div class="star hop" id="star"></div>
     <div class="pal" id="pal"></div>
     <div id="sub"></div>
@@ -357,86 +387,104 @@
 <div id="toast"></div>
 
 <script>
-/* ================= DATA ================= */
+/* ================= SHOWS ================= */
 const EP_LEN = 60; // every episode is 60 seconds long
 
+// scene = which painted background, font/tf/stroke = how the title logo looks
 const SHOWS = [
-  { id: "dragon", title: "Dragon Blocks: The Series", emoji: "🐉", pal: "🧱", colors: ["#ff7a18", "#7a1fa2"], ground: "#3d2b1f",
+  { id: "dragon", title: "Dragon Blocks: The Series", emoji: "🐉", pal: "🧱", scene: "sunset",
+    font: "Luckiest Guy", tf: ["#fff3a0", "#ff8a1f"], stroke: "#3a0d00", badge: "New Episodes",
     games: true, cat: "Adventure", year: 2026, age: "7+", match: 99, game: "../dragon-blocks-web/index.html",
     desc: "A little dragon builds a whole world one block at a time — but every night the blocks start moving on their own!",
     eps: ["The First Block", "Tower Trouble", "Lava Lake", "The Block Thief", "Biggest Build Ever"],
     lines: ["One more block and my castle is done!", "Wait... did that block just wiggle?", "The blocks are running away!", "Come back, little blocks!", "I'll build a block fence. Easy!", "Uh oh. The fence is running too.", "Okay. Deep breath. Dragon plan time.", "What if... I just ask them nicely?", "Please come home, blocks? 🥺", "They're coming back! Hooray!"] },
-  { id: "pip", title: "Pip's Quest", emoji: "🐣", pal: "🗝️", colors: ["#43c6ac", "#191654"], ground: "#2e5e2e",
+  { id: "pip", title: "Pip's Quest", emoji: "🐣", pal: "🗝️", scene: "meadow",
+    font: "Chewy", tf: ["#ffffff", "#ffe066"], stroke: "#1e5a1e",
     games: true, cat: "Adventure", year: 2026, age: "All", match: 97, game: "../pip-quest-web/index.html",
     desc: "Pip is the smallest chick in the whole valley, and she's on a quest to find the Golden Key.",
     eps: ["Out of the Shell", "The Windy Bridge", "The Sleepy Giant", "Key of Gold"],
     lines: ["I'm small, but I'm brave!", "The map says... go left. Or right?", "That bridge is SO wobbly.", "Hello, Mr. Frog! Seen a key?", "Ribbit means no, I think.", "Look! Something shiny!", "It's just a spoon. Hmm.", "Never give up, Pip!", "The Golden Key! I found it!", "Now... what does it open?"] },
-  { id: "nights", title: "99 Nights", emoji: "🌲", pal: "🔦", colors: ["#0f2027", "#2c5364"], ground: "#16261b",
+  { id: "nights", title: "99 Nights", emoji: "🧍", pal: "🔦", scene: "forest",
+    font: "Creepster", tf: ["#f4f4ec", "#9bb59e"], stroke: "#000000", badge: "New Episodes",
     games: true, cat: "Spooky", year: 2026, age: "10+", match: 95, game: "../99-nights-web/index.html",
     desc: "Lost in a deep, dark forest. Keep the campfire burning. Survive 99 nights. Don't look behind the trees...",
     eps: ["Night One", "The Strange Footprints", "Firewood", "Eyes in the Dark", "Night 99"],
     lines: ["The fire is our only light.", "Did you hear that?", "Just the wind... probably.", "We need more wood before dark.", "Footprints! Giant ones!", "Stay close to the fire.", "Only 98 more nights to go.", "Something is watching us...", "It's... a very big bunny?", "Okay that's still scary."] },
-  { id: "speed", title: "Speedway 5 Billion", emoji: "🏎️", pal: "🏁", colors: ["#f12711", "#f5af19"], ground: "#333",
+  { id: "speed", title: "Speedway 5 Billion", emoji: "🏎️", pal: "🏁", scene: "race",
+    font: "Bungee", tf: ["#ffffff", "#ffd23f"], stroke: "#5a0a0a",
     games: true, cat: "Action", year: 2026, age: "7+", match: 96, game: "../speedway-5-billion-web/index.html",
     desc: "The fastest race in the galaxy. Five billion laps. One very determined driver.",
     eps: ["Lap One", "Pit Stop Panic", "Rainbow Road Rage", "Lap 5 Billion"],
     lines: ["Engines ready? GO!", "Zoom zoom zoom!", "Only 4,999,999,999 laps left!", "Pit stop! Change the tyres!", "Faster! FASTER!", "Watch out for the banana peel!", "I'm in first place!", "Wait, I'm in last place...", "Turbo boost ON!", "The finish line! We did it!"] },
-  { id: "frost", title: "Frostfall", emoji: "❄️", pal: "🐧", colors: ["#83a4d4", "#3b6fb6"], ground: "#e8f4ff",
+  { id: "frost", title: "Frostfall", emoji: "⛄", pal: "🐧", scene: "snow",
+    font: "Cinzel Decorative", tf: ["#ffffff", "#9fd8ff"], stroke: "#0b2f5a",
     games: true, cat: "Adventure", year: 2026, age: "All", match: 93, game: "../frostfall-web/index.html",
-    desc: "When the snow never stops falling, a brave snowflake and a penguin go to wake up the sun.",
+    desc: "When the snow never stops falling, a brave snowman and a penguin go to wake up the sun.",
     eps: ["The Endless Snow", "Ice Cave", "Penguin Friends", "Wake Up, Sun!"],
     lines: ["Brrr! It's SO cold.", "The sun has been asleep for weeks.", "We have to wake it up!", "Slide down the mountain! Wheee!", "An ice cave! Echo... echo...", "Penguins! Can you help us?", "They said yes! I think.", "Climb to the top of the sky!", "WAKE UP, SUN!", "Good morning! Everything is warm!"] },
-  { id: "tides", title: "Tiny Tides", emoji: "🐠", pal: "🫧", colors: ["#00c6ff", "#0052cc"], ground: "#e0c27a",
+  { id: "tides", title: "Tiny Tides", emoji: "🐠", pal: "🦀", scene: "sea",
+    font: "Chewy", tf: ["#e8fdff", "#5ee7ff"], stroke: "#00305a",
     games: true, cat: "Funny", year: 2026, age: "All", match: 92, game: "../tiny-tides-web/index.html",
     desc: "A tiny fish with a giant attitude explores the reef and makes friends with everyone. Even the crab.",
     eps: ["Blub Blub", "The Grumpy Crab", "Bubble Party", "The Big Wave"],
     lines: ["Blub! Hi, ocean!", "I'm the bravest fish in the sea!", "Is that... a crab?", "Hello, Mr. Crab! Wanna be friends?", "He said 'go away'. Rude.", "Bubble party time! 🫧", "Even Mr. Crab is dancing!", "Uh oh... big wave!", "Hold on to the coral!", "Best day under the sea!"] },
-  { id: "hedge", title: "Hedgehog Hustle", emoji: "🦔", pal: "🍎", colors: ["#56ab2f", "#2f6b12"], ground: "#4b3621",
+  { id: "hedge", title: "Hedgehog Hustle", emoji: "🦔", pal: "🐿️", scene: "autumn",
+    font: "Lilita One", tf: ["#fff6c2", "#ff9a3c"], stroke: "#4a1e00",
     games: true, cat: "Funny", year: 2026, age: "All", match: 94, game: "../hedgehog-hustle-web/index.html",
     desc: "Hugo the hedgehog has one job: collect every apple before winter. How hard can it be?",
     eps: ["Apple Season", "The Roll-y Hill", "Squirrel Showdown"],
     lines: ["Apples! Apples everywhere!", "One for me, one for later...", "Oops, I rolled down the hill!", "Wheeeee!", "Hey! That squirrel took my apple!", "Squirrel! Give it back!", "Fine. We can share.", "Sharing is actually nice.", "Winter, I'm ready!", "Zzzzz... 😴"] },
-  { id: "castle", title: "Castle Defense", emoji: "🏰", pal: "🛡️", colors: ["#5f2c82", "#49a09d"], ground: "#3a5a2a",
+  { id: "castle", title: "Castle Defense", emoji: "🛡️", pal: "👺", scene: "castle",
+    font: "Cinzel Decorative", tf: ["#fff0b8", "#d39a34"], stroke: "#241000",
     games: true, cat: "Action", year: 2026, age: "10+", match: 91, game: "../castle-defense-web/index.html",
     desc: "The goblins are coming! One small castle, one very loud knight, and a catapult that only sort of works.",
     eps: ["The Goblin Horn", "Catapult Chaos", "The Siege", "Victory Feast"],
     lines: ["Goblins on the hill!", "Ready the catapult!", "Fire!", "...It went backwards.", "Okay, try again. FIRE!", "Direct hit!", "Close the big gate!", "Hold the wall, everyone!", "The goblins are running away!", "Feast time! 🍗"] },
-  { id: "snack", title: "Space Snack Squad", emoji: "🚀", pal: "🍩", colors: ["#1a2a6c", "#b21f1f"], ground: "#4a4a6a",
+  { id: "snack", title: "Space Snack Squad", emoji: "🧑‍🚀", pal: "👽", scene: "space",
+    font: "Bangers", tf: ["#ffffff", "#ff7ad1"], stroke: "#22003d", badge: "Recently Added",
     games: false, cat: "Funny", year: 2025, age: "All", match: 98,
     desc: "Three astronauts deliver snacks across the galaxy. The aliens are VERY hungry customers.",
     eps: ["Donut Delivery", "The Pizza Planet", "Snack Attack", "The Last Cookie", "Lunch on the Moon"],
     lines: ["Snack delivery for Planet Zork!", "Five hundred donuts, coming up!", "The aliens look hungry...", "Hello! Your donuts are here!", "They ate the box too.", "Next stop: the Pizza Planet!", "Uh oh. We're out of snacks.", "Quick! Bake more in space!", "Space cookies! Floating cookies!", "Five stars from the aliens! ⭐"] },
-  { id: "wizard", title: "The Wobbly Wizard", emoji: "🧙", pal: "✨", colors: ["#8e2de2", "#4a00e0"], ground: "#2a1a4a",
+  { id: "wizard", title: "The Wobbly Wizard", emoji: "🧙", pal: "🐈", scene: "magic",
+    font: "Luckiest Guy", tf: ["#f6e6ff", "#b77bff"], stroke: "#1d0040",
     games: false, cat: "Funny", year: 2025, age: "All", match: 94,
     desc: "Wally is learning magic. Every spell goes a tiny bit wrong. Today he turned his cat into a teapot.",
     eps: ["Abraca-Oops", "The Teapot Cat", "Flying Lessons", "Spell Exam"],
     lines: ["Abracadabra!", "Hmm. That's not a rabbit.", "That's... a teapot?", "Mittens, is that you?", "Meow. *steam noises*", "Okay, reverse spell!", "Now the teapot is a cat AND a teapot.", "Let's call it a 'cat-pot'.", "I'll practise more tomorrow.", "Best wizard ever! Almost."] },
-  { id: "owl", title: "Night Owl Detectives", emoji: "🦉", pal: "🔍", colors: ["#3a3d40", "#181a1c"], ground: "#1d1d2b",
+  { id: "owl", title: "Night Owl Detectives", emoji: "🦉", pal: "🦝", scene: "noir",
+    font: "Special Elite", tf: ["#f6efd6", "#cbb98a"], stroke: "#000000", badge: "New",
     games: false, cat: "Mystery", year: 2026, age: "7+", match: 90,
     desc: "Every night, Detective Hoot solves a mystery in the forest. Who stole the moon cheese?",
     eps: ["The Missing Cheese", "Footprints in Mud", "The Fox Did It?", "Case Closed"],
     lines: ["Hoot hoot! A new case!", "The moon cheese is missing!", "Let's look for clues.", "Footprints! Tiny ones.", "A mouse? No... too big.", "Hmm. Crumbs lead this way.", "Aha! It was... the raccoon!", "He wanted a midnight snack.", "Case closed!", "Now who wants cheese? 🧀"] },
-  { id: "robo", title: "Robo Pals", emoji: "🤖", pal: "🔋", colors: ["#3a7bd5", "#3a6073"], ground: "#5a6a7a",
+  { id: "robo", title: "Robo Pals", emoji: "🤖", pal: "🦾", scene: "city",
+    font: "Orbitron", tf: ["#e6fbff", "#36d1ff"], stroke: "#001a33",
     games: false, cat: "Funny", year: 2025, age: "All", match: 89,
     desc: "Two robots try to learn what humans do for fun. Today: dancing. Tomorrow: sneezing.",
     eps: ["Beep Boop Hello", "Dance Mode", "What is a Sneeze?", "Low Battery"],
     lines: ["BEEP. HELLO. HUMAN.", "WHAT. IS. FUN?", "Humans say dancing is fun.", "ACTIVATING DANCE MODE.", "*robot noises*", "This is... FUN!", "Warning: too much fun.", "Battery at 10 percent.", "Need... charging...", "Sleep mode. Good night. 💤"] },
-  { id: "volcano", title: "Volcano Kitchen", emoji: "🌋", pal: "🍳", colors: ["#e65c00", "#a83200"], ground: "#4a2511",
+  { id: "volcano", title: "Volcano Kitchen", emoji: "🧑‍🍳", pal: "🥞", scene: "volcano",
+    font: "Bangers", tf: ["#fff6c0", "#ff6a00"], stroke: "#3a0a00",
     games: false, cat: "Funny", year: 2026, age: "All", match: 88,
     desc: "A cooking show on top of a volcano. The oven is very, very hot.",
     eps: ["Lava Pancakes", "Hot Hot Soup", "The Explosive Cake"],
     lines: ["Welcome to Volcano Kitchen!", "Today: pancakes!", "Our oven is... a volcano.", "Flip it! Higher!", "That's a really good flip.", "Uh oh. It landed in the lava.", "Crispy pancakes!", "Okay, very crispy.", "Taste test... MMM.", "See you next time! 🔥"] },
-  { id: "penguin", title: "Penguin FC", emoji: "🐧", pal: "⚽", colors: ["#2193b0", "#135d73"], ground: "#d8f0ff",
+  { id: "penguin", title: "Penguin FC", emoji: "🐧", pal: "⚽", scene: "stadium",
+    font: "Bungee", tf: ["#ffffff", "#a8ecff"], stroke: "#002a4a", badge: "Recently Added",
     games: false, cat: "Action", year: 2026, age: "All", match: 93,
     desc: "The worst football team in the Arctic wants to win the Ice Cup. They slide a lot.",
     eps: ["Kick Off", "Slippery Pitch", "The Walrus Team", "Ice Cup Final"],
     lines: ["Welcome to Penguin FC!", "Pass the ball!", "Whoops. We slid.", "Everybody slides on ice.", "The Walrus team is HUGE.", "Don't be scared, team!", "Penguin power!", "He shoots... he scores!", "GOOOAAL!", "We won the Ice Cup! 🏆"] },
-  { id: "moon", title: "Mystery of Moon Island", emoji: "🏝️", pal: "🌕", colors: ["#141e30", "#243b55"], ground: "#c2a46a",
+  { id: "moon", title: "Mystery of Moon Island", emoji: "🧭", pal: "🦜", scene: "island",
+    font: "Cinzel Decorative", tf: ["#fffbe6", "#ffd36e"], stroke: "#081226",
     games: false, cat: "Mystery", year: 2025, age: "10+", match: 87,
     desc: "An island that only appears during a full moon. Three friends have one night to explore it.",
     eps: ["The Glowing Shore", "The Hidden Door", "Moon Map", "Before Sunrise"],
     lines: ["Look! The island appeared!", "It only comes at full moon.", "Let's row over there.", "The sand is glowing!", "There's a door in the rock...", "It needs a password.", "'Moon'? ...It opened!", "A treasure map!", "We have to leave before sunrise!", "See you next full moon... 🌕"] },
 ];
+
+const MOODS = { Funny: "Silly, Feel-good", Adventure: "Exciting, Imaginative", Action: "Fast-paced, Exciting", Mystery: "Clever, Suspenseful", Spooky: "Spooky, Suspenseful" };
 
 const PROFILES = [
   { name: "Wynn", face: "🐉", color: "#ff9f1c" },
@@ -446,12 +494,298 @@ const PROFILES = [
 ];
 
 const ROWS_BY_CAT = [
-  ["Funny", "😂 Funny Shows"],
-  ["Adventure", "🗺️ Big Adventures"],
-  ["Action", "⚡ Action"],
-  ["Mystery", "🔍 Mysteries"],
-  ["Spooky", "👻 A Little Bit Spooky"],
+  ["Funny", "Funny Shows"],
+  ["Adventure", "Big Adventures"],
+  ["Action", "Action & Racing"],
+  ["Mystery", "Mysteries"],
+  ["Spooky", "A Little Bit Spooky"],
 ];
+
+/* ================= PAINTED SCENES =================
+   Every picture is drawn with SVG: sky, light, hills, trees, fog,
+   then the characters with a glow, then a dark edge and the title logo. */
+const W = 640, H = 360;
+let UID = 0;
+const f = (n) => Math.round(n * 10) / 10;
+
+function rng(seed) { // same seed -> same picture every time
+  let h = 2166136261;
+  for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => {
+    h += 0x6D2B79F5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const lg = (id, stops, x2 = 0, y2 = 1) =>
+  `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${stops.map((c, i) => `<stop offset="${f(i / (stops.length - 1))}" stop-color="${c}"/>`).join("")}</linearGradient>`;
+const sky = (P, stops) => `<defs>${lg(P + "sky", stops)}</defs><rect width="${W}" height="${H}" fill="url(#${P}sky)"/>`;
+function glow(P, name, cx, cy, rx, ry, c, op) {
+  return `<defs><radialGradient id="${P + name}"><stop offset="0" stop-color="${c}" stop-opacity="${op}"/><stop offset=".4" stop-color="${c}" stop-opacity="${f(op * .35)}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#${P + name})"/>`;
+}
+function stars(r, n, maxY) {
+  let s = "";
+  for (let i = 0; i < n; i++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * maxY)}" r="${f(r() * 1.2 + .3)}" fill="#fff" opacity="${f(r() * .7 + .3)}"/>`;
+  return s;
+}
+function peaks(r, base, amp, n, c, op = 1) {
+  let d = `M0 ${H}L0 ${base}`;
+  const st = W / n;
+  for (let i = 0; i <= n; i++) d += `L${f(i * st + (r() - .5) * st * .4)} ${f(base - (i % 2 ? amp * (.55 + r() * .45) : amp * r() * .25))}`;
+  return `<path d="${d}L${W} ${H}Z" fill="${c}" opacity="${op}"/>`;
+}
+function hills(r, base, amp, c, op = 1) {
+  const p1 = r() * 6, p2 = r() * 6, f1 = .006 + r() * .006, f2 = .016 + r() * .01;
+  let d = `M0 ${H}`;
+  for (let x = 0; x <= W; x += 16) d += `L${x} ${f(base - amp * (.5 + .3 * Math.sin(x * f1 + p1) + .2 * Math.sin(x * f2 + p2)))}`;
+  return `<path d="${d}L${W} ${H}Z" fill="${c}" opacity="${op}"/>`;
+}
+function pines(r, base, n, hMin, hMax, c) {
+  let s = "";
+  for (let i = 0; i < n; i++) {
+    const x = r() * W, h = hMin + r() * (hMax - hMin), w = h * .26, b = base + r() * 8;
+    s += `<path d="M${f(x)} ${f(b - h)}L${f(x - w * .55)} ${f(b - h * .5)}L${f(x - w * .3)} ${f(b - h * .5)}L${f(x - w)} ${f(b)}L${f(x + w)} ${f(b)}L${f(x + w * .3)} ${f(b - h * .5)}L${f(x + w * .55)} ${f(b - h * .5)}Z" fill="${c}"/>`;
+  }
+  return s;
+}
+function roundTrees(r, base, n, cols) {
+  let s = "";
+  for (let i = 0; i < n; i++) {
+    const x = r() * W, h = 40 + r() * 50, rad = 18 + r() * 18, c = cols[Math.floor(r() * cols.length)];
+    s += `<rect x="${f(x - 3)}" y="${f(base - h)}" width="6" height="${f(h)}" fill="#3b2412"/><circle cx="${f(x)}" cy="${f(base - h)}" r="${f(rad)}" fill="${c}"/><circle cx="${f(x - rad * .3)}" cy="${f(base - h - rad * .3)}" r="${f(rad * .55)}" fill="#fff" opacity=".12"/>`;
+  }
+  return s;
+}
+function clouds(r, n, y0, y1, c, op) {
+  let s = "";
+  for (let i = 0; i < n; i++) {
+    const x = r() * W, y = y0 + r() * (y1 - y0), w = 40 + r() * 70;
+    s += `<g fill="${c}" opacity="${op}"><ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(w)}" ry="${f(w * .22)}"/><ellipse cx="${f(x - w * .3)}" cy="${f(y - w * .12)}" rx="${f(w * .4)}" ry="${f(w * .25)}"/><ellipse cx="${f(x + w * .25)}" cy="${f(y - w * .16)}" rx="${f(w * .35)}" ry="${f(w * .28)}"/></g>`;
+  }
+  return s;
+}
+function fog(P, name, y, op) {
+  return `<defs>${lg(P + name, ["#fff0", "#ffffff", "#fff0"])}</defs><rect y="${y - 40}" width="${W}" height="80" fill="url(#${P + name})" opacity="${op}"/>`;
+}
+function dots(r, n, x0, x1, y0, y1, cols, rMin, rMax, op = 1) {
+  let s = "";
+  for (let i = 0; i < n; i++) s += `<circle cx="${f(x0 + r() * (x1 - x0))}" cy="${f(y0 + r() * (y1 - y0))}" r="${f(rMin + r() * (rMax - rMin))}" fill="${cols[Math.floor(r() * cols.length)]}" opacity="${op}"/>`;
+  return s;
+}
+
+const SCENES = {
+  sunset(r, P) {
+    let cubes = "";
+    const cols = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
+    for (let i = 0; i < 11; i++) {
+      const x = 30 + r() * 560, y = 30 + r() * 170, z = 10 + r() * 22, c = cols[i % 5];
+      cubes += `<g opacity="${f(.6 + r() * .4)}" transform="rotate(${Math.round(r() * 30 - 15)} ${f(x)} ${f(y)})"><rect x="${f(x)}" y="${f(y)}" width="${f(z)}" height="${f(z)}" fill="${c}"/><path d="M${f(x)} ${f(y)}l${f(z * .35)} ${f(-z * .35)}h${f(z)}l${f(-z * .35)} ${f(z * .35)}z" fill="#fff" opacity=".4"/><path d="M${f(x + z)} ${f(y)}l${f(z * .35)} ${f(-z * .35)}v${f(z)}l${f(-z * .35)} ${f(z * .35)}z" fill="#000" opacity=".3"/></g>`;
+    }
+    return [sky(P, ["#2b1055", "#7b2d6b", "#d53369", "#ffb347"]) + glow(P, "sun", 320, 250, 320, 190, "#ffcf6b", .95) +
+      `<circle cx="320" cy="250" r="44" fill="#ffe8a3"/>` + clouds(r, 6, 40, 170, "#ffb3c6", .35) + cubes +
+      peaks(r, 265, 120, 9, "#7a3566", .9) + peaks(r, 292, 80, 12, "#4a1f4f") + hills(r, 322, 30, "#24112c"), 322, "#ffb347"];
+  },
+  meadow(r, P) {
+    return [sky(P, ["#3aa6f5", "#8fd3ff", "#e6f9ff"]) + glow(P, "sun", 530, 60, 240, 170, "#fff7c2", .95) +
+      `<circle cx="530" cy="60" r="30" fill="#fffbe0"/>` + clouds(r, 6, 30, 140, "#ffffff", .9) +
+      hills(r, 250, 60, "#a8dc8e", .9) + roundTrees(r, 262, 5, ["#4caf50", "#66bb6a", "#2e7d32"]) +
+      hills(r, 288, 50, "#5fbf5a") + dots(r, 40, 0, W, 290, 330, ["#ff6b9a", "#fff", "#ffd23f"], 1.5, 3) +
+      hills(r, 326, 24, "#3d9a3f") + dots(r, 30, 0, W, 335, 360, ["#ff6b9a", "#fff", "#ffd23f"], 2, 4), 326, "#fff7c2"];
+  },
+  forest(r, P) {
+    let eyes = "";
+    for (let i = 0; i < 5; i++) {
+      const x = r() * W, y = 205 + r() * 80;
+      eyes += `<g fill="#ffe066" opacity="${f(.5 + r() * .5)}"><ellipse cx="${f(x)}" cy="${f(y)}" rx="3" ry="1.6"/><ellipse cx="${f(x + 10)}" cy="${f(y)}" rx="3" ry="1.6"/></g>`;
+    }
+    return [sky(P, ["#03060c", "#0b1d26", "#1b3a3a"]) + stars(r, 90, 180) + glow(P, "moon", 150, 70, 110, 110, "#e8f0d0", .5) +
+      `<circle cx="150" cy="70" r="24" fill="#eef2dc"/>` + peaks(r, 230, 70, 10, "#10242a") +
+      pines(r, 262, 28, 60, 110, "#0c1c20") + fog(P, "f1", 235, .14) + eyes + pines(r, 304, 22, 90, 170, "#060f11") +
+      glow(P, "fire", 230, 322, 220, 90, "#ff8a2a", .6) + `<rect y="318" width="${W}" height="42" fill="#040a0b"/>` +
+      `<path d="M215 330 l15 -26 l15 26z" fill="#ffb347"/><path d="M222 330 l8 -16 l8 16z" fill="#fff1a8"/>` + fog(P, "f2", 300, .08), 322, "#ff9a3c"];
+  },
+  race(r, P) {
+    let stands = "", lines = "";
+    for (let x = 0; x < W; x += 22 + r() * 30) {
+      const h = 16 + r() * 28;
+      stands += `<rect x="${f(x)}" y="${f(215 - h)}" width="${f(20 + r() * 20)}" height="${f(h)}" fill="#2a0d2e"/>`;
+    }
+    for (let i = 0; i < 14; i++) lines += `<rect x="${f(r() * W)}" y="${f(240 + r() * 110)}" width="${f(60 + r() * 140)}" height="1.5" fill="#fff" opacity="${f(.15 + r() * .25)}"/>`;
+    return [sky(P, ["#1b0b3a", "#7a1d5c", "#ff6f3c", "#ffb347"]) + glow(P, "sun", 320, 215, 340, 140, "#ffd23f", .85) +
+      `<circle cx="320" cy="215" r="52" fill="#ffd27a"/>` + stands + dots(r, 50, 0, W, 180, 212, ["#fff", "#ffd23f", "#ff5e8a"], .8, 1.6, .8) +
+      `<rect y="215" width="${W}" height="145" fill="#2a1430"/>` +
+      `<defs>${lg(P + "rd", ["#4a4458", "#1c1a22"])}</defs><path d="M300 215 L340 215 L860 360 L-220 360Z" fill="url(#${P}rd)"/>` +
+      `<path d="M300 215 L-220 360 L-180 360 L304 215Z" fill="#ff3b3b"/><path d="M340 215 L860 360 L820 360 L336 215Z" fill="#ff3b3b"/>` +
+      `<path d="M320 218 L320 360" stroke="#fff" stroke-width="5" stroke-dasharray="4 10 8 16 14 24 20 30" opacity=".85"/>` + lines, 336, "#ffd23f"];
+  },
+  snow(r, P) {
+    const au = (y) => `<path d="M0 ${y} C160 ${y - 60} 320 ${y + 40} 640 ${y - 30} L640 ${y} C320 ${y + 70} 160 ${y - 20} 0 ${y + 34}Z" fill="url(#${P}au)" opacity=".45"/>`;
+    return [sky(P, ["#061229", "#143a68", "#5a8fc7"]) + stars(r, 60, 150) +
+      `<defs>${lg(P + "au", ["#00ffa3", "#00c2ff", "#a66bff"], 1, 0)}${lg(P + "mt", ["#ffffff", "#9cc0e6"])}</defs>` + au(70) + au(110) +
+      peaks(r, 250, 140, 8, `url(#${P}mt)`, .95) + peaks(r, 285, 90, 11, "#cfe2f5") + hills(r, 322, 30, "#eef6ff") +
+      dots(r, 70, 0, W, 0, H, ["#fff"], 1, 2.6, .85), 324, "#b6fbff"];
+  },
+  sea(r, P) {
+    let rays = "", weeds = "";
+    for (let i = 0; i < 6; i++) { const x = r() * W; rays += `<path d="M${f(x)} 0 L${f(x + 40)} 0 L${f(x + 140 + r() * 80)} 360 L${f(x - 40)} 360Z" fill="#fff" opacity="${f(.04 + r() * .06)}"/>`; }
+    for (let i = 0; i < 14; i++) {
+      const x = r() * W, h = 50 + r() * 90;
+      weeds += `<path d="M${f(x)} 360 q${f(-14)} ${f(-h * .33)} 0 ${f(-h * .66)} t0 ${f(-h * .34)}" stroke="${r() > .5 ? "#1f7a5c" : "#2fa37a"}" stroke-width="${f(4 + r() * 4)}" fill="none" stroke-linecap="round"/>`;
+    }
+    let bubbles = "";
+    for (let i = 0; i < 30; i++) bubbles += `<circle cx="${f(r() * W)}" cy="${f(r() * 300)}" r="${f(1.5 + r() * 5)}" fill="#fff" fill-opacity=".12" stroke="#fff" stroke-opacity=".6"/>`;
+    return [sky(P, ["#3fd0f5", "#0a8bc2", "#044e7c", "#022b47"]) + rays + bubbles + weeds +
+      `<defs>${lg(P + "sand", ["#f0d89a", "#b8955a"])}</defs>` + hills(r, 326, 22, `url(#${P}sand)`) +
+      dots(r, 12, 0, W, 322, 345, ["#ff6f91", "#ff9a3c", "#c77dff"], 5, 11), 328, "#7df9ff"];
+  },
+  autumn(r, P) {
+    let leaves = "";
+    for (let i = 0; i < 26; i++) leaves += `<ellipse cx="${f(r() * W)}" cy="${f(r() * 300)}" rx="4" ry="2" fill="${["#e85d04", "#ffba08", "#dc2f02"][i % 3]}" transform="rotate(${Math.round(r() * 180)} ${f(r() * W)} 0)"/>`;
+    return [sky(P, ["#ff8c55", "#ffc58f", "#fff0d4"]) + glow(P, "sun", 140, 110, 260, 180, "#fff2b0", .95) +
+      `<circle cx="140" cy="110" r="36" fill="#fff5d0"/>` + hills(r, 240, 50, "#d98c4a", .7) +
+      roundTrees(r, 268, 10, ["#e85d04", "#f48c06", "#dc2f02", "#ffba08"]) + hills(r, 292, 40, "#a0522d") + leaves +
+      hills(r, 326, 20, "#5a3a1e") + dots(r, 9, 0, W, 330, 350, ["#e63946"], 5, 7), 326, "#ffcf7a"];
+  },
+  castle(r, P) {
+    const c = "#1a1026";
+    let towers = "";
+    [[200, 120, 34], [258, 90, 46], [330, 140, 40], [395, 105, 34]].forEach(([x, h, w]) => {
+      towers += `<rect x="${x}" y="${250 - h}" width="${w}" height="${h}" fill="${c}"/><path d="M${x - 4} ${250 - h} L${x + w / 2} ${250 - h - w * 1.1} L${x + w + 4} ${250 - h}Z" fill="${c}"/>` +
+        `<rect x="${x + w / 2 - 4}" y="${250 - h + 20}" width="8" height="12" rx="4" fill="#ffcf6b"/>` +
+        `<path d="M${x + w / 2} ${250 - h - w * 1.1} v-18 l14 5 l-14 5" stroke="${c}" fill="#c0392b" stroke-width="2"/>`;
+    });
+    return [sky(P, ["#120a2a", "#4b2a7b", "#c0587e", "#f2a65a"]) + stars(r, 40, 120) + glow(P, "m", 530, 70, 100, 100, "#ffe9c4", .5) +
+      `<circle cx="530" cy="70" r="20" fill="#fff1d6"/>` + clouds(r, 4, 60, 150, "#2a1840", .6) + hills(r, 262, 40, "#3a2350") +
+      `<rect x="190" y="200" width="250" height="60" fill="${c}"/>` + towers +
+      `<path d="M300 260 v-28 a15 15 0 0 1 30 0 v28z" fill="#0c0612"/>` +
+      glow(P, "t1", 190, 205, 30, 30, "#ffb347", .8) + glow(P, "t2", 440, 205, 30, 30, "#ffb347", .8) +
+      hills(r, 300, 30, "#22172f") + hills(r, 328, 18, "#140d1c"), 328, "#ffcf6b"];
+  },
+  space(r, P) {
+    return [sky(P, ["#04010d", "#140a33", "#2d0b4a"]) + glow(P, "n1", 180, 120, 280, 150, "#ff4fa3", .35) +
+      glow(P, "n2", 470, 90, 260, 140, "#3f7bff", .35) + stars(r, 160, 300) +
+      `<defs>${lg(P + "pl", ["#ffb347", "#d53369", "#4a1f6b"], 1, 1)}</defs>` +
+      `<circle cx="110" cy="92" r="46" fill="url(#${P}pl)"/><ellipse cx="110" cy="92" rx="82" ry="14" fill="none" stroke="#ffd9a8" stroke-width="4" opacity=".75" transform="rotate(-18 110 92)"/>` +
+      `<circle cx="565" cy="58" r="12" fill="#7ad7ff"/><circle cx="420" cy="40" r="6" fill="#ffcf7a"/>` +
+      hills(r, 318, 30, "#4a4566") + dots(r, 9, 0, W, 330, 352, ["#363250"], 6, 14), 322, "#ff6ec7"];
+  },
+  magic(r, P) {
+    let sp = "";
+    for (let i = 0; i < 26; i++) {
+      const x = r() * W, y = r() * 280, s = 2 + r() * 5;
+      sp += `<path d="M${f(x)} ${f(y - s)} L${f(x + s * .3)} ${f(y - s * .3)} L${f(x + s)} ${f(y)} L${f(x + s * .3)} ${f(y + s * .3)} L${f(x)} ${f(y + s)} L${f(x - s * .3)} ${f(y + s * .3)} L${f(x - s)} ${f(y)} L${f(x - s * .3)} ${f(y - s * .3)}Z" fill="${["#ffe066", "#ff9ff3", "#9be7ff"][i % 3]}" opacity="${f(.5 + r() * .5)}"/>`;
+    }
+    return [sky(P, ["#0d0221", "#2a0a6b", "#6a11a8"]) + stars(r, 90, 220) + glow(P, "m", 470, 80, 160, 160, "#d9b3ff", .5) +
+      `<circle cx="470" cy="80" r="30" fill="#f4e8ff"/>` + hills(r, 280, 50, "#24104a") +
+      `<rect x="120" y="140" width="46" height="150" fill="#140630"/><path d="M110 142 L143 60 L176 142Z" fill="#1d0b45"/>` +
+      `<rect x="136" y="170" width="14" height="20" rx="7" fill="#ffe066"/>` + glow(P, "win", 143, 180, 40, 40, "#ffe066", .6) +
+      sp + hills(r, 322, 22, "#12062a"), 322, "#c77dff"];
+  },
+  noir(r, P) {
+    return [sky(P, ["#08090b", "#1a1d22", "#2c3038"]) + glow(P, "m", 470, 90, 190, 190, "#f5ecc8", .35) +
+      `<circle cx="470" cy="90" r="42" fill="#efe7c6"/>` + fog(P, "f1", 220, .12) +
+      `<g stroke="#050506" stroke-linecap="round" fill="none"><path d="M70 360 C80 260 60 180 90 90" stroke-width="26"/><path d="M84 170 C140 150 200 160 270 120" stroke-width="10"/><path d="M200 140 C230 110 250 100 300 100" stroke-width="5"/><path d="M88 120 C60 80 30 70 0 72" stroke-width="8"/><path d="M90 230 C150 220 200 240 250 220" stroke-width="7"/></g>` +
+      `<defs>${lg(P + "sp", ["#fff3b0", "#fff3b000"])}</defs><path d="M600 0 L640 0 L560 330 L330 330Z" fill="url(#${P}sp)" opacity=".2"/>` +
+      hills(r, 320, 16, "#0b0c0f") + fog(P, "f2", 300, .1), 322, "#f5e6a8"];
+  },
+  city(r, P) {
+    let city = "", grid = "";
+    for (let x = 0; x < W; ) {
+      const w = 26 + r() * 40, h = 40 + r() * 120;
+      city += `<rect x="${f(x)}" y="${f(230 - h)}" width="${f(w)}" height="${f(h)}" fill="#120c2e"/>`;
+      for (let wy = 230 - h + 8; wy < 222; wy += 10) for (let wx = x + 5; wx < x + w - 6; wx += 9)
+        if (r() > .55) city += `<rect x="${f(wx)}" y="${f(wy)}" width="4" height="4" fill="${r() > .5 ? "#36d1ff" : "#ff4fa3"}" opacity=".8"/>`;
+      x += w + 2;
+    }
+    for (let i = 1; i < 9; i++) { const y = 230 + Math.pow(i / 8, 2) * 130; grid += `<path d="M0 ${f(y)}H${W}"/>`; }
+    for (let i = -10; i <= 10; i++) grid += `<path d="M320 230 L${320 + i * 90} 360"/>`;
+    return [sky(P, ["#07071a", "#1b1046", "#4a1c78", "#ff4fa3"]) + stars(r, 40, 120) + glow(P, "sun", 320, 230, 220, 110, "#ff4fa3", .7) +
+      `<circle cx="320" cy="200" r="60" fill="#ff8ac9" opacity=".8"/>` + city +
+      `<rect y="230" width="${W}" height="130" fill="#0a0420"/><g stroke="#ff4fa3" stroke-width="1.2" opacity=".7">${grid}</g>`, 335, "#36d1ff"];
+  },
+  volcano(r, P) {
+    let smoke = "";
+    for (let i = 0; i < 9; i++) smoke += `<circle cx="${f(300 + r() * 60 + i * 12)}" cy="${f(100 - i * 12 - r() * 10)}" r="${f(20 + i * 6)}" fill="#2a1d1a" opacity="${f(.35 + r() * .3)}"/>`;
+    let blobs = "";
+    for (let i = 0; i < 14; i++) blobs += `<circle cx="${f(250 + r() * 160)}" cy="${f(40 + r() * 90)}" r="${f(2 + r() * 4)}" fill="#ffb000"/>`;
+    return [sky(P, ["#0d0200", "#3a0a00", "#8a2400", "#e25a00"]) + smoke + glow(P, "erupt", 330, 120, 220, 150, "#ff7a00", .75) + blobs +
+      `<defs>${lg(P + "vc", ["#3a1408", "#140602"])}</defs><path d="M70 330 L290 122 L370 122 L590 330Z" fill="url(#${P}vc)"/>` +
+      `<g stroke="#ff6a00" stroke-width="5" fill="none" stroke-linecap="round" opacity=".9"><path d="M310 124 C300 180 330 220 300 290"/><path d="M350 124 C365 170 345 210 380 260"/></g>` +
+      hills(r, 326, 18, "#2a0d04") + `<g stroke="#ff7a00" stroke-width="2" fill="none" opacity=".7"><path d="M40 345 l30 -6 l20 8 l40 -5"/><path d="M480 350 l25 -8 l30 6"/></g>`, 328, "#ff5e00"];
+  },
+  stadium(r, P) {
+    const light = (x) => `<rect x="${x - 2}" y="60" width="4" height="170" fill="#0b1530"/><rect x="${x - 22}" y="52" width="44" height="14" rx="3" fill="#dff6ff"/>` + glow(P, "l" + x, x, 60, 140, 110, "#eaffff", .6);
+    return [sky(P, ["#050c1f", "#10264d", "#1e3c72"]) + stars(r, 30, 100) + light(70) + light(570) +
+      `<rect y="190" width="${W}" height="50" fill="#0b1530"/>` + dots(r, 160, 0, W, 194, 236, ["#ff5e5e", "#ffd23f", "#ffffff", "#5ec8ff"], .9, 1.8, .85) +
+      `<defs>${lg(P + "ice", ["#cfeaff", "#f4fbff"])}</defs><path d="M40 238 L600 238 L760 360 L-120 360Z" fill="url(#${P}ice)"/>` +
+      `<g stroke="#e05050" stroke-width="2" fill="none" opacity=".6"><path d="M320 238 V360"/><ellipse cx="320" cy="300" rx="70" ry="26"/></g>` +
+      `<g stroke="#fff" stroke-width="3" fill="none"><path d="M520 250 h60 v28 h-60"/></g>` +
+      dots(r, 50, 0, W, 0, H, ["#fff"], 1, 2.4, .8), 335, "#e0f7ff"];
+  },
+  island(r, P) {
+    let refl = "";
+    for (let i = 0; i < 12; i++) refl += `<rect x="${f(430 - (40 - i * 2.5) - r() * 10)}" y="${236 + i * 7}" width="${f(80 - i * 5 + r() * 20)}" height="2" fill="#fff4c8" opacity="${f(.7 - i * .05)}"/>`;
+    return [sky(P, ["#020617", "#0b1a36", "#1f3657"]) + stars(r, 120, 200) + glow(P, "m", 430, 110, 230, 230, "#fff4c8", .5) +
+      `<circle cx="430" cy="110" r="62" fill="#fdf3cf"/><circle cx="410" cy="95" r="10" fill="#e9dcae" opacity=".6"/><circle cx="450" cy="130" r="7" fill="#e9dcae" opacity=".6"/>` +
+      `<defs>${lg(P + "sea", ["#13294b", "#06101f"])}</defs><rect y="232" width="${W}" height="128" fill="url(#${P}sea)"/>` + refl +
+      `<path d="M0 260 C60 200 160 190 260 245 L260 260Z" fill="#070c16"/>` +
+      `<g stroke="#070c16" fill="none" stroke-linecap="round"><path d="M150 215 C145 180 150 160 160 140" stroke-width="5"/></g>` +
+      `<g fill="#070c16"><path d="M160 140 C130 130 110 140 100 150 C125 138 140 140 160 142Z"/><path d="M160 140 C190 128 210 136 222 148 C195 138 180 140 160 143Z"/><path d="M160 140 C150 115 130 108 115 110 C135 116 148 126 158 142Z"/><path d="M160 140 C175 116 196 112 208 116 C190 122 175 130 162 142Z"/></g>` +
+      hills(r, 328, 14, "#3a3226"), 330, "#fff1b8"];
+  },
+};
+
+// Title logo drawn inside the picture
+function titleSVG(s, P, poster) {
+  const [main, sub = ""] = s.title.split(":").map((x) => x.trim());
+  const lines = [];
+  let line = "";
+  for (const w of main.split(" ")) {
+    if (line && (line + " " + w).length > 11) { lines.push(line); line = w; } else line = line ? line + " " + w : w;
+  }
+  lines.push(line);
+  const maxW = poster ? 210 : 360;
+  const longest = Math.max(...lines.map((l) => l.length));
+  const size = Math.min(poster ? 50 : 62, maxW / (longest * .6));
+  const lh = size * .92;
+  const x = poster ? 320 : 26, anchor = poster ? "middle" : "start";
+  let y = H - 24 - (sub ? 18 : 0) - (lines.length - 1) * lh;
+  let out = `<defs>${lg(P + "tf", s.tf)}<filter id="${P}ts" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".7"/></filter></defs><g filter="url(#${P}ts)" text-anchor="${anchor}">`;
+  for (const l of lines) {
+    out += `<text x="${x}" y="${f(y)}" font-family="'${s.font}', sans-serif" font-size="${f(size)}" font-weight="900" fill="url(#${P}tf)" stroke="${s.stroke}" stroke-width="${f(size * .08)}" paint-order="stroke" stroke-linejoin="round">${esc(l)}</text>`;
+    y += lh;
+  }
+  if (sub) out += `<text x="${x}" y="${f(y - lh + 22)}" font-family="Nunito, sans-serif" font-weight="800" font-size="13" letter-spacing="5" fill="#fff">${esc(sub.toUpperCase())}</text>`;
+  return out + "</g>";
+}
+
+/* art(show, variant, options) -> SVG picture
+   options: chars (draw characters), title (draw title logo), poster (tall card), cx (where the hero stands) */
+function art(s, variant = 0, o = {}) {
+  const P = "a" + UID++ + "_";
+  const r = rng(s.id + ":" + variant);
+  const [body, g, glowC] = SCENES[s.scene](r, P);
+  art.ground = g;
+  art.glow = glowC;
+  let chars = "";
+  if (o.chars) {
+    const big = o.poster ? 150 : 140;
+    const cx = o.poster ? 320 : (o.cx != null ? o.cx : 470 + (variant ? (r() - .5) * 160 : 0));
+    const withPal = o.poster ? false : variant % 2 === 1 || !variant;
+    const shadow = (x, w) => `<ellipse cx="${f(x)}" cy="${g}" rx="${f(w)}" ry="8" fill="#000" opacity=".45"/>`;
+    chars = `<defs><filter id="${P}ch" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="${glowC}" flood-opacity=".6"/><feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter></defs>`;
+    if (withPal) {
+      const px = cx < 320 ? cx + big * .9 : cx - big * .9;
+      chars += shadow(px, big * .2) + `<text x="${f(px)}" y="${g + 6}" font-size="${big * .55}" text-anchor="middle" filter="url(#${P}ch)">${s.pal}</text>`;
+    }
+    chars += shadow(cx, big * .32) + `<text x="${f(cx)}" y="${g + 10}" font-size="${big}" text-anchor="middle" filter="url(#${P}ch)">${s.emoji}</text>`;
+  }
+  const shade = `<defs><radialGradient id="${P}vg" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>${lg(P + "bs", ["#0000", "#000c"])}</defs>` +
+    `<rect width="${W}" height="${H}" fill="url(#${P}vg)"/>` + (o.title ? `<rect y="${H * .5}" width="${W}" height="${H * .5}" fill="url(#${P}bs)"/>` : "");
+  return `<svg class="art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${body}${chars}${shade}${o.title ? titleSVG(s, P, o.poster) : ""}</svg>`;
+}
 
 /* ================= STORAGE (one save per profile) ================= */
 let profile = PROFILES[3];
@@ -468,11 +802,12 @@ function saveStore() { try { localStorage.setItem(storeKey(), JSON.stringify(sto
 /* ================= HELPERS ================= */
 const $ = (id) => document.getElementById(id);
 const byId = (id) => SHOWS.find((s) => s.id === id);
-const grad = (s) => `linear-gradient(135deg, ${s.colors[0]}, ${s.colors[1]})`;
 const fmt = (sec) => Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
 function esc(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+const TOP10 = [...SHOWS].sort((a, b) => b.match - a.match).slice(0, 10).map((s) => s.id);
+const isPhone = () => window.innerWidth < 700;
 function metaHTML(s) {
-  return `<span class="match">${s.match}% Match</span><span>${s.year}</span><span class="age">${s.age}</span><span>${s.eps.length} Episodes</span><span>· ${s.cat}</span>`;
+  return `<span class="match">${s.match}% Match</span><span>${s.year}</span><span class="age">${s.age}</span><span>${s.eps.length} Episodes</span><span class="hd">HD</span>`;
 }
 
 function toast(msg) {
@@ -506,11 +841,13 @@ $("me").addEventListener("click", showProfiles);
 
 /* ================= HERO ================= */
 let heroShow = SHOWS[0];
+function heroTitleHTML(s) {
+  return `<span style="font-family:'${s.font}',sans-serif;background-image:linear-gradient(180deg,${s.tf[0]},${s.tf[1]})">${esc(s.title)}</span>`;
+}
 function setHero(s) {
   heroShow = s;
-  $("hero-bg").style.background = grad(s);
-  $("hero-emoji").textContent = s.emoji;
-  $("hero-title").textContent = s.title;
+  $("hero-bg").innerHTML = art(s, 0, { chars: true, cx: isPhone() ? 380 : 480 });
+  $("hero-title").innerHTML = heroTitleHTML(s);
   $("hero-meta").innerHTML = metaHTML(s);
   $("hero-desc").textContent = s.desc;
   $("hero-play").textContent = store.progress[s.id] ? `▶ Resume E${store.progress[s.id].ep + 1}` : "▶ Play";
@@ -523,12 +860,14 @@ let tab = "home";
 
 function card(s, rank) {
   const p = store.progress[s.id];
-  const bar = p ? `<div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div>` : "";
-  const inner = `<span class="w-badge">🐉</span><span class="big">${s.emoji}</span><span class="t">${esc(s.title)}</span>${bar}`;
+  const bar = p ? `<div class="bar-bg"><div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div></div>` : "";
   if (rank) {
-    return `<button class="card top10" data-id="${s.id}" style="background:none" aria-label="${esc(s.title)}"><span class="num">${rank}</span><span class="inner" style="background:${grad(s)}">${inner}</span></button>`;
+    return `<button class="card top10" data-id="${s.id}" aria-label="${esc(s.title)}"><span class="num">${rank}</span>` +
+      `<span class="poster grain">${art(s, 0, { chars: true, title: true, poster: true })}<span class="mark">W</span>${bar}</span></button>`;
   }
-  return `<button class="card" data-id="${s.id}" style="background:${grad(s)}" aria-label="${esc(s.title)}">${inner}</button>`;
+  const tag = TOP10.includes(s.id) ? `<span class="tag">TOP<br>10</span>` : "";
+  const ribbon = s.badge && !p ? `<span class="ribbon">${s.badge}</span>` : "";
+  return `<button class="card grain" data-id="${s.id}" aria-label="${esc(s.title)}">${art(s, 0, { chars: true, title: true })}<span class="mark">W</span>${tag}${ribbon}${bar}</button>`;
 }
 function row(title, shows, top10) {
   if (!shows.length) return "";
@@ -556,8 +895,8 @@ function render() {
     const top = [...pool].sort((a, b) => b.match - a.match).slice(0, 10);
 
     html += row(`Continue Watching for ${esc(profile.name)}`, watching);
-    html += row("Top 10 on WynnFlix Today", top, true);
-    if (tab !== "games") html += row("From Wynn's Games 🎮", SHOWS.filter((s) => s.games));
+    html += row(tab === "games" ? "Top 10 From Wynn's Games" : "Top 10 Shows on WynnFlix Today", top, true);
+    if (tab !== "games") html += row("Because You Like Wynn's Games", SHOWS.filter((s) => s.games));
     html += row("My List", mine);
     for (const [cat, label] of ROWS_BY_CAT) html += row(label, pool.filter((s) => s.cat === cat));
   }
@@ -573,14 +912,14 @@ function goTab(t) {
   tab = t;
   $("search").value = "";
   document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
+  render();
   const pool = t === "games" ? SHOWS.filter((s) => s.games) : SHOWS;
   setHero(pool[Math.floor(Math.random() * pool.length)]);
-  render();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => goTab(b.dataset.tab)));
 $("logo").addEventListener("click", (e) => { e.preventDefault(); goTab("home"); });
-$("search").addEventListener("input", render);
+$("search").addEventListener("input", () => { render(); });
 window.addEventListener("scroll", () => $("top").classList.toggle("solid", window.scrollY > 40));
 
 /* ================= DETAILS MODAL ================= */
@@ -588,19 +927,19 @@ let modalShow = null;
 
 function openModal(s) {
   modalShow = s;
-  $("m-top").style.background = grad(s);
-  $("m-emoji").textContent = s.emoji;
+  $("m-art").innerHTML = art(s, 0, { chars: true, title: true });
   $("m-title").textContent = s.title;
   $("m-meta").innerHTML = metaHTML(s);
   $("m-desc").textContent = s.desc;
+  $("m-side").innerHTML = `<div>Created by: <b>Wynn</b></div><div>Genres: <b>${s.cat}, Kids &amp; Family${s.games ? ", Based on a Game" : ""}</b></div><div>This show is: <b>${MOODS[s.cat]}</b></div>`;
   $("m-game").innerHTML = s.game ? `<a class="game-link" href="${s.game}">🎮 Play the ${esc(s.title.split(":")[0])} game →</a>` : "";
   const p = store.progress[s.id];
   $("m-eps").innerHTML = s.eps.map((name, i) => {
-    const bar = p && p.ep === i ? `<div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div>` : "";
+    const bar = p && p.ep === i ? `<div class="bar-bg"><div class="bar" style="width:${Math.max(4, (p.t / EP_LEN) * 100)}%"></div></div>` : "";
     return `<button class="ep" data-ep="${i}">
       <span class="n">${i + 1}</span>
-      <span class="thumb" style="background:${grad(s)}">${i % 2 ? s.pal : s.emoji}${bar}</span>
-      <span><b>${esc(name)}</b><span>1m · Episode ${i + 1}</span></span>
+      <span class="thumb grain">${art(s, i + 1, { chars: true })}<span class="play">▶</span>${bar}</span>
+      <span><b>${esc(name)}</b><span class="d">${esc(s.lines[(i * 2) % s.lines.length])} · 1m</span></span>
     </button>`;
   }).join("");
   $("m-play").textContent = p ? `▶ Resume E${p.ep + 1}` : "▶ Play";
@@ -640,7 +979,7 @@ $("m-like").addEventListener("click", () => {
 });
 
 /* ================= PLAYER ================= */
-// The "video" is a cartoon scene: the show's character hops around while subtitles tell the story.
+// The "video" is the painted scene with the characters moving on top and subtitles telling the story.
 let cur = null, ep = 0, t = 0, playing = false, last = 0, raf = 0, lastSave = -1;
 
 function playShow(s, epIndex, start) {
@@ -648,13 +987,14 @@ function playShow(s, epIndex, start) {
   const p = store.progress[s.id];
   ep = epIndex != null ? epIndex : (p ? p.ep : 0);
   t = start != null ? start : (p && p.ep === ep ? p.t : 0);
-  $("sky").style.background = grad(s);
-  $("ground").style.background = s.ground;
+  $("scene").innerHTML = art(s, ep + 1, { chars: false });
+  const feet = Math.max(6, (1 - art.ground / H) * 100 - 4) + "%";
+  $("stage").style.setProperty("--glow", art.glow + "aa");
+  $("star").style.bottom = feet;
+  $("pal").style.bottom = feet;
   $("star").textContent = s.emoji;
   $("pal").textContent = s.pal;
   $("ptitle").textContent = `${s.title} · E${ep + 1} "${s.eps[ep]}"`;
-  $("floats").innerHTML = ["☁️", "✨", "☁️", s.pal].map((f, i) =>
-    `<div class="float" style="top:${8 + i * 13}%;animation-duration:${9 + i * 4}s;animation-delay:-${i * 3}s">${f}</div>`).join("");
   $("next-up").style.display = "none";
   $("player").classList.add("open");
   document.body.style.overflow = "hidden";
@@ -696,7 +1036,7 @@ function draw() {
   $("sub").textContent = cur.lines[(Math.floor(t / (EP_LEN / n)) + ep * 2) % n];
   // the character walks back and forth, and a friend pops in sometimes
   const phase = Math.floor(t / 6);
-  $("star").style.left = (phase % 2 ? 55 : 10) + "%";
+  $("star").style.left = (phase % 2 ? 50 : 10) + "%";
   $("pal").style.opacity = phase % 3 === 1 ? 1 : 0;
   // save where you are every 3 seconds
   const tick3 = Math.floor(t / 3);
@@ -753,8 +1093,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ================= START ================= */
-setHero(SHOWS[0]);
 render();
+setHero(SHOWS[0]);
 showProfiles();
 </script>
 </body>
