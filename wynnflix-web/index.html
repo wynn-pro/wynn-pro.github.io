@@ -337,7 +337,7 @@
       <div id="m-art"></div>
       <button class="close" id="m-close" aria-label="Close">✕</button>
       <div>
-        <h2 id="m-title" style="position:absolute;left:-9999px"></h2>
+        <h2 id="m-title" style="font-size:clamp(34px,6vw,58px);font-weight:400;line-height:.95;margin:0 0 16px;filter:drop-shadow(0 3px 8px #000c)"></h2>
         <div class="btns">
           <button class="btn btn-play" id="m-play">▶ Play</button>
           <button class="round" id="m-list" title="Add to My List">＋</button>
@@ -928,8 +928,8 @@ let modalShow = null;
 
 function openModal(s) {
   modalShow = s;
-  $("m-art").innerHTML = art(s, 0, { chars: true, title: true });
-  $("m-title").textContent = s.title;
+  $("m-art").innerHTML = art(s, 0, { chars: true });
+  $("m-title").innerHTML = heroTitleHTML(s);
   $("m-meta").innerHTML = metaHTML(s);
   $("m-desc").textContent = s.desc;
   $("m-side").innerHTML = `<div>Created by: <b>Wynn</b></div><div>Genres: <b>${s.cat}, Kids &amp; Family${s.games ? ", Based on a Game" : ""}</b></div><div>This show is: <b>${MOODS[s.cat]}</b></div>`;
