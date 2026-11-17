@@ -162,6 +162,10 @@
   .feedback .tip { display: block; font-weight: 500; font-size: 15px; margin-top: 4px; }
   .feedback .row { margin-top: 10px; }
 
+  .lb { margin: 0; padding-left: 26px; font-weight: 700; }
+  .lb li { padding: 3px 0; }
+  .lb li.me { color: #b5651d; }
+  .lb small { font-weight: 400; opacity: .75; }
   /* results */
   .bigscore { font-size: 54px; color: #5a3a10; margin: 4px 0; text-align: center; }
   .center { text-align: center; }
@@ -224,6 +228,10 @@
       <div class="rankbar"><i id="rankFill"></i></div>
       <div class="badges" id="badges" style="margin-top:12px"></div>
     </div>
+    <div class="panel">
+      <h2>🏆 Leaderboard</h2>
+      <ol class="lb" id="lbMenu"></ol>
+    </div>
     <div class="center">
       <a class="home-link" href="../index.html">← Back to all games</a> &nbsp;
       <button class="linkbtn" id="resetBtn">Reset my progress</button>
@@ -266,6 +274,12 @@
       <div id="resBadges"></div>
       <p id="resRank" style="font-weight:700"></p>
       <div class="rankbar"><i id="resRankFill"></i></div>
+      <h3 style="margin:16px 0 6px">🏆 Leaderboard</h3>
+      <div class="row" id="lbForm">
+        <input id="lbName" type="text" maxlength="16" placeholder="Your name" style="flex:1;font-size:16px;padding:8px;border-radius:8px;border:2px solid #c9a46a">
+        <button class="btn sel" id="lbSave">Save score</button>
+      </div>
+      <ol class="lb" id="lbRes"></ol>
       <div class="row" style="margin-top:16px">
         <button class="btn sel" id="againBtn" style="flex:1">🔁 Play again</button>
         <button class="btn" id="menuBtn" style="flex:1">🏰 Back to menu</button>
@@ -808,6 +822,7 @@ function rankProgress(textEl, fillEl) {
   } else { textEl.textContent = RANKS[r][1] + " — the highest rank!"; fillEl.style.width = "100%"; }
 }
 function renderMenu() {
+  lbRender($("lbMenu"));
   renderTop();
   const h = $("heroes"); h.textContent = "";
   HEROES.forEach(x => {
@@ -1196,6 +1211,31 @@ document.addEventListener("keydown", e => {
 });
 
 /* ===================== RESULTS ===================== */
+// Leaderboard: top 10 scores saved on this device.
+const LB_KEY = "writing-test-leaderboard";
+function lbLoad() { try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch (e) { return []; } }
+function lbRender(list, hi) {
+  const rows = lbLoad(); list.textContent = "";
+  if (!rows.length) { list.append(el("li", "", "No scores yet — be the first!")); return; }
+  const medal = ["🥇", "🥈", "🥉"];
+  rows.forEach((r, i) => {
+    const li = el("li", r.t === hi ? "me" : "", (medal[i] || "") + " " + r.name + " — " + r.score + " pts ");
+    li.append(el("small", "", "(" + r.grade + ", " + r.pct + "%)")); list.append(li);
+  });
+}
+let lbEntry = null;
+$("lbSave").onclick = () => {
+  const name = $("lbName").value.trim(); if (!name || !lbEntry) return;
+  save.lbName = name; persist();
+  lbEntry.name = name;
+  const rows = lbLoad(); rows.push(lbEntry);
+  rows.sort((a, b) => b.score - a.score || b.pct - a.pct);
+  try { localStorage.setItem(LB_KEY, JSON.stringify(rows.slice(0, 10))); } catch (e) {}
+  $("lbForm").classList.add("hidden");
+  lbRender($("lbRes"), lbEntry.t); lbRender($("lbMenu")); lbEntry = null;
+};
+$("lbName").addEventListener("keydown", e => { if (e.key === "Enter") $("lbSave").click(); });
+
 function finish() {
   stopTimer();
   const pct = Math.round(100 * S.correct / S.n);
@@ -1227,6 +1267,10 @@ function finish() {
   fresh.forEach(b => rb.append(el("div", "newbadge", "New badge: " + b.em + " " + b.name + " — " + b.desc)));
   if (rankOf(save.xp) > oldRank) rb.append(el("div", "newbadge", "🏅 Rank up! You are now a " + RANKS[rankOf(save.xp)][1] + "!"));
   rankProgress($("resRank"), $("resRankFill"));
+  lbEntry = { score: S.score, pct, grade: GRADES[S.gi].name, t: Date.now() };
+  $("lbName").value = save.lbName || "";
+  $("lbForm").classList.remove("hidden");
+  lbRender($("lbRes"));
   renderTop();
   show("results");
 }
