@@ -646,13 +646,12 @@
   function voiceList(){ try { const v = speechSynthesis.getVoices().filter(x => /^en/i.test(x.lang)); return v.length ? v : speechSynthesis.getVoices(); } catch { return []; } }
   function speak(t, sc){
     try { speechSynthesis.cancel(); talking = false;
-      if (t){ const u = new SpeechSynthesisUtterance(t); u.rate = 1.05; speechSynthesis.speak(u); }
       if (sc && sc.line){ const u = new SpeechSynthesisUtterance(sc.line), [pitch, rate] = VOICES[sc.voice] || [1,1], vs = voiceList();
         u.pitch = pitch; u.rate = rate; if (vs.length) u.voice = vs[Object.keys(VOICES).indexOf(sc.voice) % vs.length];
         u.onstart = () => { talking = true; showBubble(sc); }; u.onend = () => { talking = false; };
         speechSynthesis.speak(u); }
     } catch {}
-    if (sc && sc.line) setTimeout(() => { if (tv.scenes[tv.scene] === sc) showBubble(sc); }, Math.min(2500, (t || "").length * 70));
+    if (sc && sc.line) setTimeout(() => { if (tv.scenes[tv.scene] === sc) showBubble(sc); }, 400);
   }
   function showBubble(sc){ const b = $("bubble"); if (b.dataset.for === sc.line + tv.scene) return; b.dataset.for = sc.line + tv.scene;
     const col = sc.speaker === "villain" ? "#c02040" : "#" + HERO_COLOR[sc.who].toString(16).padStart(6, "0");
