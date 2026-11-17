@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spelling Test</title>
+<style>
+  :root { --bg:#fff8e7; --card:#ffffff; --ink:#1f2a44; --muted:#6b7590; --accent:#3a7bff; --good:#22a35a; --bad:#e0483e; --line:#e5dcc4; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141a2b; --card:#1f2740; --ink:#eef2ff; --muted:#a3acc7; --line:#33405f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family: "Trebuchet MS", system-ui, sans-serif; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .card { background:var(--card); border:2px solid var(--line); border-radius:20px; padding:28px 24px; width:100%; max-width:520px; text-align:center; box-shadow:0 8px 0 var(--line); }
+  h1 { margin:0 0 6px; font-size:2rem; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .levels { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  button { font:inherit; font-size:1.1rem; border:0; border-radius:12px; padding:12px 18px; cursor:pointer; background:var(--accent); color:#fff; font-weight:bold; box-shadow:0 4px 0 #2856b8; }
+  button:active { transform:translateY(3px); box-shadow:0 1px 0 #2856b8; }
+  button.alt { background:#8a93ad; box-shadow:0 4px 0 #5d6680; }
+  .bar { height:10px; background:var(--line); border-radius:9px; overflow:hidden; margin:4px 0 18px; }
+  .bar div { height:100%; background:var(--accent); width:0; transition:width .3s; }
+  .top { display:flex; justify-content:space-between; color:var(--muted); font-weight:bold; }
+  .speak { font-size:3rem; width:110px; height:110px; border-radius:50%; margin:6px auto 10px; display:block; padding:0; }
+  .hint { color:var(--muted); min-height:1.4em; margin-bottom:14px; }
+  input { font:inherit; font-size:1.6rem; width:100%; padding:12px; border-radius:12px; border:2px solid var(--line); background:var(--bg); color:var(--ink); text-align:center; letter-spacing:2px; }
+  input:focus { outline:3px solid var(--accent); }
+  .row { display:flex; gap:10px; justify-content:center; margin-top:14px; }
+  .fb { font-size:1.3rem; font-weight:bold; min-height:1.6em; margin-top:14px; }
+  .good { color:var(--good); } .bad { color:var(--bad); }
+  .big { font-size:3.2rem; font-weight:bold; margin:10px 0; }
+  ul { text-align:left; list-style:none; padding:0; margin:14px 0; max-height:260px; overflow:auto; }
+  li { padding:6px 10px; border-bottom:1px solid var(--line); }
+  .hidden { display:none; }
+  a.home { display:inline-block; margin-top:16px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <section id="menu">
+    <h1>✏️ Spelling Test</h1>
+    <p class="sub">Listen to the word, then type it. 10 words per test!</p>
+    <div class="levels">
+      <button data-lvl="easy">🟢 Easy</button>
+      <button data-lvl="medium">🟡 Medium</button>
+      <button data-lvl="hard">🔴 Hard</button>
+    </div>
+    <p class="sub" id="best" style="margin-top:18px"></p>
+    <a class="home" href="../index.html">← Back to games</a>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="top"><span id="count">Word 1/10</span><span id="score">⭐ 0</span></div>
+    <div class="bar"><div id="prog"></div></div>
+    <button class="speak" id="say" title="Hear the word">🔊</button>
+    <div class="hint" id="hint"></div>
+    <input id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type here">
+    <div class="row">
+      <button id="check">Check ✔</button>
+      <button class="alt" id="hintBtn">Hint 💡</button>
+    </div>
+    <div class="fb" id="fb"></div>
+  </section>
+
+  <section id="done" class="hidden">
+    <h1>🎉 Test done!</h1>
+    <div class="big" id="final"></div>
+    <p class="sub" id="msg"></p>
+    <ul id="list"></ul>
+    <div class="row"><button id="again">Play again</button><button class="alt" id="toMenu">Menu</button></div>
+  </section>
+</div>
+
+<script>
+const WORDS = {
+  easy: [
+    ["cat","The cat sat on the mat."],["dog","My dog likes to run."],["sun","The sun is hot."],["red","An apple can be red."],
+    ["bed","I sleep in my bed."],["fish","A fish swims in water."],["frog","The frog can jump."],["jump","Jump over the puddle."],
+    ["book","Read a good book."],["tree","A bird is in the tree."],["milk","Drink your milk."],["star","Look at that bright star."],
+    ["ship","The ship sails on the sea."],["hand","Raise your hand."],["ball","Kick the ball."],["cake","We ate birthday cake."],
+    ["rain","The rain is falling."],["play","Let's play outside."],["green","Grass is green."],["happy","I feel happy today."]
+  ],
+  medium: [
+    ["because","I smiled because I won."],["friend","She is my best friend."],["school","We learn at school."],["people","Lots of people came."],
+    ["little","A little mouse ran by."],["water","Plants need water."],["beautiful","What a beautiful day."],["Wednesday","Wednesday comes after Tuesday."],
+    ["thought","I thought about it."],["laugh","That joke made me laugh."],["answer","Write your answer."],["kitchen","Mum is in the kitchen."],
+    ["dinosaur","The dinosaur was huge."],["minute","Wait one minute."],["animal","A lion is an animal."],["picture","Draw a picture."],
+    ["island","They lived on an island."],["knight","The knight had a sword."],["giraffe","A giraffe has a long neck."],["birthday","Happy birthday to you!"]
+  ],
+  hard: [
+    ["necessary","Is that really necessary?"],["separate","Keep them separate."],["rhythm","Clap to the rhythm."],["definitely","I will definitely come."],
+    ["environment","Protect the environment."],["restaurant","We ate at a restaurant."],["accommodate","The hotel can accommodate us."],["occasionally","I occasionally eat pizza."],
+    ["temperature","The temperature dropped."],["exaggerate","Don't exaggerate the story."],["mischievous","The mischievous cat hid my sock."],["conscience","Listen to your conscience."],
+    ["embarrass","Don't embarrass me."],["government","The government made a law."],["parallel","The lines are parallel."],["receive","Did you receive my letter?"],
+    ["immediately","Come here immediately."],["february","My birthday is in February."],["vacuum","Vacuum the carpet."],["questionnaire","Fill in the questionnaire."]
+  ]
+};
+const $ = id => document.getElementById(id);
+let level, list, i, score, tries, hintsUsed, results;
+
+function speak(text, rate = 0.8) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = rate; u.lang = "en-GB";
+  speechSynthesis.speak(u);
+}
+function show(id) { ["menu","game","done"].forEach(s => $(s).classList.toggle("hidden", s !== id)); }
+function shuffle(a) { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; }
+function bestKey(l) { return "spelling-best-" + l; }
+function getBest(l) { try { return +localStorage.getItem(bestKey(l)) || 0; } catch { return 0; } }
+function showBest() {
+  $("best").textContent = "Best scores — Easy " + getBest("easy") + "/10 · Medium " + getBest("medium") + "/10 · Hard " + getBest("hard") + "/10";
+}
+
+function start(l) {
+  level = l; list = shuffle(WORDS[l]).slice(0, 10); i = 0; score = 0; results = [];
+  show("game"); next();
+}
+function next() {
+  tries = 0; hintsUsed = 0;
+  $("count").textContent = "Word " + (i + 1) + "/10";
+  $("score").textContent = "⭐ " + score;
+  $("prog").style.width = (i * 10) + "%";
+  $("hint").textContent = "Press 🔊 to hear it again";
+  $("fb").textContent = ""; $("fb").className = "fb";
+  $("ans").value = ""; $("ans").disabled = false; $("ans").focus();
+  sayWord();
+}
+function sayWord() { const [w, s] = list[i]; speak(w + ". " + s + ". " + w); }
+
+function check() {
+  const guess = $("ans").value.trim().toLowerCase();
+  if (!guess || $("ans").disabled) return;
+  const word = list[i][0];
+  if (guess === word.toLowerCase()) {
+    const pts = tries === 0 && hintsUsed === 0;
+    if (pts) score++;
+    results.push({ word, ok: pts, guess });
+    $("fb").textContent = pts ? "✅ Correct!" : "✅ Got it! (no star this time)";
+    $("fb").className = "fb good";
+    speak(pts ? "Correct!" : "Good job", 1);
+    advance();
+  } else {
+    tries++;
+    if (tries < 2) {
+      $("fb").textContent = "❌ Not quite — try once more!";
+      $("fb").className = "fb bad";
+      $("ans").select();
+    } else {
+      results.push({ word, ok: false, guess });
+      $("fb").innerHTML = "❌ It's spelled <b>" + word + "</b>";
+      $("fb").className = "fb bad";
+      speak(word.split("").join(", "), 0.9);
+      advance(2600);
+    }
+  }
+}
+function advance(ms = 1200) {
+  $("ans").disabled = true;
+  setTimeout(() => { i++; i < list.length ? next() : finish(); }, ms);
+}
+function hint() {
+  const word = list[i][0];
+  hintsUsed = Math.min(hintsUsed + 1, word.length - 1);
+  $("hint").textContent = "Starts with: " + word.slice(0, hintsUsed) + " _".repeat(word.length - hintsUsed);
+  $("ans").focus();
+}
+function finish() {
+  $("prog").style.width = "100%";
+  $("final").textContent = score + " / 10";
+  $("msg").textContent = score === 10 ? "PERFECT! Spelling champion! 🏆" : score >= 7 ? "Great work! 🌟" : score >= 4 ? "Nice try — keep practising! 💪" : "Practice makes perfect! 📚";
+  $("list").innerHTML = results.map(r => "<li>" + (r.ok ? "✅ " : "❌ ") + "<b>" + r.word + "</b>" + (r.ok ? "" : " <span style='color:var(--muted)'>(you typed: " + r.guess.replace(/</g, "&lt;") + ")</span>") + "</li>").join("");
+  try { if (score > getBest(level)) localStorage.setItem(bestKey(level), score); } catch {}
+  show("done");
+  speak("You scored " + score + " out of 10", 1);
+}
+
+document.querySelectorAll("[data-lvl]").forEach(b => b.onclick = () => start(b.dataset.lvl));
+$("say").onclick = sayWord;
+$("check").onclick = check;
+$("hintBtn").onclick = hint;
+$("ans").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+$("again").onclick = () => start(level);
+$("toMenu").onclick = () => { showBest(); show("menu"); };
+showBest();
+</script>
+</body>
+</html>

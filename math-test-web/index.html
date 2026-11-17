@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick Math Test</title>
+<style>
+  :root { --bg:#14213d; --card:#1f2f57; --ink:#fff; --muted:#a9b8dd; --good:#3ddc84; --bad:#ff5c6c; --accent:#ffd84d; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--ink); font-family:system-ui, -apple-system, "Segoe UI", sans-serif; padding:16px; }
+  .card { width:100%; max-width:440px; background:var(--card); border-radius:20px; padding:24px; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  h1 { margin:0 0 4px; font-size:28px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:14px; }
+  button { font:inherit; font-weight:700; border:0; border-radius:12px; padding:12px 16px; cursor:pointer;
+    background:#2e4580; color:var(--ink); }
+  button.on { background:var(--accent); color:#14213d; }
+  .go { background:var(--good); color:#0b2a17; font-size:20px; width:100%; padding:14px; }
+  .hud { display:flex; justify-content:space-between; color:var(--muted); font-weight:700; margin-bottom:8px; }
+  .bar { height:8px; background:#2e4580; border-radius:8px; overflow:hidden; margin-bottom:20px; }
+  .bar i { display:block; height:100%; background:var(--accent); transition:width .1s linear; }
+  .q { font-size:52px; font-weight:800; margin:10px 0 18px; }
+  input { font:inherit; font-size:32px; width:100%; text-align:center; padding:10px; border-radius:12px; border:3px solid #2e4580;
+    background:#0f1a33; color:var(--ink); outline:none; }
+  input.good { border-color:var(--good); } input.bad { border-color:var(--bad); }
+  .msg { height:28px; margin-top:10px; font-weight:700; }
+  .big { font-size:64px; font-weight:800; color:var(--accent); margin:8px 0; }
+  ul { list-style:none; padding:0; margin:12px 0 18px; text-align:left; max-height:220px; overflow:auto; }
+  li { padding:6px 10px; border-radius:8px; margin-bottom:4px; background:#18264a; }
+  li.x { color:var(--bad); } li.ok { color:var(--good); }
+  .hidden { display:none; }
+  a { color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <!-- start screen -->
+  <div id="start">
+    <h1>⚡ Quick Math Test</h1>
+    <p class="sub">10 questions. Answer fast — 10 seconds each!</p>
+    <div class="row" id="ops">
+      <button data-op="+" class="on">+</button>
+      <button data-op="-" class="on">−</button>
+      <button data-op="*">×</button>
+      <button data-op="/">÷</button>
+    </div>
+    <div class="row" id="lvls">
+      <button data-max="10" class="on">Easy</button>
+      <button data-max="20">Medium</button>
+      <button data-max="50">Hard</button>
+    </div>
+    <button class="go" id="goBtn">Start ▶</button>
+    <p class="sub" style="margin-top:14px" id="best"></p>
+  </div>
+
+  <!-- test screen -->
+  <div id="test" class="hidden">
+    <div class="hud"><span id="num">1 / 10</span><span id="score">⭐ 0</span></div>
+    <div class="bar"><i id="timer"></i></div>
+    <div class="q" id="q">?</div>
+    <input id="ans" type="text" inputmode="numeric" autocomplete="off" placeholder="type answer + Enter">
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <!-- results screen -->
+  <div id="done" class="hidden">
+    <h1>Finished! 🎉</h1>
+    <div class="big" id="final">0/10</div>
+    <p class="sub" id="grade"></p>
+    <ul id="review"></ul>
+    <button class="go" id="againBtn">Play again ↺</button>
+  </div>
+  <p style="margin:16px 0 0"><a href="../index.html">← Back to all games</a></p>
+</div>
+
+<script>
+const TOTAL = 10, TIME = 10;
+const $ = id => document.getElementById(id);
+const show = id => ["start","test","done"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+let ops = ["+","-"], max = 10, i, score, cur, results, left, tick, locked;
+
+function toggle(group, multi) {
+  $(group).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (multi) {
+      b.classList.toggle("on");
+      if (!$(group).querySelector(".on")) b.classList.add("on"); // keep at least one
+    } else {
+      $(group).querySelectorAll("button").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+    }
+    ops = [...$("ops").querySelectorAll(".on")].map(x => x.dataset.op);
+    max = +$("lvls").querySelector(".on").dataset.max;
+  });
+}
+toggle("ops", true); toggle("lvls", false);
+
+const rnd = n => Math.floor(Math.random() * n) + 1;
+function makeQ() {
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let a = rnd(max), b = rnd(max);
+  if (op === "-" && b > a) [a, b] = [b, a];               // no negatives
+  if (op === "*") { a = rnd(Math.min(max, 12)); b = rnd(Math.min(max, 12)); }
+  if (op === "/") { b = rnd(Math.min(max, 12)); a = b * rnd(Math.min(max, 12)); } // whole answers
+  const ans = op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b;
+  const sym = { "+":"+", "-":"−", "*":"×", "/":"÷" }[op];
+  return { text: `${a} ${sym} ${b}`, ans };
+}
+
+function bestKey() { return "mathbest:" + ops.join("") + max; }
+function showBest() {
+  let b = null; try { b = localStorage.getItem(bestKey()); } catch {}
+  $("best").textContent = b ? `🏆 Best for this mode: ${b}/10` : "";
+}
+$("ops").addEventListener("click", showBest); $("lvls").addEventListener("click", showBest);
+
+function start() { i = 0; score = 0; results = []; show("test"); next(); }
+
+function next() {
+  if (i >= TOTAL) return finish();
+  cur = makeQ(); locked = false;
+  $("num").textContent = `${i + 1} / ${TOTAL}`;
+  $("score").textContent = `⭐ ${score}`;
+  $("q").textContent = cur.text;
+  $("msg").textContent = "";
+  $("ans").value = ""; $("ans").className = ""; $("ans").focus();
+  left = TIME * 10; drawTimer();
+  clearInterval(tick);
+  tick = setInterval(() => { left--; drawTimer(); if (left <= 0) answer(null); }, 100);
+}
+function drawTimer() { $("timer").style.width = (left / (TIME * 10) * 100) + "%"; }
+
+function answer(val) {
+  if (locked) return; locked = true; clearInterval(tick);
+  const ok = val !== null && Number(val) === cur.ans;
+  if (ok) score++;
+  results.push({ q: cur.text, ans: cur.ans, got: val, ok });
+  $("ans").className = ok ? "good" : "bad";
+  $("msg").style.color = ok ? "var(--good)" : "var(--bad)";
+  $("msg").textContent = ok ? "Correct! ✅" : (val === null ? `Time's up! It was ${cur.ans}` : `Oops — it was ${cur.ans}`);
+  $("score").textContent = `⭐ ${score}`;
+  i++; setTimeout(next, ok ? 500 : 1200);
+}
+
+$("ans").addEventListener("keydown", e => {
+  if (e.key === "Enter" && $("ans").value.trim() !== "") answer($("ans").value.trim());
+});
+
+function finish() {
+  show("done");
+  $("final").textContent = `${score}/${TOTAL}`;
+  $("grade").textContent = score === 10 ? "PERFECT! Math genius 🧠" : score >= 8 ? "Awesome job! 🔥" : score >= 5 ? "Nice work — keep practising 💪" : "Keep trying, you'll get it! 🌱";
+  $("review").innerHTML = results.map(r =>
+    `<li class="${r.ok ? "ok" : "x"}">${r.ok ? "✅" : "❌"} ${r.q} = ${r.ans}${r.ok ? "" : ` <small>(you: ${r.got ?? "no answer"})</small>`}</li>`).join("");
+  try { const b = +localStorage.getItem(bestKey()) || 0; if (score > b) localStorage.setItem(bestKey(), score); } catch {}
+}
+
+$("goBtn").onclick = start;
+$("againBtn").onclick = () => { show("start"); showBest(); };
+showBest();
+</script>
+</body>
+</html>
