@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Roblox Tycoon</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #1b2633; font-family: 'Fredoka', sans-serif; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+  #wrap { position: fixed; inset: 0; padding-top: 48px; display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; border-radius: 12px; box-shadow: 0 10px 40px #0008; }
+  .hud { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; align-items: center; z-index: 5; pointer-events: none; flex-wrap: wrap; }
+  .hud > * { pointer-events: auto; }
+  .pill { background: #0f1720cc; border: 2px solid #ffffff22; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 6px; }
+  .rbx { display: inline-block; width: 20px; height: 20px; background: #3ddc84; clip-path: polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%); position: relative; }
+  .rbx::after { content: ''; position: absolute; inset: 30%; background: #0f1720; clip-path: inherit; }
+  button, a.back { font-family: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; color: #fff; text-decoration: none; }
+  .shop-btn { background: #ffb800; color: #3a2600; box-shadow: 0 3px 0 #b07c00; }
+  a.back { background: #ffffff22; }
+  .spacer { flex: 1; }
+  #goal { font-size: 14px; font-weight: 500; }
+
+  /* shop */
+  #shop { position: fixed; inset: 0; background: #000a; display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
+  #shop.open { display: flex; }
+  .panel { background: #f4f6fa; color: #1b2633; border-radius: 18px; width: min(720px, 100%); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px #000a; }
+  .panel header { background: #ffb800; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+  .panel header h2 { flex: 1; font-size: 24px; color: #3a2600; }
+  .panel header .pill { background: #3a2600; color: #fff; border: none; }
+  .close { background: #3a2600; }
+  .tabs { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
+  .tab { background: #dde3ec; color: #1b2633; border-radius: 12px 12px 0 0; }
+  .tab.on { background: #fff; color: #0a7cff; }
+  .items { background: #fff; padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; overflow-y: auto; }
+  .item { border: 2px solid #e3e8f0; border-radius: 14px; padding: 10px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+  .item .ico { font-size: 40px; height: 52px; display: flex; align-items: center; justify-content: center; }
+  .item b { font-size: 16px; }
+  .item small { color: #5b6878; font-size: 13px; min-height: 32px; }
+  .item button { background: #0a7cff; box-shadow: 0 3px 0 #0058b8; }
+  .item button.owned { background: #3ddc84; box-shadow: 0 3px 0 #1f9a55; color: #063d1f; }
+  .item button.equipped { background: #1b2633; box-shadow: none; }
+  .item button:disabled { background: #b9c2cf; box-shadow: none; cursor: not-allowed; }
+
+  /* touch */
+  #touch { display: none; }
+  body.touch #touch { display: block; }
+  #stick { position: fixed; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; background: #ffffff22; border: 3px solid #ffffff44; z-index: 6; touch-action: none; }
+  #knob { position: absolute; left: 37px; top: 37px; width: 50px; height: 50px; border-radius: 50%; background: #ffffffaa; pointer-events: none; }
+  .tbtn { position: fixed; z-index: 6; width: 76px; height: 76px; border-radius: 50%; font-size: 15px; padding: 0; background: #0a7cffcc; border: 3px solid #fff6; }
+  #jumpBtn { right: 24px; bottom: 30px; }
+  #swingBtn { right: 112px; bottom: 60px; background: #ff4d4dcc; }
+
+  #toast { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); background: #0f1720ee; padding: 10px 18px; border-radius: 12px; font-size: 18px; z-index: 30; opacity: 0; transition: opacity .25s; pointer-events: none; text-align: center; max-width: 90vw; }
+  #toast.show { opacity: 1; }
+  .help { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 13px; opacity: .7; z-index: 4; white-space: nowrap; }
+  body.touch .help { display: none; }
+</style>
+</head>
+<body>
+<div class="hud">
+  <a class="back" href="../index.html">← Back</a>
+  <div class="pill"><span class="rbx"></span><span id="robux">0</span></div>
+  <div class="pill" id="goal">Step on the green pad!</div>
+  <div class="spacer"></div>
+  <button class="shop-btn" id="shopBtn">🛒 Shop</button>
+</div>
+<div id="wrap"><canvas id="game"></canvas></div>
+<div class="help">Move: WASD / arrows · Jump: Space · Swing sword: E · Shop: B</div>
+
+<div id="shop">
+  <div class="panel">
+    <header>
+      <h2>🛒 Avatar Shop</h2>
+      <div class="pill"><span class="rbx"></span><span id="shopRobux">0</span></div>
+      <button class="close" id="closeShop">✕</button>
+    </header>
+    <div class="tabs" id="tabs"></div>
+    <div class="items" id="items"></div>
+  </div>
+</div>
+
+<div id="touch">
+  <div id="stick"><div id="knob"></div></div>
+  <button class="tbtn" id="swingBtn">⚔️ Swing</button>
+  <button class="tbtn" id="jumpBtn">⬆ Jump</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(() => {
+  const W = 960, H = 600;
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const scale = Math.min((innerWidth - 8) / W, (innerHeight - 60) / H);
+    cv.style.width = W * scale + 'px';
+    cv.style.height = H * scale + 'px';
+    cv.width = Math.round(W * scale * dpr);
+    cv.height = Math.round(H * scale * dpr);
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  }
+  addEventListener('resize', resize); resize();
+
+  // ---------- Shop catalogue ----------
+  const SHOP = {
+    'Hats & Outfits': [
+      { id: 'cap', name: 'Red Cap', ico: '🧢', price: 25, slot: 'hat', desc: 'A cool cap.' },
+      { id: 'tophat', name: 'Top Hat', ico: '🎩', price: 80, slot: 'hat', desc: 'Very fancy.' },
+      { id: 'viking', name: 'Viking Helmet', ico: '🪖', price: 250, slot: 'hat', desc: 'With horns!' },
+      { id: 'crown', name: 'Golden Crown', ico: '👑', price: 600, slot: 'hat', desc: 'Rule the tycoon.' },
+      { id: 'red', name: 'Red Outfit', ico: '🟥', price: 20, slot: 'outfit', desc: 'Bright red shirt.' },
+      { id: 'blue', name: 'Blue Outfit', ico: '🟦', price: 20, slot: 'outfit', desc: 'Cool blue shirt.' },
+      { id: 'galaxy', name: 'Galaxy Outfit', ico: '🌌', price: 300, slot: 'outfit', desc: 'Full of stars.' },
+      { id: 'gold', name: 'Gold Outfit', ico: '🟨', price: 900, slot: 'outfit', desc: 'Shiny and rich.' },
+    ],
+    'Speed & Jump': [
+      { id: 'boots', name: 'Speed Boots', ico: '👟', price: 50, slot: 'speed', desc: 'Run 35% faster.' },
+      { id: 'superspeed', name: 'Super Speed', ico: '⚡', price: 300, slot: 'speed', desc: 'Run 80% faster!' },
+      { id: 'jump', name: 'Jump Boost', ico: '🦘', price: 60, slot: 'jump', desc: 'Jump higher.' },
+      { id: 'superjump', name: 'Mega Jump', ico: '🚀', price: 350, slot: 'jump', desc: 'Jump way higher!' },
+    ],
+    'Pets': [
+      { id: 'dog', name: 'Puppy', ico: '🐶', price: 100, slot: 'pet', bonus: 0.1, desc: '+10% Robux when you collect.' },
+      { id: 'cat', name: 'Kitty', ico: '🐱', price: 250, slot: 'pet', bonus: 0.25, desc: '+25% Robux when you collect.' },
+      { id: 'dragon', name: 'Dragon', ico: '🐉', price: 1000, slot: 'pet', bonus: 0.5, desc: '+50% Robux. Scares bandits away!' },
+      { id: 'unicorn', name: 'Unicorn', ico: '🦄', price: 2500, slot: 'pet', bonus: 1, desc: 'Double Robux when you collect!' },
+    ],
+    'Gear': [
+      { id: 'sword', name: 'Sword', ico: '🗡️', price: 75, slot: 'gear', desc: 'Press E (or Swing) to bonk bandits.' },
+      { id: 'coil', name: 'Gravity Coil', ico: '🌀', price: 150, slot: 'gear', desc: 'Low gravity. Long, floaty jumps.' },
+      { id: 'magnet', name: 'Robux Magnet', ico: '🧲', price: 400, slot: 'gear', desc: 'Collects your cash from anywhere.' },
+    ],
+  };
+  const ALL = Object.values(SHOP).flat();
+  const byId = Object.fromEntries(ALL.map(i => [i.id, i]));
+  const MULTI = { gear: true };   // all owned gear works at once
+
+  // ---------- Tycoon build steps ----------
+  const DROP_X = [140, 210, 280, 350, 500, 570];
+  const STEPS = [
+    { name: 'Dropper', price: 0, type: 'dropper', i: 0 },
+    { name: 'Dropper 2', price: 15, type: 'dropper', i: 1 },
+    { name: 'Upgrader', price: 60, type: 'upgrader', i: 0 },
+    { name: 'Dropper 3', price: 110, type: 'dropper', i: 2 },
+    { name: 'Walls', price: 180, type: 'walls' },
+    { name: 'Dropper 4', price: 300, type: 'dropper', i: 3 },
+    { name: 'Fast Belt', price: 450, type: 'belt' },
+    { name: 'Gem Dropper', price: 750, type: 'dropper', i: 4 },
+    { name: 'Mega Upgrader', price: 1200, type: 'upgrader', i: 1 },
+    { name: 'Diamond Dropper', price: 2000, type: 'dropper', i: 5 },
+    { name: 'Golden Throne', price: 5000, type: 'throne' },
+  ];
+  const DROP_VALUE = [1, 2, 3, 5, 10, 20];
+  const DROP_COLOR = ['#9aa5b1', '#c27c3a', '#d9d9d9', '#ffcf33', '#ff4dc4', '#6fe7ff'];
+  const UPG_X = [430, 670];
+
+  // ---------- Save ----------
+  const KEY = 'robloxTycoonSave';
+  const fresh = () => ({ robux: 0, bank: 0, step: 0, owned: [], eq: {}, won: false });
+  let S = fresh();
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
+  if (!S.eq || typeof S.eq !== 'object') S.eq = {};
+  if (!Array.isArray(S.owned)) S.owned = [];
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  setInterval(save, 3000);
+  addEventListener('beforeunload', save);
+  addEventListener('pagehide', save);
+
+  const built = (type, i) => STEPS.slice(0, S.step).some(s => s.type === type && (i === undefined || s.i === i));
+  const has = id => S.owned.includes(id);
+
+  // ---------- Toast ----------
+  const toastEl = document.getElementById('toast');
+  let toastT;
+  function toast(msg) { toastEl.innerHTML = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200); }
+
+  // ---------- Player & world ----------
+  const P = { x: 840, y: 530, z: 0, vz: 0, face: -1, swing: 0, walk: 0 };
+  const pet = { x: 880, y: 530 };
+  const blocks = [];
+  const bandits = [];
+  const floats = [];
+  const confetti = [];
+  const timers = DROP_X.map(() => Math.random() * 2);
+  let banditTimer = 25, magnetTimer = 0, swordHintT = 0;
+  let onPadLast = -1;
+  const PADS = [{ x: 90, y: 460 }, { x: 210, y: 460 }];
+  const COLLECT = { x: 790, y: 400, w: 80, h: 80 };
+  const BELT = { x1: 110, x2: 760, y: 250, h: 50 };
+
+  function speed() { return 170 * (S.eq.speed === 'superspeed' ? 1.8 : S.eq.speed === 'boots' ? 1.35 : 1); }
+  function jumpV() { return S.eq.jump === 'superjump' ? 460 : S.eq.jump === 'jump' ? 360 : 280; }
+  function gravity() { return has('coil') ? 420 : 1000; }
+  function petBonus() { const p = byId[S.eq.pet]; return p ? p.bonus : 0; }
+  function beltSpeed() { return built('belt') ? 120 : 65; }
+  function addFloat(x, y, text, color) { floats.push({ x, y, text, color: color || '#3ddc84', t: 1.2 }); }
+
+  // ---------- Input ----------
+  const keys = {};
+  let jumpQ = false, swingQ = false;
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (shopEl.classList.contains('open')) { if (k === 'escape' || k === 'b') closeShop(); return; }
+    keys[k] = true;
+    if (k === ' ') { jumpQ = true; e.preventDefault(); }
+    if (k === 'e') swingQ = true;
+    if (k === 'b') openShop();
+    if (k.startsWith('arrow')) e.preventDefault();
+  });
+  addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+  if ('ontouchstart' in window || matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+  const stick = document.getElementById('stick'), knob = document.getElementById('knob');
+  const joy = { x: 0, y: 0, id: null };
+  function stickMove(e) {
+    const r = stick.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy), m = 50;
+    if (d > m) { dx = dx / d * m; dy = dy / d * m; }
+    joy.x = dx / m; joy.y = dy / m;
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+  stick.addEventListener('pointerdown', e => { joy.id = e.pointerId; stick.setPointerCapture(e.pointerId); stickMove(e); });
+  stick.addEventListener('pointermove', e => { if (e.pointerId === joy.id) stickMove(e); });
+  const stickEnd = e => { if (e.pointerId === joy.id) { joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; } };
+  stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+  document.getElementById('jumpBtn').addEventListener('pointerdown', e => { e.preventDefault(); jumpQ = true; });
+  document.getElementById('swingBtn').addEventListener('pointerdown', e => { e.preventDefault(); swingQ = true; });
+
+  // ---------- Shop UI ----------
+  const shopEl = document.getElementById('shop');
+  const tabsEl = document.getElementById('tabs'), itemsEl = document.getElementById('items');
+  let tab = Object.keys(SHOP)[0];
+  function openShop() { shopEl.classList.add('open'); renderShop(); }
+  function closeShop() { shopEl.classList.remove('open'); }
+  document.getElementById('shopBtn').onclick = openShop;
+  document.getElementById('closeShop').onclick = closeShop;
+  shopEl.addEventListener('pointerdown', e => { if (e.target === shopEl) closeShop(); });
+
+  function renderShop() {
+    document.getElementById('shopRobux').textContent = S.robux.toLocaleString();
+    tabsEl.innerHTML = '';
+    Object.keys(SHOP).forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'tab' + (t === tab ? ' on' : '');
+      b.textContent = t; b.onclick = () => { tab = t; renderShop(); };
+      tabsEl.appendChild(b);
+    });
+    itemsEl.innerHTML = '';
+    SHOP[tab].forEach(it => {
+      const d = document.createElement('div'); d.className = 'item';
+      const owned = has(it.id);
+      d.innerHTML = `<div class="ico">${it.ico}</div><b>${it.name}</b><small>${it.desc}</small>`;
+      const b = document.createElement('button');
+      if (!owned) {
+        b.innerHTML = `<span class="rbx" style="width:14px;height:14px;vertical-align:-2px"></span> ${it.price.toLocaleString()}`;
+        b.disabled = S.robux < it.price;
+        b.onclick = () => buyItem(it);
+      } else if (MULTI[it.slot]) {
+        b.textContent = 'Owned ✓'; b.className = 'owned';
+      } else if (S.eq[it.slot] === it.id) {
+        b.textContent = 'Unequip'; b.className = 'equipped';
+        b.onclick = () => { delete S.eq[it.slot]; save(); renderShop(); };
+      } else {
+        b.textContent = 'Equip'; b.className = 'owned';
+        b.onclick = () => { S.eq[it.slot] = it.id; save(); renderShop(); };
+      }
+      d.appendChild(b); itemsEl.appendChild(d);
+    });
+  }
+  function buyItem(it) {
+    if (S.robux < it.price || has(it.id)) return;
+    S.robux -= it.price; S.owned.push(it.id);
+    if (!MULTI[it.slot]) S.eq[it.slot] = it.id;
+    save(); renderShop(); toast(`${it.ico} You got the <b>${it.name}</b>!`);
+  }
+
+  // ---------- Tycoon logic ----------
+  function buyStep(slot) {
+    const st = STEPS[S.step + slot];
+    if (!st) return;
+    if (slot !== 0) { toast('Buy the first pad first! 👈'); return; }
+    if (S.robux < st.price) { addFloat(P.x, P.y - 80, `Need ${(st.price - S.robux).toLocaleString()} more R$`, '#ff6b6b'); return; }
+    S.robux -= st.price; S.step++;
+    toast(`🏗️ Built: <b>${st.name}</b>!`);
+    if (st.type === 'throne') {
+      S.won = true;
+      for (let i = 0; i < 160; i++) confetti.push({ x: Math.random() * W, y: -Math.random() * 300, vy: 80 + Math.random() * 120, c: `hsl(${Math.random() * 360},90%,60%)`, r: Math.random() * 6 });
+      toast('👑 YOU BEAT THE TYCOON! 👑');
+    }
+    save();
+  }
+  function collect(auto) {
+    if (S.bank <= 0) return;
+    const amt = Math.round(S.bank * (1 + petBonus()));
+    S.robux += amt; S.bank = 0;
+    addFloat(auto ? P.x : COLLECT.x + 40, auto ? P.y - 80 : COLLECT.y - 10, `+${amt.toLocaleString()} R$`);
+    save();
+  }
+  function hitBandit(b) {
+    if (b.flee > 0) return;
+    b.hp--; addFloat(b.x, b.y - 70, 'BONK!', '#ffd84d');
+    if (b.hp <= 0) { b.flee = 3; S.robux += 10; addFloat(b.x, b.y - 90, '+10 R$'); }
+  }
+  function stomp() {
+    bandits.forEach(b => {
+      if (b.flee <= 0 && Math.hypot(b.x - P.x, b.y - P.y) < 34) { b.hp = 1; hitBandit(b); P.vz = jumpV() * 0.6; }
+    });
+  }
+
+  function update(dt) {
+    let mx = joy.x, my = joy.y;
+    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['d'] || keys['arrowright']) mx += 1;
+    if (keys['w'] || keys['arrowup']) my -= 1;
+    if (keys['s'] || keys['arrowdown']) my += 1;
+    const ml = Math.hypot(mx, my);
+    if (ml > 1) { mx /= ml; my /= ml; }
+    P.x += mx * speed() * dt; P.y += my * speed() * dt;
+    if (Math.abs(mx) > 0.1) P.face = mx > 0 ? 1 : -1;
+    if (ml > 0.1) P.walk += dt * 12;
+
+    if (jumpQ && P.z <= 0) P.vz = jumpV();
+    jumpQ = false;
+    if (P.z > 0 || P.vz > 0) {
+      P.vz -= gravity() * dt; P.z += P.vz * dt;
+      if (P.z <= 0) { P.z = 0; P.vz = 0; stomp(); }
+    }
+
+    // conveyor pushes you when you're standing on it
+    if (P.z === 0 && P.x > BELT.x1 && P.x < BELT.x2 && P.y > BELT.y && P.y < BELT.y + BELT.h) P.x += beltSpeed() * dt;
+    P.x = Math.max(60, Math.min(900, P.x)); P.y = Math.max(90, Math.min(565, P.y));
+
+    if (swingQ) {
+      if (has('sword')) {
+        if (P.swing <= 0) { P.swing = 0.3; bandits.forEach(b => { if (Math.hypot(b.x - P.x, b.y - P.y) < 75) hitBandit(b); }); }
+      } else if (swordHintT <= 0) { toast('🗡️ Buy a Sword in the Shop to swing!'); swordHintT = 2; }
+    }
+    swingQ = false;
+    P.swing -= dt; swordHintT -= dt;
+
+    // buy pads (you have to step off and back on to buy again)
+    let onPad = -1;
+    PADS.forEach((p, i) => { if (P.z === 0 && Math.abs(P.x - (p.x + 45)) < 45 && Math.abs(P.y - (p.y + 35)) < 35) onPad = i; });
+    if (onPad !== -1 && onPad !== onPadLast) buyStep(onPad);
+    onPadLast = onPad;
+
+    if (P.z === 0 && P.x > COLLECT.x && P.x < COLLECT.x + COLLECT.w && P.y > COLLECT.y && P.y < COLLECT.y + COLLECT.h) collect(false);
+    if (has('magnet')) { magnetTimer -= dt; if (magnetTimer <= 0) { magnetTimer = 4; collect(true); } }
+
+    DROP_X.forEach((x, i) => {
+      if (!built('dropper', i)) return;
+      timers[i] -= dt;
+      if (timers[i] <= 0) { timers[i] = 2; blocks.push({ x: x + 25, y: BELT.y + 25, v: DROP_VALUE[i], c: DROP_COLOR[i], s: 0, up: [false, false] }); }
+    });
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      const b = blocks[i];
+      b.s = Math.min(1, b.s + dt * 4);
+      b.x += beltSpeed() * dt;
+      UPG_X.forEach((ux, k) => {
+        if (!b.up[k] && b.x > ux && built('upgrader', k)) { b.up[k] = true; b.v *= k === 0 ? 2 : 3; b.c = k === 0 ? '#7dff7d' : '#b388ff'; }
+      });
+      if (b.x > 780) { S.bank += b.v; blocks.splice(i, 1); }
+    }
+
+    // bandits show up once your tycoon is a few steps in
+    if (S.step >= 4) {
+      banditTimer -= dt;
+      if (banditTimer <= 0) {
+        banditTimer = (built('walls') ? 55 : 30) + Math.random() * 10;
+        const fromLeft = Math.random() < 0.5;
+        bandits.push({ x: fromLeft ? -20 : 400 + Math.random() * 100, y: fromLeft ? 400 + Math.random() * 140 : 640, hp: 2, flee: 0, slow: built('walls') });
+        toast('🦹 A bandit is coming for your cash! Jump on it!');
+      }
+    }
+    for (let i = bandits.length - 1; i >= 0; i--) {
+      const b = bandits[i];
+      if (b.flee > 0) { b.flee -= dt; b.y += 220 * dt; b.x -= 60 * dt; if (b.flee <= 0 || b.y > 700) bandits.splice(i, 1); continue; }
+      let tx = COLLECT.x + 40, ty = COLLECT.y + 40, sp = b.slow ? 38 : 55;
+      if (S.eq.pet === 'dragon' && Math.hypot(pet.x - b.x, pet.y - b.y) < 90) { tx = b.x - (pet.x - b.x); ty = b.y - (pet.y - b.y); sp = 80; }
+      const d = Math.hypot(tx - b.x, ty - b.y);
+      if (d > 4) { b.x += (tx - b.x) / d * sp * dt; b.y += (ty - b.y) / d * sp * dt; }
+      b.x = Math.max(-40, Math.min(1000, b.x)); b.y = Math.max(-40, Math.min(680, b.y));
+      if (Math.hypot(COLLECT.x + 40 - b.x, COLLECT.y + 40 - b.y) < 30) {
+        const stolen = Math.ceil(S.bank / 2); S.bank -= stolen;
+        if (stolen > 0) { addFloat(b.x, b.y - 70, `-${stolen} stolen!`, '#ff6b6b'); toast('😠 The bandit stole some cash!'); }
+        b.flee = 3;
+      }
+      if (P.z === 0 && Math.hypot(P.x - b.x, P.y - b.y) < 30) {
+        const dd = Math.hypot(b.x - P.x, b.y - P.y) || 1;
+        b.x += (b.x - P.x) / dd * 6; b.y += (b.y - P.y) / dd * 6;
+      }
+    }
+
+    const px = P.x - P.face * 40, py = P.y + 10;
+    pet.x += (px - pet.x) * Math.min(1, dt * 5); pet.y += (py - pet.y) * Math.min(1, dt * 5);
+
+    for (let i = floats.length - 1; i >= 0; i--) { floats[i].t -= dt; floats[i].y -= 40 * dt; if (floats[i].t <= 0) floats.splice(i, 1); }
+    for (let i = confetti.length - 1; i >= 0; i--) { const c = confetti[i]; c.y += c.vy * dt; c.r += dt * 5; if (c.y > H + 10) confetti.splice(i, 1); }
+
+    document.getElementById('robux').textContent = S.robux.toLocaleString();
+    const next = STEPS[S.step];
+    document.getElementById('goal').textContent = next ? `Next: ${next.name} (${next.price ? next.price.toLocaleString() + ' R$' : 'FREE'})` : '👑 Tycoon complete!';
+  }
+
+  // ---------- Drawing ----------
+  function rr(x, y, w, h, r, fill, stroke) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  function block3d(x, y, w, h, top, side, depth) {
+    ctx.fillStyle = top; ctx.fillRect(x, y, w, h - depth);
+    ctx.fillStyle = side; ctx.fillRect(x, y + h - depth, w, depth);
+  }
+  function text(t, x, y, size, color) {
+    ctx.font = `700 ${size}px Fredoka, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4; ctx.strokeStyle = '#0008'; ctx.strokeText(t, x, y);
+    ctx.fillStyle = color || '#fff'; ctx.fillText(t, x, y);
+  }
+
+  function drawAvatar(x, y, z, face, outfit, hat, walk, swing) {
+    ctx.fillStyle = '#0004'; ctx.beginPath(); ctx.ellipse(x, y + 4, Math.max(6, 16 - z / 20), Math.max(2, 6 - z / 60), 0, 0, Math.PI * 2); ctx.fill();
+    const by = y - z;
+    const leg = Math.sin(walk) * 5;
+    const shirt = { red: '#e53935', blue: '#1e88e5', galaxy: '#3a1c71', gold: '#ffc107' }[outfit] || '#43a047';
+    ctx.fillStyle = '#1565c0'; ctx.fillRect(x - 11, by - 18 + leg * 0.3, 9, 18 - leg * 0.3); ctx.fillRect(x + 2, by - 18 - leg * 0.3, 9, 18 + leg * 0.3);
+    ctx.fillStyle = shirt; ctx.fillRect(x - 13, by - 42, 26, 24);
+    if (outfit === 'galaxy') { ctx.fillStyle = '#fff'; [[-6, -36], [5, -30], [-2, -24], [8, -38]].forEach(([a, b]) => ctx.fillRect(x + a, by + b, 2, 2)); }
+    if (outfit === 'gold') { ctx.fillStyle = '#fff6'; ctx.fillRect(x - 10, by - 40, 5, 20); }
+    ctx.fillStyle = '#ffd13b';
+    ctx.fillRect(x - 20, by - 42 - leg * 0.3, 7, 20); ctx.fillRect(x + 13, by - 42 + leg * 0.3, 7, 20);
+    if (has('sword')) {
+      ctx.save(); ctx.translate(x + face * 17, by - 24);
+      ctx.rotate(face * (swing > 0 ? 1.6 - swing * 8 : 0.5));
+      ctx.fillStyle = '#6d4c41'; ctx.fillRect(-2, -2, 4, 10);
+      ctx.fillStyle = '#cfd8dc'; ctx.fillRect(-3, -32, 6, 30);
+      ctx.fillStyle = '#ffb300'; ctx.fillRect(-7, -4, 14, 4);
+      ctx.restore();
+    }
+    if (has('coil') && z > 0) {
+      ctx.strokeStyle = '#7c4dff'; ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(x - face * 17, by - 20 + i * 4, 4, 2, 0, 0, Math.PI * 2); ctx.stroke(); }
+    }
+    ctx.fillStyle = '#ffd13b'; ctx.fillRect(x - 11, by - 64, 22, 22);
+    ctx.fillStyle = '#222'; ctx.fillRect(x - 6 + face * 2, by - 57, 3, 4); ctx.fillRect(x + 3 + face * 2, by - 57, 3, 4);
+    ctx.beginPath(); ctx.arc(x + face * 2, by - 51, 4, 0.2, Math.PI - 0.2); ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5; ctx.stroke();
+    if (hat === 'cap') { ctx.fillStyle = '#d32f2f'; ctx.fillRect(x - 12, by - 70, 24, 8); ctx.fillRect(x + (face > 0 ? 8 : -20), by - 64, 12, 3); }
+    if (hat === 'tophat') { ctx.fillStyle = '#212121'; ctx.fillRect(x - 15, by - 67, 30, 4); ctx.fillRect(x - 10, by - 87, 20, 21); ctx.fillStyle = '#c62828'; ctx.fillRect(x - 10, by - 72, 20, 4); }
+    if (hat === 'viking') {
+      ctx.fillStyle = '#9e9e9e'; ctx.fillRect(x - 12, by - 72, 24, 10);
+      ctx.fillStyle = '#fff3e0';
+      ctx.beginPath(); ctx.moveTo(x - 12, by - 66); ctx.lineTo(x - 22, by - 86); ctx.lineTo(x - 12, by - 74); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x + 12, by - 66); ctx.lineTo(x + 22, by - 86); ctx.lineTo(x + 12, by - 74); ctx.fill();
+    }
+    if (hat === 'crown') {
+      ctx.fillStyle = '#ffc107'; ctx.beginPath();
+      ctx.moveTo(x - 12, by - 64); ctx.lineTo(x - 12, by - 78); ctx.lineTo(x - 6, by - 70); ctx.lineTo(x, by - 80); ctx.lineTo(x + 6, by - 70); ctx.lineTo(x + 12, by - 78); ctx.lineTo(x + 12, by - 64);
+      ctx.fill(); ctx.fillStyle = '#e53935'; ctx.fillRect(x - 2, by - 70, 4, 4);
+    }
+  }
+
+  function drawBandit(b) {
+    ctx.fillStyle = '#0004'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 4, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = b.flee > 0 ? 0.6 : 1;
+    ctx.fillStyle = '#37474f'; ctx.fillRect(b.x - 10, b.y - 18, 8, 18); ctx.fillRect(b.x + 2, b.y - 18, 8, 18);
+    ctx.fillStyle = '#212121'; ctx.fillRect(b.x - 12, b.y - 40, 24, 22);
+    ctx.fillStyle = '#bdbdbd'; ctx.fillRect(b.x - 10, b.y - 60, 20, 20);
+    ctx.fillStyle = '#111'; ctx.fillRect(b.x - 11, b.y - 54, 22, 6);
+    ctx.fillStyle = '#fff'; ctx.fillRect(b.x - 6, b.y - 53, 3, 3); ctx.fillRect(b.x + 3, b.y - 53, 3, 3);
+    ctx.fillStyle = '#8d6e63'; ctx.beginPath(); ctx.arc(b.x + 15, b.y - 26, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 9px Fredoka'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', b.x + 15, b.y - 26);
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(t) {
+    ctx.fillStyle = '#5cb85c'; ctx.fillRect(0, 0, W, H);
+    rr(40, 40, 880, 540, 10, '#a7b1bd');
+    ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1;
+    for (let x = 80; x < 920; x += 40) { ctx.beginPath(); ctx.moveTo(x, 40); ctx.lineTo(x, 580); ctx.stroke(); }
+    for (let y = 80; y < 580; y += 40) { ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(920, y); ctx.stroke(); }
+    text('MY TYCOON', 480, 80, 22, '#ffffffcc');
+
+    if (built('walls')) {
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(40, 40, 880, 12); ctx.fillRect(40, 40, 12, 300); ctx.fillRect(908, 40, 12, 540);
+      ctx.fillRect(40, 568, 300, 12); ctx.fillRect(520, 568, 400, 12);
+      ctx.fillStyle = '#bdbdbd'; ctx.fillRect(40, 52, 880, 4);
+    }
+
+    rr(BELT.x1, BELT.y, BELT.x2 - BELT.x1 + 30, BELT.h, 6, '#263238');
+    ctx.strokeStyle = '#455a64'; ctx.lineWidth = 3;
+    const off = (t / 1000 * beltSpeed()) % 30;
+    for (let x = BELT.x1 + off; x < BELT.x2 + 20; x += 30) { ctx.beginPath(); ctx.moveTo(x, BELT.y + 6); ctx.lineTo(x + 10, BELT.y + 25); ctx.lineTo(x, BELT.y + 44); ctx.stroke(); }
+
+    DROP_X.forEach((x, i) => {
+      if (!built('dropper', i)) { ctx.setLineDash([6, 6]); rr(x, 175, 50, 50, 6, null, '#ffffff55'); ctx.setLineDash([]); return; }
+      block3d(x, 160, 50, 70, DROP_COLOR[i], '#0006', 12);
+      ctx.fillStyle = '#0005'; ctx.fillRect(x + 15, 212, 20, 6);
+      text('$' + DROP_VALUE[i], x + 25, 182, 13);
+      ctx.fillStyle = '#546e7a'; ctx.fillRect(x + 22, 230, 6, 20);
+    });
+
+    blocks.forEach(b => { const s = 16 * b.s; block3d(b.x - s / 2, b.y - s / 2, s, s, b.c, '#0005', 4 * b.s); });
+
+    UPG_X.forEach((x, k) => {
+      if (!built('upgrader', k)) return;
+      ctx.fillStyle = k === 0 ? '#2e7d32' : '#6a1b9a'; ctx.fillRect(x - 8, BELT.y - 18, 16, BELT.h + 28);
+      ctx.fillStyle = k === 0 ? '#7dff7d66' : '#b388ff66'; ctx.fillRect(x + 8, BELT.y - 6, 4, BELT.h + 4);
+      text(k === 0 ? 'x2' : 'x3', x, BELT.y - 30, 16, k === 0 ? '#7dff7d' : '#d1b3ff');
+    });
+
+    block3d(760, 220, 90, 110, '#5d4037', '#3e2723', 16);
+    const glow = 0.6 + Math.sin(t / 200) * 0.2;
+    ctx.fillStyle = `rgba(255,${120 + glow * 60 | 0},0,${glow})`; ctx.fillRect(775, 245, 60, 50);
+    text('🔥 Furnace', 805, 205, 14);
+
+    rr(COLLECT.x, COLLECT.y, COLLECT.w, COLLECT.h, 10, '#ffc107', '#ff8f00');
+    rr(COLLECT.x + 10, COLLECT.y + 10, COLLECT.w - 20, COLLECT.h - 20, 6, '#ffe082');
+    text('COLLECT', COLLECT.x + 40, COLLECT.y + 40, 14, '#6d4c00');
+    text(`R$ ${S.bank.toLocaleString()}`, COLLECT.x + 40, COLLECT.y - 16, 18, '#3ddc84');
+
+    PADS.forEach((p, i) => {
+      const st = STEPS[S.step + i];
+      if (!st) return;
+      const can = i === 0 && S.robux >= st.price;
+      const pulse = can ? Math.sin(t / 200) * 3 : 0;
+      rr(p.x - pulse, p.y - pulse, 90 + pulse * 2, 70 + pulse * 2, 10, i === 0 ? (can ? '#2ecc71' : '#27ae60') : '#7f8c8d', '#fff8');
+      text(st.name, p.x + 45, p.y + 24, 13);
+      text(st.price ? `R$ ${st.price.toLocaleString()}` : 'FREE', p.x + 45, p.y + 46, 15, can || !st.price ? '#fff' : '#ffcdd2');
+      if (i === 1) text('🔒', p.x + 80, p.y + 8, 14);
+    });
+    if (STEPS[S.step]) text('BUY HERE', 165, 445, 14, '#ffffffcc');
+
+    if (built('throne')) {
+      block3d(830, 90, 60, 80, '#ffc107', '#c79100', 14);
+      ctx.fillStyle = '#ffeb3b'; ctx.fillRect(838, 70, 44, 26);
+      text('👑', 860, 60, 22);
+    }
+
+    const ents = [];
+    bandits.forEach(b => ents.push({ y: b.y, f: () => drawBandit(b) }));
+    if (S.eq.pet && byId[S.eq.pet]) ents.push({ y: pet.y, f: () => {
+      const bob = Math.sin(t / 180) * 3;
+      ctx.fillStyle = '#0003'; ctx.beginPath(); ctx.ellipse(pet.x, pet.y + 4, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(byId[S.eq.pet].ico, pet.x, pet.y - 4 + bob);
+    } });
+    ents.push({ y: P.y, f: () => drawAvatar(P.x, P.y, P.z, P.face, S.eq.outfit, S.eq.hat, P.walk, P.swing) });
+    ents.sort((a, b) => a.y - b.y).forEach(e => e.f());
+
+    floats.forEach(f => { ctx.globalAlpha = Math.min(1, f.t * 2); text(f.text, f.x, f.y, 18, f.color); ctx.globalAlpha = 1; });
+    confetti.forEach(c => { ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.r); ctx.fillStyle = c.c; ctx.fillRect(-4, -2, 8, 4); ctx.restore(); });
+    if (S.won) text('👑 TYCOON MASTER 👑', 480, 120, 20, '#ffd84d');
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!shopEl.classList.contains('open')) update(dt);
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+  if (!S.step) setTimeout(() => toast('👋 Walk onto the green <b>FREE</b> pad to build your first dropper!'), 500);
+  else toast('👋 Welcome back! Your tycoon is saved.');
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

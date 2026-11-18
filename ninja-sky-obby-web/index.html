@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Ninja Sky Obby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root { --ink:#13233a; --gold:#ffd84d; --red:#ff4d5e; --panel:rgba(10,20,40,.72); }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; overflow:hidden; background:#8fd3ff; font-family:'Fredoka',sans-serif; color:#fff; touch-action:none; user-select:none; -webkit-user-select:none; }
+  canvas { display:block; }
+  #hud { position:fixed; top:10px; left:10px; right:10px; display:flex; gap:8px; flex-wrap:wrap; pointer-events:none; z-index:5; }
+  .pill { background:var(--panel); padding:6px 12px; border-radius:999px; font-weight:600; font-size:16px; }
+  #stage { color:var(--gold); }
+  #msg { position:fixed; top:22%; left:50%; transform:translateX(-50%); font-size:clamp(22px,6vw,40px); font-weight:700; text-shadow:0 3px 0 var(--ink),0 0 12px rgba(0,0,0,.4); opacity:0; transition:opacity .25s; pointer-events:none; z-index:6; text-align:center; white-space:nowrap; }
+  #flash { position:fixed; inset:0; background:#ff3040; opacity:0; pointer-events:none; transition:opacity .3s; z-index:4; }
+  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(8,18,38,.55); z-index:10; padding:16px; }
+  .card { background:#fff; color:var(--ink); border-radius:24px; padding:26px 28px; max-width:440px; width:100%; text-align:center; box-shadow:0 10px 0 #0b1a2b33; border:4px solid var(--ink); }
+  .card h1 { margin:0 0 6px; font-size:36px; line-height:1.05; }
+  .card h1 span { color:var(--red); }
+  .card p { margin:8px 0; font-size:16px; }
+  .keys { text-align:left; background:#eef7ff; border-radius:14px; padding:10px 14px; margin:12px 0; font-size:15px; line-height:1.6; }
+  kbd { background:var(--ink); color:#fff; border-radius:6px; padding:1px 7px; font-family:inherit; font-size:13px; }
+  .btn { display:inline-block; border:none; cursor:pointer; font-family:inherit; font-weight:700; font-size:22px; padding:12px 34px; border-radius:16px; background:var(--red); color:#fff; box-shadow:0 5px 0 #a3202d; margin-top:6px; }
+  .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #a3202d; }
+  .big { font-size:28px; font-weight:700; margin:6px 0; }
+  .hidden { display:none !important; }
+  #touch { position:fixed; inset:0; pointer-events:none; z-index:7; }
+  #joy { position:absolute; left:24px; bottom:24px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,.22); border:3px solid rgba(255,255,255,.5); pointer-events:auto; }
+  #knob { position:absolute; left:37px; top:37px; width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,.8); }
+  .tbtn { position:absolute; width:84px; height:84px; border-radius:50%; border:3px solid #fff; color:#fff; font-weight:700; font-size:17px; display:flex; align-items:center; justify-content:center; pointer-events:auto; font-family:inherit; }
+  #bJump { right:24px; bottom:30px; background:rgba(255,77,94,.85); }
+  #bDash { right:120px; bottom:20px; width:68px; height:68px; background:rgba(40,60,110,.85); font-size:15px; }
+</style>
+</head>
+<body>
+<div id="hud" class="hidden">
+  <div class="pill" id="stage">Stage 1</div>
+  <div class="pill">⏱ <span id="time">0.0</span>s</div>
+  <div class="pill">✴️ <span id="stars">0</span>/<span id="starsTotal">0</span></div>
+  <div class="pill">💥 <span id="deaths">0</span></div>
+</div>
+<div id="msg"></div>
+<div id="flash"></div>
+
+<div class="overlay" id="title">
+  <div class="card">
+    <h1>🥷 Ninja <span>Sky</span> Obby</h1>
+    <p>Jump across the floating sky islands, dodge the spinning blades and grab the <b>Golden Shuriken</b> at the top!</p>
+    <div class="keys">
+      <kbd>W A S D</kbd> / arrows: run<br>
+      <kbd>Space</kbd>: jump (press again in the air to <b>double jump</b>!)<br>
+      <kbd>Shift</kbd>: ninja dash<br>
+      Drag the mouse or press <kbd>Q</kbd> <kbd>E</kbd>: turn the camera<br>
+      <kbd>R</kbd>: go back to your checkpoint
+    </div>
+    <p id="bestTitle"></p>
+    <button class="btn" id="playBtn">▶ PLAY</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="win">
+  <div class="card">
+    <h1>🏆 You did it, <span>Ninja!</span></h1>
+    <p class="big">⏱ <span id="wTime"></span>s</p>
+    <p>✴️ Shurikens: <b id="wStars"></b> &nbsp; 💥 Falls: <b id="wDeaths"></b></p>
+    <p id="wBest"></p>
+    <button class="btn" id="againBtn">↻ Play Again</button>
+  </div>
+</div>
+
+<div id="touch" class="hidden">
+  <div id="joy"><div id="knob"></div></div>
+  <button class="tbtn" id="bDash">DASH</button>
+  <button class="tbtn" id="bJump">JUMP</button>
+</div>
+
+<script>
+// ---------- basic setup ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3ff);
+scene.fog = new THREE.Fog(0x8fd3ff, 40, 140);
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 400);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6aa0c8, 0.75));
+const sun = new THREE.DirectionalLight(0xfff3d6, 0.85);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -25, right: 25, top: 25, bottom: -25, near: 1, far: 90 });
+scene.add(sun, sun.target);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const mat = c => new THREE.MeshLambertMaterial({ color: c });
+function box(w, h, d, color, parent, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'number' ? mat(color) : color);
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+// ---------- sound ----------
+let actx;
+function beep(f, dur = 0.12, type = 'square', f2 = f, vol = 0.08) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, actx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(f2, actx.currentTime + dur);
+    g.gain.setValueAtTime(vol, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+    o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+  } catch (e) {}
+}
+
+// ---------- level ----------
+const plats = [], blades = [], stars = [], checkpoints = [];
+const COLORS = { grass: 0x52c45a, dirt: 0x9a6b3f, rock: 0x7d6a5c, wood: 0xc98b4a, bounce: 0xff4fb3 };
+
+function plat(x, top, z, w, d, o = {}) {
+  const type = o.type || 'grass', h = o.h || (type === 'grass' ? 2 : 0.8);
+  const g = new THREE.Group();
+  const p = { type, w, h, d, x, y: top - h / 2, z, bx: x, by: top - h / 2, bz: z,
+              mesh: g, solid: true, dx: 0, dy: 0, dz: 0, move: o.move, timer: -1, gone: 0 };
+  if (type === 'grass') {
+    box(w, h - 0.35, d, COLORS.dirt, g, 0, -0.175, 0);
+    box(w + 0.04, 0.4, d + 0.04, COLORS.grass, g, 0, h / 2 - 0.2, 0);
+    if (w >= 4) {
+      const s = Math.min(w, d);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(s * 0.62, s * 0.9, 6), mat(COLORS.rock));
+      cone.rotation.x = Math.PI; cone.position.y = -h / 2 - s * 0.45; cone.castShadow = true; g.add(cone);
+    }
+  } else if (type === 'wood') {
+    box(w, h, d, COLORS.wood, g);
+    for (let i = -d / 2 + 0.5; i < d / 2; i += 1) box(w + 0.02, h + 0.02, 0.08, 0x8a5a2b, g, 0, 0, i);
+  } else if (type === 'cloud') {
+    p.cmat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
+    box(w, h, d, p.cmat, g);
+    box(w * 0.6, 0.5, d * 0.6, p.cmat, g, 0.2, h / 2 + 0.1, -0.1);
+  } else if (type === 'bounce') {
+    box(w, h, d, 0x555a66, g);
+    box(w * 0.8, 0.2, d * 0.8, COLORS.bounce, g, 0, h / 2 + 0.05, 0);
+  }
+  g.position.set(x, p.y, z);
+  scene.add(g); plats.push(p);
+  return p;
+}
+function blade(cx, top, cz, len, speed) {
+  const g = new THREE.Group();
+  box(0.4, 0.9, 0.4, 0x333844, g, 0, 0.45, 0);
+  box(len, 0.32, 0.32, 0xff3b3b, g, 0, 0.6, 0);
+  box(0.5, 0.5, 0.5, 0xffd84d, g, len / 2, 0.6, 0);
+  box(0.5, 0.5, 0.5, 0xffd84d, g, -len / 2, 0.6, 0);
+  g.position.set(cx, top, cz); scene.add(g);
+  blades.push({ g, cx, cz, y: top + 0.6, len, speed, a: 0 });
+}
+function star(x, y, z) {
+  const g = new THREE.Group();
+  const m = new THREE.MeshLambertMaterial({ color: 0xc9d3e0, emissive: 0x222833 });
+  box(1, 0.12, 0.28, m, g); box(0.28, 0.12, 1, m, g);
+  const b2 = box(0.8, 0.12, 0.22, m, g); b2.rotation.y = Math.PI / 4;
+  const b3 = box(0.8, 0.12, 0.22, m, g); b3.rotation.y = -Math.PI / 4;
+  box(0.22, 0.16, 0.22, 0x222222, g);
+  g.rotation.x = Math.PI / 2;
+  const holder = new THREE.Group(); holder.add(g); holder.position.set(x, y, z); scene.add(holder);
+  stars.push({ g: holder, got: false });
+}
+function checkpoint(x, top, z, name) {
+  const g = new THREE.Group();
+  box(0.15, 3, 0.15, 0xdddddd, g, 0, 1.5, 0);
+  const flag = box(1.2, 0.8, 0.06, 0xff4d5e, g, 0.65, 2.55, 0);
+  g.position.set(x + 2.3, top, z + 2.3); scene.add(g);
+  checkpoints.push({ x, y: top, z, name, flag, on: false });
+}
+
+// Stage 1: Island Hops
+plat(0, 0, 0, 10, 10, { h: 3 });
+checkpoints.push({ x: 0, y: 0, z: 2, name: 'Stage 1: Island Hops', on: true });
+plat(0, 0, -8, 3, 3); plat(2, 0.5, -12, 3, 3); plat(-1, 1, -16, 3, 3); plat(1, 1.5, -20, 3, 3);
+star(0, 1.3, -8); star(-1, 2.3, -16);
+// Stage 2: Moving Planks
+plat(0, 1.5, -27, 7, 7); checkpoint(0, 1.5, -27, 'Stage 2: Moving Planks');
+plat(0, 1.5, -34, 3, 3, { type: 'wood', move: { axis: 'x', range: 3, speed: 1.3 } });
+plat(0, 2, -40, 3, 3, { type: 'wood', move: { axis: 'x', range: 3.5, speed: 1.6, phase: 2 } });
+plat(0, 2.5, -46, 3, 3, { type: 'wood', move: { axis: 'y', range: 1.5, speed: 1.4 } });
+star(0, 3, -40); star(0, 5, -46);
+// Stage 3: Spinning Blades
+plat(0, 2.5, -53, 7, 7); checkpoint(0, 2.5, -53, 'Stage 3: Spinning Blades');
+plat(0, 2.5, -64, 3, 15, { type: 'wood' });
+blade(0, 2.5, -60, 5, 2.0); blade(0, 2.5, -67, 5, -2.4);
+star(0, 3.8, -63.5);
+// Stage 4: Poof Clouds
+plat(0, 2.5, -76, 7, 7); checkpoint(0, 2.5, -76, 'Stage 4: Poof Clouds');
+plat(0, 3, -82, 2.6, 2.6, { type: 'cloud' }); plat(-2.5, 3.5, -86, 2.6, 2.6, { type: 'cloud' });
+plat(0.5, 4, -90, 2.6, 2.6, { type: 'cloud' }); plat(3, 4.5, -94, 2.6, 2.6, { type: 'cloud' });
+plat(0, 5, -98, 2.6, 2.6, { type: 'cloud' });
+star(-2.5, 4.8, -86); star(3, 5.8, -94);
+// Stage 5: Ninja Leaps (double jump + dash)
+plat(0, 5, -105, 7, 7); checkpoint(0, 5, -105, 'Stage 5: Ninja Leaps');
+plat(0, 6, -112.5, 2.5, 2.5, { h: 1.5 }); plat(0, 7, -119, 2.5, 2.5, { h: 1.5 });
+plat(-4, 7.5, -124, 2.5, 2.5, { h: 1.5 }); plat(0, 8, -130, 2.5, 2.5, { h: 1.5 });
+star(0, 8.8, -116); star(-4, 8.8, -124); star(0, 9.3, -130);
+// Stage 6: Bounce Tower
+plat(0, 8, -137, 7, 7); checkpoint(0, 8, -137, 'Stage 6: Bounce Tower');
+plat(0, 8, -143, 3, 3, { type: 'bounce' });
+plat(0, 13, -148, 4, 4, { h: 1.5 });
+plat(0, 13, -153, 3, 3, { type: 'bounce' });
+plat(0, 16, -159, 3, 3, { type: 'wood', move: { axis: 'y', range: 2, speed: 1.1 } });
+plat(0, 18, -164, 3, 3, { type: 'bounce' });
+plat(0, 24, -172, 9, 9);
+star(0, 15, -148); star(0, 18, -153); star(0, 21, -164);
+
+// Goal: Golden Shuriken
+const goal = new THREE.Group();
+{
+  const gm = new THREE.MeshLambertMaterial({ color: 0xffd84d, emissive: 0x7a5a00 });
+  const inner = new THREE.Group();
+  box(3, 0.3, 0.8, gm, inner); box(0.8, 0.3, 3, gm, inner);
+  const a = box(2.4, 0.3, 0.6, gm, inner); a.rotation.y = Math.PI / 4;
+  const b = box(2.4, 0.3, 0.6, gm, inner); b.rotation.y = -Math.PI / 4;
+  inner.rotation.x = Math.PI / 2; goal.add(inner);
+  goal.position.set(0, 26.5, -173); scene.add(goal);
+}
+
+// Decor: clouds and a far-away sun
+for (let i = 0; i < 45; i++) {
+  const g = new THREE.Group();
+  const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+  const s = 2 + Math.random() * 4;
+  for (let k = 0; k < 3; k++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(s * (1 + Math.random()), s * 0.5, s), cm);
+    m.position.set(k * s * 0.7, Math.random() * s * 0.3, Math.random() * s * 0.5); g.add(m);
+  }
+  const side = Math.random() < 0.5 ? -1 : 1;
+  g.position.set(side * (14 + Math.random() * 40), -18 + Math.random() * 50, 20 - Math.random() * 220);
+  scene.add(g);
+}
+const sunBall = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 16), new THREE.MeshBasicMaterial({ color: 0xfff2a8, fog: false }));
+sunBall.position.set(60, 70, -200); scene.add(sunBall);
+
+// ---------- ninja ----------
+const ninja = new THREE.Group();
+const black = 0x1b1d26, red = 0xe8313f, skin = 0xffd2a6;
+const body = new THREE.Group(); ninja.add(body);
+box(0.9, 0.9, 0.5, black, body, 0, 1.15, 0);
+box(0.92, 0.14, 0.52, red, body, 0, 0.8, 0);
+box(0.75, 0.75, 0.75, black, body, 0, 1.98, 0);
+box(0.62, 0.18, 0.05, skin, body, 0, 2.02, 0.38);
+box(0.12, 0.08, 0.06, 0x111111, body, -0.15, 2.02, 0.41);
+box(0.12, 0.08, 0.06, 0x111111, body, 0.15, 2.02, 0.41);
+box(0.79, 0.14, 0.79, red, body, 0, 2.24, 0);
+const tail1 = box(0.12, 0.1, 0.55, red, body, 0.12, 2.22, -0.62);
+const tail2 = box(0.12, 0.1, 0.45, red, body, -0.1, 2.16, -0.58);
+const sword = box(0.1, 1.3, 0.1, 0x9aa3b0, body, 0, 1.3, -0.3); sword.rotation.z = 0.7;
+box(0.14, 0.35, 0.14, 0x5a3a1a, sword, 0, 0.75, 0);
+function limb(x, y, w, h) {
+  const pivot = new THREE.Group(); pivot.position.set(x, y, 0);
+  box(w, h, w, black, pivot, 0, -h / 2, 0); body.add(pivot); return pivot;
+}
+const armL = limb(-0.6, 1.55, 0.28, 0.8), armR = limb(0.6, 1.55, 0.28, 0.8);
+const legL = limb(-0.22, 0.72, 0.34, 0.72), legR = limb(0.22, 0.72, 0.34, 0.72);
+scene.add(ninja);
+
+// ---------- player state ----------
+const R = 0.38, H = 2.35;
+const P = { x: 0, y: 0, z: 2, vx: 0, vy: 0, vz: 0, ground: null, jumps: 2, coyote: 0, dash: 0, canDash: true, face: Math.PI };
+let cp = checkpoints[0];
+let yaw = 0, pitch = 0.42, camDist = 10;
+let started = false, won = false, time = 0, deaths = 0, starCount = 0;
+let walkT = 0, flipT = 0, landT = 0;
+document.getElementById('starsTotal').textContent = stars.length;
+
+// ---------- input ----------
+const keys = {};
+let jumpPressed = false, dashPressed = false;
+addEventListener('keydown', e => {
+  if (e.code === 'Space') e.preventDefault();
+  if (e.repeat) return;
+  keys[e.code] = true;
+  if (e.code === 'Space') jumpPressed = true;
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyK') dashPressed = true;
+  if (e.code === 'KeyR' && started && !won) respawn(false);
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+let dragging = false, lastX = 0, lastY = 0;
+renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  yaw -= (e.clientX - lastX) * 0.006;
+  pitch = Math.max(0.05, Math.min(1.3, pitch + (e.clientY - lastY) * 0.005));
+  lastX = e.clientX; lastY = e.clientY;
+});
+addEventListener('wheel', e => { camDist = Math.max(5, Math.min(18, camDist + e.deltaY * 0.01)); });
+
+// touch joystick
+const joy = document.getElementById('joy'), knob = document.getElementById('knob');
+let joyX = 0, joyY = 0, joyId = null;
+function joyMove(t) {
+  const r = joy.getBoundingClientRect();
+  let dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+  const len = Math.hypot(dx, dy), max = 45;
+  if (len > max) { dx *= max / len; dy *= max / len; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  joyX = dx / max; joyY = dy / max;
+}
+joy.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; joyId = t.identifier; joyMove(t); });
+joy.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) if (t.identifier === joyId) joyMove(t); });
+const joyEnd = e => { for (const t of e.changedTouches) if (t.identifier === joyId) { joyId = null; joyX = joyY = 0; knob.style.transform = ''; } };
+joy.addEventListener('touchend', joyEnd); joy.addEventListener('touchcancel', joyEnd);
+document.getElementById('bJump').addEventListener('touchstart', e => { e.preventDefault(); jumpPressed = true; });
+document.getElementById('bDash').addEventListener('touchstart', e => { e.preventDefault(); dashPressed = true; });
+if ('ontouchstart' in window || matchMedia('(pointer: coarse)').matches) document.getElementById('touch').classList.remove('hidden');
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+let msgTimer;
+function say(text, ms = 1400) {
+  const m = $('msg'); m.textContent = text; m.style.opacity = 1;
+  clearTimeout(msgTimer); msgTimer = setTimeout(() => m.style.opacity = 0, ms);
+}
+function getBest() { try { return parseFloat(localStorage.getItem('ninjaSkyBest')) || null; } catch (e) { return null; } }
+function showBest() { const b = getBest(); $('bestTitle').textContent = b ? `🏅 Best time: ${b.toFixed(1)}s` : ''; }
+showBest();
+
+function startGame() {
+  plats.forEach(p => { p.timer = -1; p.gone = 0; p.solid = true; p.mesh.visible = true; if (p.cmat) p.cmat.opacity = 1; });
+  stars.forEach(s => { s.got = false; s.g.visible = true; });
+  checkpoints.forEach((c, i) => { c.on = i === 0; if (c.flag) c.flag.material.color.set(0xff4d5e); });
+  cp = checkpoints[0]; time = 0; deaths = 0; starCount = 0; won = false;
+  $('stars').textContent = 0; $('deaths').textContent = 0;
+  $('title').classList.add('hidden'); $('win').classList.add('hidden'); $('hud').classList.remove('hidden');
+  respawn(true); started = true;
+  say('Stage 1: Island Hops', 1800);
+  beep(440, 0.15, 'triangle', 880);
+}
+$('playBtn').onclick = startGame;
+$('againBtn').onclick = startGame;
+
+function respawn(fresh) {
+  P.x = cp.x; P.y = cp.y + 0.05; P.z = cp.z; P.vx = P.vy = P.vz = 0;
+  P.ground = null; P.jumps = 2; P.dash = 0; P.canDash = true; P.face = Math.PI;
+  yaw = 0;
+  if (!fresh) {
+    deaths++; $('deaths').textContent = deaths;
+    $('flash').style.opacity = 0.45; setTimeout(() => $('flash').style.opacity = 0, 120);
+    beep(300, 0.3, 'sawtooth', 80);
+  }
+  $('stage').textContent = cp.name.split(':')[0];
+}
+
+function winGame() {
+  won = true;
+  beep(523, 0.15, 'triangle'); setTimeout(() => beep(659, 0.15, 'triangle'), 150);
+  setTimeout(() => beep(784, 0.15, 'triangle'), 300); setTimeout(() => beep(1046, 0.4, 'triangle'), 450);
+  const best = getBest();
+  let note;
+  if (!best || time < best) { try { localStorage.setItem('ninjaSkyBest', time.toFixed(1)); } catch (e) {} note = '🌟 NEW BEST TIME! 🌟'; }
+  else note = `🏅 Best time: ${best.toFixed(1)}s`;
+  $('wTime').textContent = time.toFixed(1);
+  $('wStars').textContent = `${starCount}/${stars.length}`;
+  $('wDeaths').textContent = deaths;
+  $('wBest').textContent = note;
+  setTimeout(() => $('win').classList.remove('hidden'), 700);
+  showBest();
+}
+
+// ---------- physics ----------
+const GRAV = 30, SPEED = 7.5, JUMP = 11, JUMP2 = 10, DASH_SPEED = 19, DASH_TIME = 0.2, BOUNCE = 21;
+
+function overlaps(p) {
+  return p.solid &&
+    P.x + R > p.x - p.w / 2 && P.x - R < p.x + p.w / 2 &&
+    P.z + R > p.z - p.d / 2 && P.z - R < p.z + p.d / 2 &&
+    P.y + H > p.y - p.h / 2 && P.y < p.y + p.h / 2;
+}
+
+function updatePlatforms(t, dt) {
+  for (const p of plats) {
+    p.dx = p.dy = p.dz = 0;
+    if (p.move) {
+      const m = p.move, off = Math.sin(t * m.speed + (m.phase || 0)) * m.range;
+      const nx = m.axis === 'x' ? p.bx + off : p.bx;
+      const ny = m.axis === 'y' ? p.by + off : p.by;
+      const nz = m.axis === 'z' ? p.bz + off : p.bz;
+      p.dx = nx - p.x; p.dy = ny - p.y; p.dz = nz - p.z;
+      p.x = nx; p.y = ny; p.z = nz;
+      p.mesh.position.set(nx, ny, nz);
+    }
+    if (p.type === 'cloud') {
+      if (p.timer >= 0) {
+        p.timer += dt;
+        p.cmat.opacity = Math.max(0.15, 1 - p.timer / 0.8);
+        p.mesh.position.x = p.x + Math.sin(p.timer * 60) * 0.05;
+        if (p.timer > 0.8) { p.timer = -1; p.gone = 2.5; p.solid = false; p.mesh.visible = false; beep(600, 0.12, 'sine', 200, 0.05); }
+      } else if (p.gone > 0) {
+        p.gone -= dt;
+        if (p.gone <= 0) { p.solid = true; p.mesh.visible = true; p.cmat.opacity = 1; p.mesh.position.x = p.x; }
+      }
+    }
+  }
+}
+
+function updatePlayer(dt) {
+  // ride moving platforms
+  if (P.ground) { P.x += P.ground.dx; P.y += P.ground.dy; P.z += P.ground.dz; }
+
+  // input direction relative to camera
+  let ix = 0, iz = 0;
+  if (keys.KeyW || keys.ArrowUp) iz -= 1;
+  if (keys.KeyS || keys.ArrowDown) iz += 1;
+  if (keys.KeyA || keys.ArrowLeft) ix -= 1;
+  if (keys.KeyD || keys.ArrowRight) ix += 1;
+  ix += joyX; iz += joyY;
+  if (keys.KeyQ) yaw += 2.2 * dt;
+  if (keys.KeyE) yaw -= 2.2 * dt;
+  const len = Math.hypot(ix, iz);
+  if (len > 1) { ix /= len; iz /= len; }
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+  const mx = rx * ix - fx * iz, mz = rz * ix - fz * iz;
+  if (Math.hypot(mx, mz) > 0.1) P.face = Math.atan2(mx, mz);
+
+  // dash
+  if (dashPressed && P.canDash && P.dash <= 0) {
+    P.dash = DASH_TIME; P.canDash = false; P.vy = 0;
+    beep(900, 0.15, 'sawtooth', 300, 0.05);
+  }
+  dashPressed = false;
+
+  if (P.dash > 0) {
+    P.dash -= dt;
+    P.vx = Math.sin(P.face) * DASH_SPEED; P.vz = Math.cos(P.face) * DASH_SPEED; P.vy = 0;
+  } else {
+    const k = P.ground ? 18 : 7;
+    P.vx += (mx * SPEED - P.vx) * Math.min(1, k * dt);
+    P.vz += (mz * SPEED - P.vz) * Math.min(1, k * dt);
+    P.vy = Math.max(-30, P.vy - GRAV * dt);
+  }
+
+  // jump / double jump
+  P.coyote = P.ground ? 0.12 : P.coyote - dt;
+  if (jumpPressed) {
+    if (P.coyote > 0) { P.vy = JUMP; P.jumps = 1; P.coyote = 0; P.ground = null; beep(500, 0.1, 'square', 800, 0.05); }
+    else if (P.jumps > 0) { P.vy = JUMP2; P.jumps = 0; P.dash = 0; flipT = 0.35; beep(700, 0.12, 'square', 1100, 0.05); }
+  }
+  jumpPressed = false;
+
+  // move X (step up small ledges)
+  P.x += P.vx * dt;
+  for (const p of plats) if (overlaps(p)) {
+    const top = p.y + p.h / 2;
+    if (top - P.y < 0.4 && P.vy <= 0) { P.y = top; continue; }
+    P.x = P.vx > 0 ? p.x - p.w / 2 - R - 0.001 : p.x + p.w / 2 + R + 0.001; P.vx = 0;
+  }
+  // move Z
+  P.z += P.vz * dt;
+  for (const p of plats) if (overlaps(p)) {
+    const top = p.y + p.h / 2;
+    if (top - P.y < 0.4 && P.vy <= 0) { P.y = top; continue; }
+    P.z = P.vz > 0 ? p.z - p.d / 2 - R - 0.001 : p.z + p.d / 2 + R + 0.001; P.vz = 0;
+  }
+  // move Y
+  const wasGround = P.ground;
+  P.ground = null;
+  P.y += P.vy * dt - (wasGround ? 0.02 : 0);
+  for (const p of plats) if (overlaps(p)) {
+    if (P.vy <= 0) {
+      P.y = p.y + p.h / 2; P.vy = 0; P.ground = p; P.jumps = 2; P.canDash = true;
+      if (!wasGround) landT = 0.15;
+      if (p.type === 'bounce') { P.vy = BOUNCE; P.ground = null; P.jumps = 1; beep(300, 0.3, 'sine', 1200, 0.08); }
+      if (p.type === 'cloud' && p.timer < 0) p.timer = 0;
+    } else {
+      P.y = p.y - p.h / 2 - H - 0.001; P.vy = 0;
+    }
+  }
+
+  // spinning blades
+  for (const b of blades) {
+    const dx = P.x - b.cx, dz = P.z - b.cz;
+    const ux = Math.cos(b.a), uz = -Math.sin(b.a);
+    const along = dx * ux + dz * uz, perp = Math.abs(dx * uz - dz * ux);
+    if (Math.abs(along) < b.len / 2 + 0.3 && perp < R + 0.2 && P.y < b.y + 0.2 && P.y + H > b.y - 0.2) {
+      say('💥 Ouch!', 800); respawn(false); return;
+    }
+  }
+  if (P.y < -25) { say('Whoops! 🌥️', 800); respawn(false); return; }
+
+  // shurikens
+  for (const s of stars) {
+    if (s.got) continue;
+    const p = s.g.position;
+    if (Math.abs(P.x - p.x) < 1 && Math.abs(P.z - p.z) < 1 && P.y < p.y + 0.6 && P.y + H > p.y - 0.6) {
+      s.got = true; s.g.visible = false; starCount++; $('stars').textContent = starCount;
+      beep(988, 0.08, 'square', 988, 0.05); setTimeout(() => beep(1318, 0.12, 'square', 1318, 0.05), 80);
+    }
+  }
+  // checkpoints
+  for (const c of checkpoints) {
+    if (c.on) continue;
+    if (Math.abs(P.x - c.x) < 3.5 && Math.abs(P.z - c.z) < 3.5 && Math.abs(P.y - c.y) < 1) {
+      c.on = true; cp = c; c.flag.material.color.set(0x37d65a);
+      $('stage').textContent = c.name.split(':')[0];
+      say('🚩 ' + c.name, 1800);
+      beep(660, 0.12, 'triangle'); setTimeout(() => beep(990, 0.2, 'triangle'), 120);
+    }
+  }
+  // goal
+  const gp = goal.position;
+  if (Math.hypot(P.x - gp.x, P.z - gp.z) < 2.2 && P.y + H > gp.y - 1.8 && P.y < gp.y + 1.6) winGame();
+}
+
+// ---------- animation ----------
+function animateNinja(dt) {
+  ninja.position.set(P.x, P.y, P.z);
+  let diff = P.face - ninja.rotation.y;
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  ninja.rotation.y += diff * Math.min(1, 14 * dt);
+  const speed = Math.hypot(P.vx, P.vz);
+  if (P.ground && speed > 0.5) walkT += dt * speed * 1.6;
+  const swing = P.ground ? Math.sin(walkT) * Math.min(1, speed / 6) * 0.9 : 0.5;
+  legL.rotation.x = swing; legR.rotation.x = P.ground ? -swing : -0.3;
+  armL.rotation.x = P.dash > 0 ? 1.4 : -swing; armR.rotation.x = P.dash > 0 ? 1.4 : swing;
+  if (flipT > 0) { flipT -= dt; body.rotation.x = (1 - Math.max(0, flipT) / 0.35) * Math.PI * 2; }
+  else body.rotation.x = P.dash > 0 ? 0.5 : 0;
+  if (landT > 0) { landT -= dt; body.scale.set(1.12, 0.85, 1.12); } else body.scale.set(1, 1, 1);
+  const flutter = Math.sin(performance.now() * 0.02) * 0.3 * Math.min(1, speed / 5);
+  tail1.rotation.x = 0.3 + flutter; tail2.rotation.x = 0.2 - flutter;
+}
+
+// ---------- main loop ----------
+let last = performance.now(), clock = 0;
+const camTarget = new THREE.Vector3(0, 2, 2), tmpV = new THREE.Vector3();
+camera.position.set(0, 6, 12);
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.033, Math.max(0, (now - last) / 1000)); last = now;
+  clock += dt;
+  updatePlatforms(clock, dt);
+  for (const b of blades) { b.a += b.speed * dt; b.g.rotation.y = b.a; }
+  for (const s of stars) s.g.rotation.y += dt * 4;
+  goal.rotation.y += dt * 2; goal.position.y = 26.5 + Math.sin(clock * 2) * 0.3;
+
+  if (started && !won) { time += dt; $('time').textContent = time.toFixed(1); updatePlayer(dt); }
+  else if (!started) yaw += dt * 0.15;
+  animateNinja(dt);
+
+  camTarget.lerp(tmpV.set(P.x, P.y + 1.8, P.z), Math.min(1, 10 * dt));
+  tmpV.set(
+    camTarget.x + Math.sin(yaw) * Math.cos(pitch) * camDist,
+    camTarget.y + Math.sin(pitch) * camDist,
+    camTarget.z + Math.cos(yaw) * Math.cos(pitch) * camDist);
+  camera.position.lerp(tmpV, Math.min(1, 12 * dt));
+  camera.lookAt(camTarget);
+
+  sun.position.set(P.x + 15, P.y + 30, P.z + 10); sun.target.position.set(P.x, P.y, P.z);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
