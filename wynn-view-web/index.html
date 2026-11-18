@@ -375,6 +375,48 @@ const SHOWS = {
     "Scary House!"
    ]
   ]
+ },
+ "mc": {
+  "name": "Minecraft",
+  "emoji": "⛏️",
+  "color": "linear-gradient(135deg,#6cc04a,#5a3d1e)",
+  "blurb": "Mine, build and explore a world made of blocks — creepers beware!",
+  "list": "UU1sELGmy5jp5fQUugmuYlXQ",
+  "src": "Minecraft Official",
+  "eps": [
+   [
+    "vUj1480vLU8",
+    "POV: You Have a Fave Biome"
+   ],
+   [
+    "lOZdBywFfKc",
+    "Our Coldest Game Drop Has a Name!"
+   ],
+   [
+    "s0w_pTOXDBQ",
+    "Minecraft Dungeons II – The Humblers Awaken"
+   ],
+   [
+    "SWG_2mVIgjI",
+    "What Stirs in Minecraft Dungeons II?"
+   ],
+   [
+    "ySaY4J72kEs",
+    "New Throwing Weapon Alert!"
+   ],
+   [
+    "XJlkhdX7a0s",
+    "Final Features from Upcoming Game Drop!"
+   ],
+   [
+    "KGIGpi07EEM",
+    "Would You Dare Go Inside?"
+   ],
+   [
+    "rGwR9EuoD20",
+    "Your Hero Is Here!"
+   ]
+  ]
  }
 };
 
@@ -437,7 +479,7 @@ function render(showKey) {
     const r = EPS.filter(e => (e.title + ' ' + SHOWS[e.show].name).toLowerCase().includes(q));
     const safe = q.replace(/[<>&"]/g, '');
     app.innerHTML = `<section class="shelf"><h2>Results for “${safe}”</h2>
-      ${r.length ? `<div class="grid">${r.map(card).join('')}</div>` : '<div class="empty">Nothing found 🙈 Try “Bluey”, “Peppa”, “Ninjago”, “Paw” or “Pokémon”.</div>'}</section>`;
+      ${r.length ? `<div class="grid">${r.map(card).join('')}</div>` : '<div class="empty">Nothing found 🙈 Try “Bluey”, “Peppa”, “Ninjago”, “Paw”, “Pokémon” or “Minecraft”.</div>'}</section>`;
     return;
   }
   if (showKey) {
@@ -465,7 +507,7 @@ function render(showKey) {
   app.innerHTML = hero()
     + shelf('▶ Keep watching', recent)
     + Object.entries(SHOWS).map(([k, s]) => shelf(s.emoji + ' ' + s.name, EPS.filter(e => e.show === k), s.eps.length + ' episodes')).join('')
-    + "<p class=\"note\">Videos come from each show's official YouTube channel. Bluey, Peppa Pig, Ninjago, Paw Patrol and Pokémon belong to their creators — this is just Wynn's favourites page.</p>";
+    + "<p class=\"note\">Videos come from each show's official YouTube channel. Bluey, Peppa Pig, Ninjago, Paw Patrol, Pokémon and Minecraft belong to their creators — this is just Wynn's favourites page.</p>";
   heroTimer = setInterval(() => setHero((heroI + 1) % Object.keys(SHOWS).length), 6000);
 }
 
