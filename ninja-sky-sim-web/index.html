@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ninja Sky Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff; font-family: Fredoka, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas { display: block; }
+  .hud { position: fixed; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+  .stat { background: rgba(20,30,60,.78); color: #fff; padding: 6px 14px; border-radius: 12px; font-size: 20px; font-weight: 700; border: 3px solid rgba(255,255,255,.35); min-width: 190px; }
+  .stat small { font-size: 13px; opacity: .8; font-weight: 600; }
+  .bar { height: 8px; background: rgba(255,255,255,.2); border-radius: 6px; margin-top: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg,#4fd1ff,#a46bff); width: 0; }
+  .bar.full i { background: #ff4d6d; }
+  .side { position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+  .btn { font-family: inherit; font-size: 18px; font-weight: 700; color: #fff; border: 0; border-radius: 14px; padding: 10px 16px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .shop-btn { background: #ffb400; }
+  .auto-btn { background: #6b7a99; }
+  .auto-btn.on { background: #2ed47a; }
+  .where { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(20,30,60,.7); color: #ffd84d; padding: 6px 16px; border-radius: 12px; font-size: 18px; font-weight: 700; z-index: 4; white-space: nowrap; }
+  .msg { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #ff4d6d; color: #fff; padding: 8px 18px; border-radius: 12px; font-size: 18px; font-weight: 700; z-index: 6; opacity: 0; transition: opacity .25s; pointer-events: none; text-align: center; max-width: 90vw; }
+  .msg.show { opacity: 1; }
+  .msg.good { background: #2ed47a; }
+  .pop { position: fixed; left: 50%; top: 45%; color: #fff; font-size: 26px; font-weight: 700; pointer-events: none; z-index: 4; text-shadow: 0 3px 0 #1b2a4a, 0 0 6px #1b2a4a; animation: up .9s ease-out forwards; }
+  .pop.coin { color: #ffd84d; }
+  @keyframes up { from { transform: translate(-50%,0); opacity: 1; } to { transform: translate(-50%,-80px); opacity: 0; } }
+  .help { position: fixed; bottom: 12px; left: 12px; color: #fff; background: rgba(20,30,60,.6); padding: 6px 12px; border-radius: 10px; font-size: 14px; z-index: 4; }
+  .modal { position: fixed; inset: 0; background: rgba(10,20,40,.55); display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
+  .modal.open { display: flex; }
+  .panel { background: #fff; border-radius: 22px; width: 100%; max-width: 560px; max-height: 88vh; display: flex; flex-direction: column; border: 5px solid #1b2a4a; overflow: hidden; }
+  .panel h2 { margin: 0; padding: 12px 18px; background: #ffb400; color: #1b2a4a; display: flex; justify-content: space-between; align-items: center; font-size: 26px; }
+  .close { background: #ff4d6d; padding: 4px 14px; font-size: 20px; }
+  .tabs { display: flex; gap: 6px; padding: 10px 12px 0; }
+  .tab { flex: 1; background: #dfe6f3; color: #1b2a4a; box-shadow: none; padding: 8px; }
+  .tab.on { background: #1b2a4a; color: #fff; }
+  .items { padding: 12px; overflow-y: auto; display: grid; gap: 8px; }
+  .item { display: flex; align-items: center; gap: 12px; background: #f1f5fb; border-radius: 14px; padding: 8px 12px; }
+  .item .ic { font-size: 30px; width: 40px; text-align: center; }
+  .item .info { flex: 1; color: #1b2a4a; }
+  .item .info b { font-size: 18px; display: block; }
+  .item .info span { font-size: 14px; opacity: .75; }
+  .item .btn { font-size: 16px; padding: 8px 12px; min-width: 96px; }
+  .buy { background: #2ed47a; }
+  .buy.no { background: #b8c2d6; }
+  .owned { background: #6b7a99; }
+  .win { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 30; background: rgba(10,20,40,.6); }
+  .win.open { display: flex; }
+  .win .panel { text-align: center; padding: 24px; color: #1b2a4a; }
+  .win h1 { margin: 0 0 8px; font-size: 40px; color: #ffb400; text-shadow: 0 3px 0 #1b2a4a; }
+  .touch { display: none; }
+  @media (pointer: coarse) {
+    .touch { display: block; }
+    .help { display: none; }
+    .stat { font-size: 16px; min-width: 150px; padding: 4px 10px; }
+    .where { top: auto; bottom: 200px; font-size: 15px; }
+  }
+  .joy { position: fixed; left: 20px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.25); border: 3px solid rgba(255,255,255,.5); z-index: 5; }
+  .joy i { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.8); }
+  .tbtn { position: fixed; z-index: 5; width: 80px; height: 80px; border-radius: 50%; border: 0; font-family: inherit; font-weight: 700; font-size: 16px; color: #fff; }
+  .tjump { right: 20px; bottom: 30px; background: rgba(46,212,122,.85); }
+  .tswing { right: 110px; bottom: 70px; background: rgba(255,77,109,.85); }
+</style>
+</head>
+<body>
+<div class="hud">
+  <div class="stat">🪙 <span id="coins">0</span> <small>coins</small></div>
+  <div class="stat">🌀 <span id="chi">0</span> / <span id="cap">20</span> <small>chi</small><div class="bar" id="bar"><i id="barFill"></i></div></div>
+  <div class="stat">💪 <span id="power">0</span> <small>power</small></div>
+</div>
+<div class="side">
+  <button class="btn shop-btn" id="shopBtn">🛒 Shop</button>
+  <button class="btn auto-btn" id="autoBtn">⚔️ Auto: OFF</button>
+</div>
+<div class="where" id="where">Spawn Island</div>
+<div class="msg" id="msg"></div>
+<div class="help">WASD move · Space jump · Click / F to swing · Drag to turn camera · Stand on 💰 pad to sell</div>
+
+<div class="touch">
+  <div class="joy" id="joy"><i id="knob"></i></div>
+  <button class="tbtn tjump" id="tJump">JUMP</button>
+  <button class="tbtn tswing" id="tSwing">SWING</button>
+</div>
+
+<div class="modal" id="shop">
+  <div class="panel">
+    <h2>🛒 Ninja Shop <button class="btn close" id="closeShop">✕</button></h2>
+    <div class="tabs">
+      <button class="btn tab on" data-tab="swords">⚔️ Swords</button>
+      <button class="btn tab" data-tab="bags">🎒 Bags</button>
+      <button class="btn tab" data-tab="pets">🐾 Pets</button>
+    </div>
+    <div class="items" id="items"></div>
+  </div>
+</div>
+
+<div class="win" id="win">
+  <div class="panel">
+    <h1>🐉 NINJA MASTER! 🐉</h1>
+    <p style="font-size:20px">You reached Dragon Peak and touched the Golden Dragon!<br>Keep training to buy every sword and pet!</p>
+    <button class="btn buy" id="winOk" style="font-size:22px">Keep Playing</button>
+  </div>
+</div>
+
+<script>
+// ---------- DATA ----------
+const SWORDS = [
+  { name: 'Wooden Sword', ic: '🪵', power: 1, cost: 0, color: 0xa86b3c },
+  { name: 'Bamboo Blade', ic: '🎋', power: 3, cost: 50, color: 0x8bd34a },
+  { name: 'Iron Sword', ic: '🗡️', power: 8, cost: 300, color: 0xc8d0dc },
+  { name: 'Katana', ic: '⚔️', power: 20, cost: 1500, color: 0xeaf4ff },
+  { name: 'Jade Blade', ic: '💚', power: 55, cost: 8000, color: 0x2ed47a },
+  { name: 'Thunder Edge', ic: '⚡', power: 150, cost: 40000, color: 0xffe14d },
+  { name: 'Dragon Fang', ic: '🐉', power: 450, cost: 200000, color: 0xff4d6d },
+];
+const BAGS = [
+  { name: 'Tiny Pouch', ic: '👝', cap: 20, cost: 0 },
+  { name: 'Ninja Satchel', ic: '🎒', cap: 75, cost: 80 },
+  { name: 'Big Backpack', ic: '🧳', cap: 300, cost: 500 },
+  { name: 'Chi Barrel', ic: '🛢️', cap: 1200, cost: 3000 },
+  { name: 'Cloud Sack', ic: '☁️', cap: 5000, cost: 15000 },
+  { name: 'Sky Vault', ic: '🏯', cap: 25000, cost: 80000 },
+  { name: 'Endless Bag', ic: '♾️', cap: 1e12, cost: 300000 },
+];
+const PETS = [
+  { name: 'Kitten', ic: '🐱', cps: 2, cost: 120, color: 0xffa94d },
+  { name: 'Fox', ic: '🦊', cps: 8, cost: 800, color: 0xff6b2c },
+  { name: 'Panda', ic: '🐼', cps: 30, cost: 5000, color: 0xffffff },
+  { name: 'Phoenix', ic: '🔥', cps: 100, cost: 25000, color: 0xff3b3b },
+  { name: 'Mini Dragon', ic: '🐲', cps: 350, cost: 120000, color: 0x2ed47a },
+];
+const ISL = [
+  { name: 'Spawn Island', x: 0, y: 0, z: 0, r: 14, top: 0x5ad35a, req: 0, mult: 1, orb: 1 },
+  { name: 'Bamboo Isle', x: 0, y: 6, z: -46, r: 12, top: 0x9be35a, req: 300, mult: 3, orb: 6 },
+  { name: 'Cloud Temple', x: 38, y: 12, z: -86, r: 12, top: 0xf2f4ff, req: 6000, mult: 10, orb: 30 },
+  { name: 'Dragon Peak', x: 0, y: 20, z: -128, r: 13, top: 0xffb347, req: 100000, mult: 40, orb: 150 },
+];
+
+// ---------- SAVE ----------
+let S = { coins: 0, chi: 0, power: 0, sword: 0, bag: 0, pets: [], won: false, auto: false, check: 0 };
+try { const d = JSON.parse(localStorage.getItem('ninjaSkySim')); if (d) S = Object.assign(S, d); } catch (e) {}
+function save() { try { localStorage.setItem('ninjaSkySim', JSON.stringify(S)); } catch (e) {} }
+setInterval(save, 3000);
+
+// ---------- THREE SETUP ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3ff);
+scene.fog = new THREE.Fog(0x8fd3ff, 70, 230);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6a8fb5, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(30, 60, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 150 });
+scene.add(sun, sun.target);
+
+const mat = c => new THREE.MeshLambertMaterial({ color: c });
+function box(w, h, d, c, x = 0, y = 0, z = 0, parent = scene) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function label(text, color = '#ffd84d', w = 9) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d');
+  g.font = 'bold 54px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 12; g.strokeStyle = '#1b2a4a'; g.strokeText(text, 256, 64);
+  g.fillStyle = color; g.fillText(text, 256, 64);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+  s.scale.set(w, w / 4, 1); return s;
+}
+
+// ---------- WORLD ----------
+const surfaces = []; // {type:'circle',x,z,r,y,isl} or {type:'box',mesh,w,d,mover}
+const movers = [];
+
+ISL.forEach((I, i) => {
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(I.r, I.r, 2, 10), mat(I.top));
+  top.position.set(I.x, I.y - 1, I.z); top.receiveShadow = true; scene.add(top);
+  const rock = new THREE.Mesh(new THREE.ConeGeometry(I.r, 14, 10), mat(0x8a6a4a));
+  rock.rotation.x = Math.PI; rock.position.set(I.x, I.y - 9, I.z); scene.add(rock);
+  surfaces.push({ type: 'circle', x: I.x, z: I.z, r: I.r, y: I.y, isl: i });
+
+  // trees / decorations
+  for (let k = 0; k < 5; k++) {
+    const a = k * 1.3 + i, d = I.r - 2.5;
+    const tx = I.x + Math.cos(a) * d, tz = I.z + Math.sin(a) * d;
+    if (i === 1) { for (let h = 0; h < 3; h++) box(0.5, 3, 0.5, 0x6fbf3a, tx + h * 0.7, I.y + 1.5 + h * 0.3, tz); }
+    else if (i === 2) { box(0.8, 4, 0.8, 0xff4d6d, tx, I.y + 2, tz); box(1.6, 0.5, 1.6, 0x1b2a4a, tx, I.y + 4.2, tz); }
+    else if (i === 3) { box(1.2, 1.2 + k % 2, 1.2, 0xffd84d, tx, I.y + 0.6, tz); }
+    else { box(0.8, 2, 0.8, 0x8a5a2b, tx, I.y + 1, tz); box(2.6, 2.4, 2.6, 0x3fae3f, tx, I.y + 3.2, tz); }
+  }
+
+  // sell pad
+  const pad = box(3.4, 0.2, 3.4, 0x4fd1ff, I.x + 6, I.y + 0.1, I.z + 4);
+  pad.material.emissive = new THREE.Color(0x1a6aa0);
+  const sl = label('💰 SELL', '#ffffff', 5); sl.position.set(I.x + 6, I.y + 2.5, I.z + 4); scene.add(sl);
+  I.pad = { x: I.x + 6, z: I.z + 4 };
+
+  // name sign + lock wall
+  I.sign = label(I.name, '#ffd84d'); I.sign.position.set(I.x, I.y + 8, I.z); scene.add(I.sign);
+  if (I.req > 0) {
+    I.wall = new THREE.Mesh(new THREE.CylinderGeometry(I.r + 1.5, I.r + 1.5, 7, 24, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xff4d6d, transparent: true, opacity: 0.25, side: THREE.DoubleSide }));
+    I.wall.position.set(I.x, I.y + 3.5, I.z); scene.add(I.wall);
+    I.lock = label('🔒 ' + fmt(I.req) + ' Power', '#ff9fb2', 8);
+    I.lock.position.set(I.x, I.y + 6, I.z); scene.add(I.lock);
+  }
+
+  // stepping blocks from previous island
+  if (i > 0) {
+    const A = ISL[i - 1];
+    const dx = I.x - A.x, dz = I.z - A.z, dist = Math.hypot(dx, dz);
+    const ux = dx / dist, uz = dz / dist;
+    const start = A.r + 3, end = dist - I.r - 2.5;
+    const n = Math.round((end - start) / 4.6) + 1;
+    for (let k = 0; k < n; k++) {
+      const t = n === 1 ? 0.5 : k / (n - 1);
+      const d = start + (end - start) * t;
+      const y = A.y + (I.y - A.y) * ((k + 1) / (n + 1));
+      const colors = [0xff5a5f, 0xffb400, 0x4cd964, 0x4fa3ff, 0xa46bff];
+      const m = box(3, 1, 3, colors[k % 5], A.x + ux * d, y - 0.5, A.z + uz * d);
+      const s = { type: 'box', mesh: m, w: 3, d: 3, dx: 0, dz: 0 };
+      if (k % 3 === 1) { // medium: some blocks slide side to side
+        s.mover = { bx: m.position.x, bz: m.position.z, px: -uz, pz: ux, amp: 2.4, sp: 1.2 + i * 0.2, ph: k };
+        movers.push(s);
+      }
+      surfaces.push(s);
+    }
+  }
+});
+
+// golden dragon statue on Dragon Peak
+const P3 = ISL[3];
+const statue = new THREE.Group(); statue.position.set(P3.x, P3.y, P3.z - 4); scene.add(statue);
+const gold = 0xffd700;
+box(3, 1, 3, 0x8a6a4a, 0, 0.5, 0, statue);
+box(1.6, 2.4, 1.6, gold, 0, 2.2, 0, statue);
+box(1.4, 1.2, 2.2, gold, 0, 3.8, 0.5, statue);
+box(0.3, 0.8, 0.3, gold, -0.5, 4.7, 0, statue); box(0.3, 0.8, 0.3, gold, 0.5, 4.7, 0, statue);
+box(2.8, 0.2, 1.2, gold, -1.8, 3, -0.3, statue).rotation.z = 0.4;
+box(2.8, 0.2, 1.2, gold, 1.8, 3, -0.3, statue).rotation.z = -0.4;
+statue.children.forEach(c => { if (c.material && c.material.color && c.material.color.getHex() === gold) c.material.emissive = new THREE.Color(0x6a4a00); });
+const sLabel = label('🏆 Touch me!', '#ffd84d', 6); sLabel.position.set(0, 6.5, 0); statue.add(sLabel);
+
+// clouds
+const clouds = [];
+for (let i = 0; i < 28; i++) {
+  const g = new THREE.Group();
+  for (let k = 0; k < 4; k++) box(4 + Math.random() * 4, 2 + Math.random() * 1.5, 3 + Math.random() * 3, 0xffffff, k * 3 - 4, Math.random(), Math.random() * 2, g);
+  g.children.forEach(c => { c.castShadow = false; });
+  g.position.set((Math.random() - 0.5) * 200, -15 + Math.random() * 60, 40 - Math.random() * 220);
+  scene.add(g); clouds.push(g);
+}
+
+// coin orbs
+const orbs = [];
+const orbGeo = new THREE.OctahedronGeometry(0.6);
+ISL.forEach((I, i) => {
+  for (let k = 0; k < 7; k++) {
+    const m = new THREE.Mesh(orbGeo, new THREE.MeshLambertMaterial({ color: 0xffd84d, emissive: 0x7a5a00 }));
+    scene.add(m);
+    const o = { m, isl: i, t: 0 };
+    placeOrb(o); orbs.push(o);
+  }
+});
+function placeOrb(o) {
+  const I = ISL[o.isl], a = Math.random() * Math.PI * 2, d = 2 + Math.random() * (I.r - 4);
+  o.m.position.set(I.x + Math.cos(a) * d, I.y + 1, I.z + Math.sin(a) * d);
+  o.m.visible = true; o.t = 0;
+}
+
+// ---------- NINJA ----------
+const ninja = new THREE.Group(); scene.add(ninja);
+const BLACK = 0x22252e;
+const legL = box(0.55, 1.2, 0.6, BLACK, -0.32, 0.6, 0, ninja);
+const legR = box(0.55, 1.2, 0.6, BLACK, 0.32, 0.6, 0, ninja);
+box(1.3, 1.4, 0.7, BLACK, 0, 1.9, 0, ninja);
+box(1.32, 0.25, 0.72, 0xd62839, 0, 1.35, 0, ninja); // belt
+box(1, 1, 1, BLACK, 0, 3.1, 0, ninja); // head
+box(0.8, 0.22, 0.05, 0xf2c79a, 0, 3.15, 0.51, ninja); // eye slit
+box(0.15, 0.1, 0.06, 0x111111, -0.2, 3.15, 0.54, ninja); box(0.15, 0.1, 0.06, 0x111111, 0.2, 3.15, 0.54, ninja);
+box(1.05, 0.2, 1.05, 0xd62839, 0, 3.45, 0, ninja); // headband
+const tail1 = box(0.15, 0.15, 0.9, 0xd62839, 0.15, 3.4, -0.9, ninja);
+const tail2 = box(0.15, 0.15, 0.8, 0xd62839, -0.1, 3.3, -0.85, ninja);
+const armL = new THREE.Group(); armL.position.set(-0.85, 2.5, 0); ninja.add(armL);
+box(0.45, 1.2, 0.5, BLACK, 0, -0.5, 0, armL);
+const armR = new THREE.Group(); armR.position.set(0.85, 2.5, 0); ninja.add(armR);
+box(0.45, 1.2, 0.5, BLACK, 0, -0.5, 0, armR);
+const swordG = new THREE.Group(); swordG.position.set(0, -1.1, 0.2); armR.add(swordG);
+box(0.15, 0.15, 0.5, 0x5a3a20, 0, 0, 0.1, swordG);
+box(0.5, 0.12, 0.12, 0x333333, 0, 0, 0.35, swordG);
+const blade = box(0.12, 0.2, 2.2, 0xffffff, 0, 0, 1.5, swordG);
+function updateSwordLook() { blade.material.color.setHex(SWORDS[S.sword].color); blade.material.emissive = new THREE.Color(S.sword >= 4 ? SWORDS[S.sword].color : 0).multiplyScalar(0.35); }
+updateSwordLook();
+
+// ---------- PETS ----------
+const petMeshes = [];
+function buildPets() {
+  petMeshes.forEach(p => scene.remove(p)); petMeshes.length = 0;
+  S.pets.forEach(idx => {
+    const P = PETS[idx], g = new THREE.Group();
+    box(0.9, 0.7, 1.1, P.color, 0, 0, 0, g);
+    box(0.7, 0.7, 0.7, P.color, 0, 0.5, 0.6, g);
+    box(0.2, 0.3, 0.2, P.color, -0.22, 0.95, 0.6, g); box(0.2, 0.3, 0.2, P.color, 0.22, 0.95, 0.6, g);
+    box(0.12, 0.12, 0.05, 0x111111, -0.15, 0.6, 0.96, g); box(0.12, 0.12, 0.05, 0x111111, 0.15, 0.6, 0.96, g);
+    if (idx >= 3) { box(1.2, 0.1, 0.6, P.color, -0.8, 0.3, 0, g); box(1.2, 0.1, 0.6, P.color, 0.8, 0.3, 0, g); }
+    if (idx === 2) { box(0.72, 0.25, 0.05, 0x111111, 0, 0.6, 0.96, g); }
+    g.position.copy(ninja.position); scene.add(g); petMeshes.push(g);
+  });
+}
+buildPets();
+
+// ---------- STATE ----------
+const pos = new THREE.Vector3(ISL[S.check].x, ISL[S.check].y + 0.1, ISL[S.check].z + 6);
+const vel = new THREE.Vector3();
+let onGround = false, groundSurf = null, curIsl = S.check;
+let yaw = 0, pitch = 0.42, camDist = 13;
+let swingT = 0, swingCD = 0, autoT = 0;
+const keys = {};
+const SWING_TIME = 0.35;
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+function fmt(n) {
+  n = Math.floor(n);
+  if (n >= 1e12) return '∞';
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e4) return (n / 1e3).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+function cap() { return BAGS[S.bag].cap; }
+function hud() {
+  $('coins').textContent = fmt(S.coins);
+  $('chi').textContent = fmt(S.chi);
+  $('cap').textContent = fmt(cap());
+  $('power').textContent = fmt(S.power);
+  const f = Math.min(1, S.chi / cap());
+  $('barFill').style.width = (f * 100) + '%';
+  $('bar').classList.toggle('full', f >= 1);
+  $('autoBtn').textContent = '⚔️ Auto: ' + (S.auto ? 'ON' : 'OFF');
+  $('autoBtn').classList.toggle('on', S.auto);
+}
+let msgTimer;
+function msg(t, good) {
+  const m = $('msg'); m.textContent = t; m.classList.add('show'); m.classList.toggle('good', !!good);
+  clearTimeout(msgTimer); msgTimer = setTimeout(() => m.classList.remove('show'), 2200);
+}
+let lastPop = 0;
+function pop(t, coin) {
+  const now = performance.now(); if (now - lastPop < 90) return; lastPop = now;
+  const d = document.createElement('div'); d.className = 'pop' + (coin ? ' coin' : '');
+  d.textContent = t; d.style.left = (45 + Math.random() * 10) + '%';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 900);
+}
+function refreshLocks() {
+  ISL.forEach(I => {
+    if (!I.wall) return;
+    const open = S.power >= I.req;
+    I.wall.visible = !open; I.lock.visible = !open;
+  });
+}
+
+// ---------- ACTIONS ----------
+function addChi(n) {
+  const room = cap() - S.chi;
+  if (room <= 0) return 0;
+  const g = Math.min(room, n);
+  S.chi += g; S.power += g;
+  refreshLocks();
+  return g;
+}
+function swing() {
+  if (swingCD > 0) return;
+  swingCD = SWING_TIME; swingT = SWING_TIME;
+  const g = addChi(SWORDS[S.sword].power * ISL[curIsl].mult);
+  if (g) pop('+' + fmt(g) + ' 🌀');
+  else msg('🎒 Bag full! Go stand on the 💰 SELL pad');
+  hud();
+}
+function jump() { if (onGround) { vel.y = 12.5; onGround = false; groundSurf = null; } }
+
+// ---------- INPUT ----------
+addEventListener('keydown', e => {
+  if ($('shop').classList.contains('open')) { if (e.code === 'Escape') closeShop(); return; }
+  keys[e.code] = true;
+  if (e.code === 'Space') { jump(); e.preventDefault(); }
+  if (e.code === 'KeyF' || e.code === 'Enter') swing();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, moved: 0, id: e.pointerId }; });
+addEventListener('pointermove', e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.moved += Math.abs(dx) + Math.abs(dy);
+  yaw -= dx * 0.008; pitch = Math.max(0.05, Math.min(1.3, pitch + dy * 0.006));
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+addEventListener('pointerup', e => {
+  if (drag && drag.id === e.pointerId) { if (drag.moved < 6 && e.pointerType === 'mouse') swing(); drag = null; }
+});
+renderer.domElement.addEventListener('wheel', e => { camDist = Math.max(6, Math.min(25, camDist + e.deltaY * 0.01)); });
+
+// touch joystick
+const joy = { x: 0, y: 0, id: null };
+const joyEl = $('joy'), knob = $('knob');
+joyEl.addEventListener('pointerdown', e => { joy.id = e.pointerId; joyEl.setPointerCapture(e.pointerId); moveJoy(e); e.stopPropagation(); });
+joyEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) moveJoy(e); });
+joyEl.addEventListener('pointerup', () => { joy.id = null; joy.x = joy.y = 0; knob.style.left = '40px'; knob.style.top = '40px'; });
+function moveJoy(e) {
+  const r = joyEl.getBoundingClientRect();
+  let x = (e.clientX - r.left - 65) / 50, y = (e.clientY - r.top - 65) / 50;
+  const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
+  joy.x = x; joy.y = y; knob.style.left = (40 + x * 40) + 'px'; knob.style.top = (40 + y * 40) + 'px';
+}
+$('tJump').addEventListener('pointerdown', e => { e.stopPropagation(); jump(); });
+$('tSwing').addEventListener('pointerdown', e => { e.stopPropagation(); swing(); });
+
+$('autoBtn').onclick = () => { S.auto = !S.auto; hud(); save(); };
+
+// ---------- SHOP ----------
+let tab = 'swords';
+function openShop() { $('shop').classList.add('open'); renderShop(); }
+function closeShop() { $('shop').classList.remove('open'); }
+$('shopBtn').onclick = openShop;
+$('closeShop').onclick = closeShop;
+$('shop').addEventListener('pointerdown', e => { if (e.target.id === 'shop') closeShop(); });
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+  renderShop();
+});
+function renderShop() {
+  const wrap = $('items'); wrap.innerHTML = '';
+  const list = tab === 'swords' ? SWORDS : tab === 'bags' ? BAGS : PETS;
+  list.forEach((it, i) => {
+    const owned = tab === 'pets' ? S.pets.includes(i) : (tab === 'swords' ? S.sword : S.bag) >= i;
+    const desc = tab === 'swords' ? '+' + it.power + ' chi per swing' : tab === 'bags' ? 'Holds ' + fmt(it.cap) + ' chi' : '+' + it.cps + ' chi every second';
+    const row = document.createElement('div'); row.className = 'item';
+    row.innerHTML = `<div class="ic">${it.ic}</div><div class="info"><b>${it.name}</b><span>${desc}</span></div>`;
+    const b = document.createElement('button');
+    if (owned) { b.className = 'btn owned'; b.textContent = '✔ Owned'; }
+    else {
+      const can = S.coins >= it.cost;
+      b.className = 'btn buy' + (can ? '' : ' no'); b.textContent = '🪙 ' + fmt(it.cost);
+      b.onclick = () => buy(i);
+    }
+    row.appendChild(b); wrap.appendChild(row);
+  });
+}
+function buy(i) {
+  const list = tab === 'swords' ? SWORDS : tab === 'bags' ? BAGS : PETS, it = list[i];
+  if (S.coins < it.cost) { msg('Not enough coins! Need 🪙 ' + fmt(it.cost - S.coins) + ' more'); return; }
+  S.coins -= it.cost;
+  if (tab === 'swords') { S.sword = i; updateSwordLook(); }
+  else if (tab === 'bags') S.bag = i;
+  else { S.pets.push(i); buildPets(); }
+  msg('You got the ' + it.name + '! ' + it.ic, true);
+  hud(); renderShop(); save();
+}
+$('winOk').onclick = () => $('win').classList.remove('open');
+
+// ---------- PHYSICS ----------
+function surfTop(s) { return s.type === 'circle' ? s.y : s.mesh.position.y + 0.5; }
+function inside(s, x, z) {
+  if (s.type === 'circle') return Math.hypot(x - s.x, z - s.z) <= s.r;
+  const p = s.mesh.position;
+  return Math.abs(x - p.x) <= s.w / 2 + 0.3 && Math.abs(z - p.z) <= s.d / 2 + 0.3;
+}
+
+let elapsed = 0, petAcc = 0;
+const clock = new THREE.Clock();
+const headPos = new THREE.Vector3();
+function update(dt) {
+  elapsed += dt;
+  // movers
+  movers.forEach(s => {
+    const m = s.mover, o = Math.sin(elapsed * m.sp + m.ph) * m.amp;
+    const nx = m.bx + m.px * o, nz = m.bz + m.pz * o;
+    s.dx = nx - s.mesh.position.x; s.dz = nz - s.mesh.position.z;
+    s.mesh.position.x = nx; s.mesh.position.z = nz;
+  });
+  if (groundSurf && groundSurf.mover) { pos.x += groundSurf.dx; pos.z += groundSurf.dz; }
+
+  // input
+  let ix = 0, iz = 0;
+  if (keys.KeyW || keys.ArrowUp) iz -= 1;
+  if (keys.KeyS || keys.ArrowDown) iz += 1;
+  if (keys.KeyA || keys.ArrowLeft) ix -= 1;
+  if (keys.KeyD || keys.ArrowRight) ix += 1;
+  ix += joy.x; iz += joy.y;
+  const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
+  const sy = Math.sin(yaw), cy = Math.cos(yaw);
+  const mx = ix * cy + iz * sy, mz = -ix * sy + iz * cy;
+  const speed = 9;
+  pos.x += mx * speed * dt; pos.z += mz * speed * dt;
+  const moving = Math.hypot(mx, mz) > 0.05;
+  if (moving) {
+    const target = Math.atan2(mx, mz);
+    let d = target - ninja.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+    ninja.rotation.y += d * Math.min(1, dt * 12);
+  }
+
+  // locked island walls
+  ISL.forEach(L => {
+    if (S.power >= L.req) return;
+    const dx = pos.x - L.x, dz = pos.z - L.z, d = Math.hypot(dx, dz), R = L.r + 1.5;
+    if (d < R && pos.y > L.y - 6) {
+      pos.x = L.x + dx / d * R; pos.z = L.z + dz / d * R;
+      msg('🔒 ' + L.name + ' needs ' + fmt(L.req) + ' Power! You have ' + fmt(S.power));
+    }
+  });
+
+  // gravity + landing
+  const prevY = pos.y;
+  vel.y -= 32 * dt;
+  pos.y += vel.y * dt;
+  onGround = false;
+  let best = null, bestY = -Infinity;
+  for (const s of surfaces) {
+    if (!inside(s, pos.x, pos.z)) continue;
+    const t = surfTop(s);
+    if (prevY >= t - 0.6 && pos.y <= t + 0.05 && t > bestY) { best = s; bestY = t; }
+  }
+  if (best && vel.y <= 0) { pos.y = bestY; vel.y = 0; onGround = true; groundSurf = best; }
+  else groundSurf = null;
+
+  if (groundSurf && groundSurf.type === 'circle' && curIsl !== groundSurf.isl) {
+    curIsl = groundSurf.isl; S.check = curIsl;
+    $('where').textContent = ISL[curIsl].name + '  ·  ×' + ISL[curIsl].mult + ' chi';
+    msg('Welcome to ' + ISL[curIsl].name + '! Chi ×' + ISL[curIsl].mult, true);
+    save();
+  }
+  if (pos.y < -40) {
+    const C = ISL[S.check];
+    pos.set(C.x, C.y + 0.1, C.z + 6); vel.set(0, 0, 0);
+    msg('Whoops! Back to ' + C.name);
+  }
+
+  // sell pad
+  const I = ISL[curIsl];
+  if (onGround && Math.abs(pos.x - I.pad.x) < 1.8 && Math.abs(pos.z - I.pad.z) < 1.8 && S.chi > 0) {
+    S.coins += S.chi; pop('+' + fmt(S.chi) + ' 🪙', true); S.chi = 0; hud(); save();
+  }
+
+  // orbs
+  headPos.set(pos.x, pos.y + 1.5, pos.z);
+  orbs.forEach(o => {
+    if (!o.m.visible) { o.t += dt; if (o.t > 8) placeOrb(o); return; }
+    o.m.rotation.y += dt * 2; o.m.position.y = ISL[o.isl].y + 1 + Math.sin(elapsed * 3 + o.isl) * 0.2;
+    if (o.m.position.distanceTo(headPos) < 1.9) {
+      o.m.visible = false; S.coins += ISL[o.isl].orb; pop('+' + ISL[o.isl].orb + ' 🪙', true); hud();
+    }
+  });
+
+  // statue
+  if (!S.won && pos.distanceTo(statue.position) < 3) { S.won = true; save(); $('win').classList.add('open'); }
+  statue.rotation.y += dt * 0.5;
+
+  // swing + auto + pets
+  swingCD -= dt;
+  if (S.auto) { autoT -= dt; if (autoT <= 0) { autoT = SWING_TIME + 0.02; if (S.chi < cap()) swing(); } }
+  if (swingT > 0) { swingT -= dt; const p = 1 - swingT / SWING_TIME; armR.rotation.x = -Math.sin(p * Math.PI) * 2.4; }
+  else armR.rotation.x = 0;
+
+  if (S.pets.length) {
+    petAcc += dt;
+    if (petAcc >= 1) {
+      petAcc -= 1;
+      const cps = S.pets.reduce((a, i) => a + PETS[i].cps, 0) * ISL[curIsl].mult;
+      addChi(cps); hud();
+    }
+  }
+  petMeshes.forEach((p, i) => {
+    const a = ninja.rotation.y + Math.PI + (i - (petMeshes.length - 1) / 2) * 0.7;
+    const tx = pos.x + Math.sin(a) * 2.6, tz = pos.z + Math.cos(a) * 2.6;
+    const fly = S.pets[i] >= 3 ? 1.5 : 0;
+    p.position.x += (tx - p.position.x) * Math.min(1, dt * 6);
+    p.position.z += (tz - p.position.z) * Math.min(1, dt * 6);
+    p.position.y += (pos.y + 0.4 + fly + Math.abs(Math.sin(elapsed * 6 + i)) * 0.3 - p.position.y) * Math.min(1, dt * 8);
+    p.rotation.y = ninja.rotation.y;
+  });
+
+  // ninja animation
+  ninja.position.copy(pos);
+  const walk = moving && onGround ? Math.sin(elapsed * 12) * 0.6 : 0;
+  legL.rotation.x = walk; legR.rotation.x = -walk; armL.rotation.x = -walk;
+  tail1.rotation.y = Math.sin(elapsed * 8) * 0.3; tail2.rotation.y = -Math.sin(elapsed * 7) * 0.3;
+
+  clouds.forEach((c, i) => { c.position.x += dt * (0.5 + (i % 3) * 0.3); if (c.position.x > 110) c.position.x = -110; });
+
+  // camera
+  const cp = Math.cos(pitch);
+  camera.position.set(pos.x + Math.sin(yaw) * cp * camDist, pos.y + 2 + Math.sin(pitch) * camDist, pos.z + Math.cos(yaw) * cp * camDist);
+  camera.lookAt(pos.x, pos.y + 2.2, pos.z);
+  sun.position.set(pos.x + 30, pos.y + 60, pos.z + 20); sun.target.position.copy(pos);
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, clock.getDelta());
+  if (!$('shop').classList.contains('open')) update(dt);
+  renderer.render(scene, camera);
+}
+refreshLocks(); hud();
+$('where').textContent = ISL[curIsl].name + '  ·  ×' + ISL[curIsl].mult + ' chi';
+if (S.power === 0) setTimeout(() => msg('🥷 Click to swing your sword and collect Chi!', true), 600);
+loop();
+</script>
+</body>
+</html>
