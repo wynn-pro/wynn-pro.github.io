@@ -320,10 +320,8 @@
   function redeem() {
     const c = codeIn.value.trim();
     if (!c) return;
-    if (!Array.isArray(S.codes)) S.codes = [];
     if (!(c in CODES)) { toast('❌ That code doesn\'t work.'); return; }
-    if (S.codes.includes(c)) { toast('✅ You already used that code!'); return; }
-    S.codes.push(c); S.robux += CODES[c]; codeIn.value = '';
+    S.robux += CODES[c]; codeIn.value = '';
     save(); renderShop(); renderMenu();
     toast(`🎁 Code redeemed! <b>+${CODES[c].toLocaleString()} Robux!</b>`);
   }
