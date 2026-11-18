@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Space Coin Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #05030f; font-family: 'Fredoka', sans-serif; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas { display: block; }
+  .hud { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; align-items: center; z-index: 5; flex-wrap: wrap; pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .pill { background: #120a2ccc; border: 2px solid #ffffff30; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .bar { width: 110px; height: 12px; background: #ffffff22; border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#ff4d4d,#ffb84d,#ffee4d,#4dff88,#4dc3ff,#b24dff); transition: width .15s; }
+  .bar.full i { animation: blink .5s infinite alternate; }
+  @keyframes blink { to { opacity: .35; } }
+  button, a.back { font-family: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; color: #fff; text-decoration: none; }
+  .shop-btn { background: linear-gradient(90deg,#ff4d8d,#ffb84d); color: #2a0b2a; box-shadow: 0 3px 0 #a0305a; }
+  a.back { background: #ffffff22; }
+  .spacer { flex: 1; }
+  #mult { font-size: 15px; }
+
+  #toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #120a2ee6; border: 2px solid #ffd447; border-radius: 14px; padding: 8px 18px; font-size: 20px; font-weight: 700; z-index: 6; opacity: 0; transition: opacity .25s; pointer-events: none; text-align: center; }
+  #toast.show { opacity: 1; }
+  #hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 14px; opacity: .75; z-index: 4; text-align: center; pointer-events: none; width: 90%; }
+
+  /* touch controls */
+  #stick { position: fixed; left: 24px; bottom: 40px; width: 120px; height: 120px; border-radius: 50%; background: #ffffff18; border: 3px solid #ffffff40; z-index: 5; }
+  #knob { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: #ffffffaa; }
+  #jump { position: fixed; right: 28px; bottom: 50px; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg,#4dc3ff,#b24dff); font-size: 18px; z-index: 5; box-shadow: 0 5px 0 #4a2a8a; }
+  #jump:active { transform: translateY(3px); box-shadow: 0 2px 0 #4a2a8a; }
+
+  /* shop */
+  #shop { position: fixed; inset: 0; background: #000b; display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
+  #shop.open { display: flex; }
+  .panel { background: #f6f3ff; color: #1d1338; border-radius: 18px; width: min(760px, 100%); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px #000a; }
+  .panel header { background: linear-gradient(90deg,#ff4d4d,#ffb84d,#ffee4d,#4dff88,#4dc3ff,#b24dff); padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+  .panel header h2 { flex: 1; font-size: 24px; color: #1d1338; text-shadow: 0 1px 0 #fff8; }
+  .panel header .pill { background: #1d1338; border: none; }
+  .close { background: #1d1338; }
+  .items { padding: 14px; overflow-y: auto; }
+  .items h3 { margin: 6px 0 8px; font-size: 18px; }
+  .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .item { background: #fff; border: 2px solid #e2dcf5; border-radius: 14px; padding: 10px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+  .item .ico { font-size: 40px; height: 52px; display: flex; align-items: center; justify-content: center; }
+  .item b { font-size: 16px; }
+  .item small { color: #5a4f78; font-size: 13px; min-height: 32px; }
+  .item button { background: #7a3dff; box-shadow: 0 3px 0 #4b1fb0; }
+  .item button:disabled { background: #b9b2cc; box-shadow: none; cursor: default; }
+  .item.owned { border-color: #4dd68a; background: #effff5; }
+</style>
+</head>
+<body>
+<div class="hud">
+  <a class="back" href="../index.html">⬅ Home</a>
+  <div class="pill">💰 <span id="cash">0</span></div>
+  <div class="pill">🎒 <span id="bagTxt">0/10</span> <div class="bar" id="bar"><i id="barFill"></i></div></div>
+  <div class="pill" id="mult">✨ x1</div>
+  <div class="spacer"></div>
+  <button class="shop-btn" id="shopBtn">🛒 Shop</button>
+</div>
+<div id="toast"></div>
+<div id="hint">Walk into coins 🪙 → sell at the 🚀 SELL pad → buy cool stuff in the 🛒 Shop! &nbsp;WASD / arrows to move, Space to jump, drag to look around</div>
+<div id="stick"><div id="knob"></div></div>
+<button id="jump">JUMP</button>
+
+<div id="shop">
+  <div class="panel">
+    <header><h2>🛒 Space Shop</h2><div class="pill">💰 <span id="shopCash">0</span></div><button class="close" id="closeShop">✖</button></header>
+    <div class="items" id="items"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+// ---------- save data ----------
+const BAGS = [ {cap:10, price:0, name:'Tiny Pouch', ico:'👝'}, {cap:30, price:25, name:'School Bag', ico:'🎒'}, {cap:100, price:150, name:'Space Bag', ico:'🧳'}, {cap:300, price:800, name:'Rocket Tank', ico:'🛢️'}, {cap:1000, price:4000, name:'Galaxy Vault', ico:'🌌'}, {cap:5000, price:20000, name:'Black Hole Bag', ico:'🕳️'} ];
+const SPEEDS = [ {spd:8, price:0, name:'Walking'}, {spd:11, price:40, name:'Jogging'}, {spd:14, price:200, name:'Running'}, {spd:18, price:900, name:'Zoomy'}, {spd:23, price:4000, name:'Super Zoom'}, {spd:30, price:15000, name:'Light Speed'} ];
+const PETS = [
+  {id:'baby', name:'Baby Dragon', price:50, mult:1, color:0x7ad94f, ico:'🐲', desc:'+1x coins. So cute!'},
+  {id:'fire', name:'Fire Dragon', price:400, mult:2, color:0xff5a2a, ico:'🔥', desc:'+2x coins. Hot hot hot!'},
+  {id:'ice', name:'Ice Dragon', price:2500, mult:4, color:0x6fd6ff, ico:'❄️', desc:'+4x coins. Brrr!'},
+  {id:'rainbow', name:'Rainbow Dragon', price:20000, mult:10, color:0xffffff, ico:'🌈', desc:'+10x coins. The best!'}
+];
+const JET_PRICE = 5000;
+
+let S = { cash:0, bag:0, bagLvl:0, spdLvl:0, pets:[], jet:false };
+try { const s = JSON.parse(localStorage.getItem('spaceCoinSim')); if (s) S = Object.assign(S, s); } catch(e) {}
+const save = () => { try { localStorage.setItem('spaceCoinSim', JSON.stringify(S)); } catch(e) {} };
+setInterval(save, 3000);
+const cap = () => BAGS[S.bagLvl].cap;
+const mult = () => 1 + S.pets.reduce((a,id) => a + PETS.find(p => p.id===id).mult, 0);
+const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e4 ? (n/1e3).toFixed(1)+'K' : String(Math.floor(n));
+
+// ---------- three setup ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07041a);
+scene.fog = new THREE.Fog(0x07041a, 90, 260);
+const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 1000);
+function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+
+scene.add(new THREE.HemisphereLight(0xbfa8ff, 0x302050, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(30, 60, 20); scene.add(sun);
+
+const box = (w,h,d,color,emissive) => new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshLambertMaterial({ color, emissive: emissive||0 }));
+
+// stars
+{ const g = new THREE.BufferGeometry(), pts = [];
+  for (let i=0;i<1500;i++){ const v = new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize(); v.multiplyScalar(300+Math.random()*100); pts.push(v.x, Math.abs(v.y)*0.9-20, v.z); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0xffffff, size:1.4, fog:false }))); }
+// planets
+[[ -150, 70, -200, 35, 0xff7ab8 ], [ 180, 50, -120, 22, 0x4dc3ff ], [ 60, 110, 230, 28, 0xffb84d ], [ -200, 30, 150, 16, 0x7affb2 ]].forEach(([x,y,z,r,c],i) => {
+  const p = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 20), new THREE.MeshLambertMaterial({ color:c, emissive:c, emissiveIntensity:0.35, fog:false }));
+  p.position.set(x,y,z); scene.add(p);
+  if (i===0) { const ring = new THREE.Mesh(new THREE.RingGeometry(r*1.4, r*2, 48), new THREE.MeshBasicMaterial({ color:0xffe08a, side:THREE.DoubleSide, transparent:true, opacity:.7, fog:false })); ring.position.copy(p.position); ring.rotation.x = 1.2; scene.add(ring); }
+});
+
+// moon ground
+const R = 55;
+const ground = new THREE.Mesh(new THREE.CylinderGeometry(R, R-3, 4, 64), new THREE.MeshLambertMaterial({ color:0x8c88a8 }));
+ground.position.y = -2; scene.add(ground);
+const rainbowCols = [0xff4d4d,0xffb84d,0xffee4d,0x4dff88,0x4dc3ff,0xb24dff];
+rainbowCols.forEach((c,i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(R+0.2, 0.35, 8, 80), new THREE.MeshBasicMaterial({ color:c })); r.rotation.x = Math.PI/2; r.position.y = -0.2 - i*0.55; scene.add(r); });
+for (let i=0;i<40;i++){ const a = Math.random()*6.28, d = 8 + Math.random()*(R-12), cr = 1 + Math.random()*3;
+  const c = new THREE.Mesh(new THREE.CircleGeometry(cr, 20), new THREE.MeshLambertMaterial({ color:0x6f6b8c })); c.rotation.x = -Math.PI/2; c.position.set(Math.cos(a)*d, 0.02, Math.sin(a)*d); scene.add(c); }
+
+// label sprites
+function label(text, color) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const x = cv.getContext('2d');
+  x.font = 'bold 72px Fredoka, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.lineWidth = 12; x.strokeStyle = '#1d1338'; x.strokeText(text, 256, 64); x.fillStyle = color; x.fillText(text, 256, 64);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent:true })); s.scale.set(8, 2, 1); return s;
+}
+
+// pads
+const SELL = new THREE.Vector3(0, 0, -14), SHOP = new THREE.Vector3(14, 0, -14);
+function pad(pos, color, text) {
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 0.4, 32), new THREE.MeshLambertMaterial({ color, emissive:color, emissiveIntensity:.5 }));
+  p.position.set(pos.x, 0.2, pos.z); scene.add(p);
+  const l = label(text, '#fff'); l.position.set(pos.x, 6, pos.z); scene.add(l); return p;
+}
+const sellPad = pad(SELL, 0x4dff88, '🚀 SELL');
+pad(SHOP, 0xff4d8d, '🛒 SHOP');
+// rocket next to sell pad
+{ const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,6,16), new THREE.MeshLambertMaterial({ color:0xf2f2ff })); body.position.y = 3; g.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.2,2.2,16), new THREE.MeshLambertMaterial({ color:0xff4d4d })); nose.position.y = 7.1; g.add(nose);
+  const win = new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.3,16), new THREE.MeshLambertMaterial({ color:0x4dc3ff, emissive:0x2266aa })); win.rotation.x = Math.PI/2; win.position.set(0,4.3,1.15); g.add(win);
+  [0,2.09,4.19].forEach(a => { const f = box(.2,2,1.4,0xff4d4d); f.position.set(Math.sin(a)*1.3,1,Math.cos(a)*1.3); f.rotation.y = a; g.add(f); });
+  g.position.set(-6, 0, -16); scene.add(g); }
+
+// platforms: spiral of space rocks up to the Sky Island
+const plats = [];
+function addPlat(x,y,z,w,d,color) {
+  const m = box(w, 1, d, color); m.position.set(x, y-0.5, z); scene.add(m);
+  plats.push({ x, z, w, d, y });
+}
+const SPIRAL_R = 30;
+for (let i=0;i<12;i++){ const a = i*0.2 + 0.6; addPlat(Math.cos(a)*SPIRAL_R, 1.8 + i*1.9, Math.sin(a)*SPIRAL_R, 4.5, 4.5, rainbowCols[i%6]); }
+const ia = 12*0.2 + 0.6, ISLAND = new THREE.Vector3(Math.cos(ia)*(SPIRAL_R-8), 1.8+12*1.9, Math.sin(ia)*(SPIRAL_R-8));
+addPlat(ISLAND.x, ISLAND.y, ISLAND.z, 16, 16, 0xd8c8ff);
+{ const l = label('🌈 SKY ISLAND', '#ffee4d'); l.position.set(ISLAND.x, ISLAND.y+7, ISLAND.z); scene.add(l); }
+
+// ---------- player (blocky) ----------
+const player = new THREE.Group();
+const legL = box(.5,.8,.5,0x3b4a9a), legR = box(.5,.8,.5,0x3b4a9a);
+const legPivotL = new THREE.Group(), legPivotR = new THREE.Group();
+legL.position.y = -.4; legR.position.y = -.4; legPivotL.add(legL); legPivotR.add(legR);
+legPivotL.position.set(-.26,.8,0); legPivotR.position.set(.26,.8,0); player.add(legPivotL, legPivotR);
+rainbowCols.forEach((c,i) => { const s = box(1.04, 1/6, .54, c); s.position.y = .8 + (5-i)/6 + 1/12; player.add(s); });
+const armPivotL = new THREE.Group(), armPivotR = new THREE.Group();
+const armL = box(.42,.95,.42,0xe8b58a), armR = box(.42,.95,.42,0xe8b58a); armL.position.y = -.42; armR.position.y = -.42;
+armPivotL.add(armL); armPivotR.add(armR); armPivotL.position.set(-.74,1.72,0); armPivotR.position.set(.74,1.72,0); player.add(armPivotL, armPivotR);
+const head = box(.8,.8,.8,0xe8b58a); head.position.y = 2.2; player.add(head);
+const hair = box(.84,.22,.84,0x5a3518); hair.position.y = 2.55; player.add(hair);
+[-.18,.18].forEach(x => { const e = box(.14,.14,.05,0x1d1338); e.position.set(x,2.25,.41); player.add(e); });
+const mouth = box(.3,.07,.05,0x8a3a3a); mouth.position.set(0,2.02,.41); player.add(mouth);
+// jetpack
+const jetpack = new THREE.Group();
+[-.22,.22].forEach(x => { const tk = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.8,12), new THREE.MeshLambertMaterial({ color:0xd0d0e8 })); tk.position.set(x,1.35,-.45); jetpack.add(tk);
+  const n = new THREE.Mesh(new THREE.ConeGeometry(.2,.3,12), new THREE.MeshLambertMaterial({ color:0xff4d8d })); n.position.set(x,1.85,-.45); jetpack.add(n); });
+player.add(jetpack);
+scene.add(player);
+
+const P = { pos: new THREE.Vector3(0,0,0), vy: 0, grounded: true, walk: 0 };
+
+// ---------- pets ----------
+const petMeshes = [];
+function makeDragon(def) {
+  const g = new THREE.Group(), mat = new THREE.MeshLambertMaterial({ color:def.color }), dark = new THREE.MeshLambertMaterial({ color: new THREE.Color(def.color).multiplyScalar(.6) });
+  const b = new THREE.Mesh(new THREE.BoxGeometry(.7,.6,.9), mat); g.add(b);
+  const h = new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.55), mat); h.position.set(0,.4,.55); g.add(h);
+  const snout = new THREE.Mesh(new THREE.BoxGeometry(.35,.25,.25), mat); snout.position.set(0,.32,.9); g.add(snout);
+  [-.14,.14].forEach(x => { const e = box(.1,.12,.04,0x1d1338); e.position.set(x,.48,.83); g.add(e);
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(.07,.25,6), new THREE.MeshLambertMaterial({ color:0xfff3c4 })); horn.position.set(x,.75,.45); g.add(horn); });
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(.25,.25,.7), dark); tail.position.set(0,0,-.75); g.add(tail);
+  const wl = new THREE.Group(), wr = new THREE.Group();
+  const wmL = new THREE.Mesh(new THREE.BoxGeometry(.9,.06,.5), dark), wmR = wmL.clone();
+  wmL.position.x = -.45; wmR.position.x = .45; wl.add(wmL); wr.add(wmR);
+  wl.position.set(-.3,.25,0); wr.position.set(.3,.25,0); g.add(wl, wr);
+  g.userData = { wl, wr, mat, def };
+  scene.add(g); return g;
+}
+function refreshPets() {
+  petMeshes.forEach(m => scene.remove(m)); petMeshes.length = 0;
+  S.pets.forEach(id => { const m = makeDragon(PETS.find(p => p.id===id)); m.position.copy(P.pos); petMeshes.push(m); });
+}
+
+// ---------- coins ----------
+const coinGeo = new THREE.CylinderGeometry(.5,.5,.12,20); coinGeo.rotateX(Math.PI/2);
+const bigGeo = new THREE.CylinderGeometry(.9,.9,.2,24); bigGeo.rotateX(Math.PI/2);
+const goldMat = new THREE.MeshLambertMaterial({ color:0xffd23f, emissive:0x7a5200 });
+const silverMat = new THREE.MeshLambertMaterial({ color:0x9fe8ff, emissive:0x1a5a7a });
+const rainbowMat = new THREE.MeshLambertMaterial({ color:0xff4d4d, emissive:0x552222 });
+const coins = [];
+function spawnCoin(kind) {
+  let pos, value, mesh;
+  if (kind === 'ground') {
+    do { const a = Math.random()*6.28, d = 4 + Math.random()*(R-7); pos = new THREE.Vector3(Math.cos(a)*d, 1, Math.sin(a)*d); }
+    while (pos.distanceTo(SELL) < 5 || pos.distanceTo(SHOP) < 5);
+    value = 1; mesh = new THREE.Mesh(coinGeo, goldMat);
+  } else if (kind === 'rock') {
+    const p = plats[Math.floor(Math.random()*(plats.length-1))];
+    pos = new THREE.Vector3(p.x, p.y+1, p.z); value = 5; mesh = new THREE.Mesh(coinGeo, silverMat); mesh.scale.setScalar(1.3);
+  } else {
+    pos = new THREE.Vector3(ISLAND.x + (Math.random()-.5)*13, ISLAND.y+1.3, ISLAND.z + (Math.random()-.5)*13);
+    value = 25; mesh = new THREE.Mesh(bigGeo, rainbowMat);
+  }
+  mesh.position.copy(pos); mesh.rotation.y = Math.random()*6; scene.add(mesh);
+  coins.push({ mesh, value, kind, base: pos.y, phase: Math.random()*6 });
+}
+const WANT = { ground: 45, rock: 6, island: 10 };
+const count = k => coins.reduce((a,c) => a + (c.kind===k), 0);
+Object.keys(WANT).forEach(k => { for (let i=0;i<WANT[k];i++) spawnCoin(k); });
+
+// ---------- rainbow trail particles ----------
+const parts = [];
+const partGeo = new THREE.BoxGeometry(.25,.25,.25);
+for (let i=0;i<80;i++){ const m = new THREE.Mesh(partGeo, new THREE.MeshBasicMaterial({ color:rainbowCols[i%6], transparent:true })); m.visible = false; scene.add(m); parts.push({ m, life:0, v:new THREE.Vector3() }); }
+let partIdx = 0;
+function puff(pos, n, spread, up) {
+  for (let i=0;i<n;i++){ const p = parts[partIdx++ % parts.length]; p.m.visible = true; p.life = 1; p.m.position.copy(pos);
+    p.v.set((Math.random()-.5)*spread, up + (Math.random()-.5)*spread, (Math.random()-.5)*spread); }
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+let toastT;
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1600); }
+function updateHUD() {
+  $('cash').textContent = fmt(S.cash); $('shopCash').textContent = fmt(S.cash);
+  $('bagTxt').textContent = fmt(S.bag) + '/' + fmt(cap());
+  $('barFill').style.width = Math.min(100, S.bag/cap()*100) + '%';
+  $('bar').classList.toggle('full', S.bag >= cap());
+  $('mult').textContent = '✨ x' + mult();
+  jetpack.visible = S.jet;
+}
+function card(ico, name, desc, price, state, onBuy) {
+  const d = document.createElement('div'); d.className = 'item' + (state==='owned' ? ' owned' : '');
+  d.innerHTML = `<div class="ico">${ico}</div><b>${name}</b><small>${desc}</small>`;
+  const b = document.createElement('button');
+  if (state === 'owned') { b.textContent = '✅ Owned'; b.disabled = true; }
+  else if (state === 'max') { b.textContent = '⭐ MAX'; b.disabled = true; }
+  else { b.textContent = '💰 ' + fmt(price); if (S.cash < price) b.disabled = true; b.onclick = () => { if (S.cash >= price) { S.cash -= price; onBuy(); save(); renderShop(); updateHUD(); } }; }
+  d.appendChild(b); return d;
+}
+function renderShop() {
+  const el = $('items'); el.innerHTML = '';
+  const section = (title) => { const h = document.createElement('h3'); h.textContent = title; el.appendChild(h); const r = document.createElement('div'); r.className = 'row'; el.appendChild(r); return r; };
+  let r = section('🎒 Backpacks (carry more coins)');
+  const nb = BAGS[S.bagLvl+1];
+  r.appendChild(card(BAGS[S.bagLvl].ico, 'Now: ' + BAGS[S.bagLvl].name, 'Holds ' + fmt(cap()) + ' coins', 0, 'owned'));
+  if (nb) r.appendChild(card(nb.ico, nb.name, 'Holds ' + fmt(nb.cap) + ' coins!', nb.price, 'buy', () => { S.bagLvl++; toast('🎒 New backpack!'); }));
+  else r.appendChild(card('🏆', 'All bags', 'You have the biggest bag!', 0, 'max'));
+  r = section('⚡ Speed (run faster)');
+  const ns = SPEEDS[S.spdLvl+1];
+  r.appendChild(card('👟', 'Now: ' + SPEEDS[S.spdLvl].name, 'Speed ' + SPEEDS[S.spdLvl].spd, 0, 'owned'));
+  if (ns) r.appendChild(card('⚡', ns.name, 'Speed ' + ns.spd + '!', ns.price, 'buy', () => { S.spdLvl++; toast('⚡ Zoom zoom!'); }));
+  else r.appendChild(card('🏆', 'Light Speed', 'You are the fastest!', 0, 'max'));
+  r = section('🐉 Baby Dragon Pets (more coins + grab coins near you)');
+  PETS.forEach(p => r.appendChild(card(p.ico, p.name, p.desc, p.price, S.pets.includes(p.id) ? 'owned' : 'buy', () => { S.pets.push(p.id); refreshPets(); toast(p.ico + ' ' + p.name + ' joined you!'); })));
+  r = section('🌈 Super Special');
+  r.appendChild(card('🚀', 'Rainbow Jetpack', 'Hold JUMP in the air to FLY! Reach the Sky Island 🌈', JET_PRICE, S.jet ? 'owned' : 'buy', () => { S.jet = true; toast('🌈 RAINBOW JETPACK! Hold jump to fly!'); }));
+}
+let shopOpen = false;
+function openShop() { shopOpen = true; renderShop(); $('shop').classList.add('open'); }
+function closeShop() { shopOpen = false; $('shop').classList.remove('open'); }
+$('shopBtn').onclick = openShop; $('closeShop').onclick = closeShop;
+$('shop').addEventListener('pointerdown', e => { if (e.target.id === 'shop') closeShop(); });
+
+// ---------- input ----------
+const keys = {};
+let jumpHeld = false, jumpPressed = false;
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') { if (!jumpHeld) jumpPressed = true; jumpHeld = true; e.preventDefault(); }
+  if (e.code === 'Escape') closeShop();
+  if (e.code === 'KeyB') shopOpen ? closeShop() : openShop();
+});
+addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; });
+const jb = $('jump');
+jb.addEventListener('pointerdown', e => { e.preventDefault(); jumpPressed = true; jumpHeld = true; });
+['pointerup','pointercancel','pointerleave'].forEach(ev => jb.addEventListener(ev, () => jumpHeld = false));
+
+let stick = { id:null, x:0, y:0 };
+const stickEl = $('stick'), knob = $('knob');
+stickEl.addEventListener('pointerdown', e => { stick.id = e.pointerId; stickEl.setPointerCapture(e.pointerId); moveStick(e); });
+stickEl.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
+const endStick = e => { if (e.pointerId === stick.id) { stick = { id:null, x:0, y:0 }; knob.style.transform = ''; } };
+stickEl.addEventListener('pointerup', endStick); stickEl.addEventListener('pointercancel', endStick);
+function moveStick(e) {
+  const r = stickEl.getBoundingClientRect(); let dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
+  const L = Math.hypot(dx,dy), M = 45; if (L > M) { dx *= M/L; dy *= M/L; }
+  stick.x = dx/M; stick.y = dy/M; knob.style.transform = `translate(${dx}px,${dy}px)`;
+}
+
+let camYaw = 0, camPitch = 0.35, camDist = 13, drag = null;
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => { drag = { id:e.pointerId, x:e.clientX, y:e.clientY }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return;
+  camYaw -= (e.clientX - drag.x) * 0.008; camPitch = Math.max(0.05, Math.min(1.2, camPitch + (e.clientY - drag.y) * 0.005));
+  drag.x = e.clientX; drag.y = e.clientY; });
+cv.addEventListener('pointerup', () => drag = null); cv.addEventListener('pointercancel', () => drag = null);
+cv.addEventListener('wheel', e => { camDist = Math.max(6, Math.min(30, camDist + e.deltaY*0.01)); }, { passive:true });
+
+// ---------- game loop ----------
+let last = performance.now(), t = 0, onShop = false, fullWarn = 0, jetT = 0;
+refreshPets(); updateHUD();
+
+function groundHeight(x, z, fromY) {
+  // highest surface at or below where the feet were last frame
+  let best = -Infinity;
+  if (Math.hypot(x, z) < R && fromY >= -0.01) best = 0;
+  for (const p of plats) if (Math.abs(x-p.x) < p.w/2+.3 && Math.abs(z-p.z) < p.d/2+.3 && fromY >= p.y - 0.01 && p.y > best) best = p.y;
+  return best;
+}
+
+function frame(now) {
+  const dt = Math.min(0.05, (now - last)/1000); last = now; t += dt;
+
+  // movement input
+  let ix = 0, iz = 0;
+  if (!shopOpen) {
+    if (keys.KeyW || keys.ArrowUp) iz -= 1; if (keys.KeyS || keys.ArrowDown) iz += 1;
+    if (keys.KeyA || keys.ArrowLeft) ix -= 1; if (keys.KeyD || keys.ArrowRight) ix += 1;
+    ix += stick.x; iz += stick.y;
+  }
+  const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
+  const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
+  const mx = ix*cos + iz*sin, mz = -ix*sin + iz*cos;
+  const spd = SPEEDS[S.spdLvl].spd;
+  P.pos.x += mx*spd*dt; P.pos.z += mz*spd*dt;
+  if (il > 0.1) { const target = Math.atan2(mx, mz); let d = target - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); player.rotation.y += d*Math.min(1, dt*12); P.walk += dt*spd*1.1; }
+  else P.walk *= 0.85;
+
+  // jump / jetpack / gravity
+  if (jumpPressed && P.grounded && !shopOpen) { P.vy = 12; P.grounded = false; }
+  jumpPressed = false;
+  const flying = S.jet && jumpHeld && !P.grounded && !shopOpen;
+  if (flying) { P.vy = Math.min(P.vy + 55*dt, 11); jetT += dt; if (jetT > 0.03) { jetT = 0; const back = new THREE.Vector3(0,1.2,-.6).applyAxisAngle(new THREE.Vector3(0,1,0), player.rotation.y).add(P.pos); puff(back, 2, 1.2, -4); } }
+  P.vy -= 30*dt;
+  const prevY = P.pos.y;
+  P.pos.y += P.vy*dt;
+  const gh = groundHeight(P.pos.x, P.pos.z, prevY);
+  if (P.vy <= 0 && P.pos.y <= gh) { P.pos.y = gh; P.vy = 0; P.grounded = true; }
+  else if (P.pos.y > gh + 0.05) P.grounded = false;
+  if (P.pos.y < -40) { P.pos.set(0, 0, 0); P.vy = 0; toast('🌌 Whoops! Back to base'); }
+
+  // animate player
+  player.position.copy(P.pos);
+  const sw = Math.sin(P.walk) * Math.min(1, il) * 0.8;
+  legPivotL.rotation.x = sw; legPivotR.rotation.x = -sw; armPivotL.rotation.x = -sw; armPivotR.rotation.x = sw;
+  if (!P.grounded) { armPivotL.rotation.x = armPivotR.rotation.x = flying ? -0.3 : -2.6; }
+
+  // pads
+  const nowSell = Math.hypot(P.pos.x-SELL.x, P.pos.z-SELL.z) < 3.5 && P.pos.y < 1;
+  if (nowSell && S.bag > 0) { const got = S.bag; S.cash += got; S.bag = 0; toast('💰 +' + fmt(got) + ' sold!'); puff(new THREE.Vector3(SELL.x, 1, SELL.z), 30, 8, 6); save(); }
+  const nowShop = Math.hypot(P.pos.x-SHOP.x, P.pos.z-SHOP.z) < 3.5 && P.pos.y < 1;
+  if (nowShop && !onShop) openShop();
+  onShop = nowShop;
+  sellPad.material.emissiveIntensity = 0.4 + Math.sin(t*4)*0.25;
+
+  // rainbow material
+  rainbowMat.color.setHSL((t*0.4)%1, 1, .6); rainbowMat.emissive.setHSL((t*0.4)%1, 1, .2);
+
+  // pets follow
+  const radius = S.pets.length ? 4 + S.pets.length*1.5 : 1.6;
+  petMeshes.forEach((m, i) => {
+    const a = player.rotation.y + Math.PI + (i - (petMeshes.length-1)/2) * 0.9;
+    const target = new THREE.Vector3(P.pos.x + Math.sin(a)*2.4, P.pos.y + 2.2 + Math.sin(t*3+i)*.3, P.pos.z + Math.cos(a)*2.4);
+    m.position.lerp(target, Math.min(1, dt*5));
+    m.rotation.y += (Math.atan2(Math.sin(player.rotation.y - m.rotation.y), Math.cos(player.rotation.y - m.rotation.y))) * Math.min(1, dt*5);
+    const f = Math.sin(t*14 + i)*0.6; m.userData.wl.rotation.z = f; m.userData.wr.rotation.z = -f;
+    if (m.userData.def.id === 'rainbow') m.userData.mat.color.setHSL((t*0.5)%1, .9, .6);
+  });
+
+  // coins
+  const full = S.bag >= cap();
+  for (let i = coins.length-1; i >= 0; i--) {
+    const c = coins[i];
+    c.mesh.rotation.y += dt*3; c.mesh.position.y = c.base + Math.sin(t*2 + c.phase)*0.2;
+    const dx = P.pos.x - c.mesh.position.x, dy = (P.pos.y+1) - c.mesh.position.y, dz = P.pos.z - c.mesh.position.z;
+    const d = Math.hypot(dx, dy, dz);
+    if (!full && d < radius && d > 1.4 && S.pets.length) { const k = Math.min(1, dt*8); c.mesh.position.x += dx*k; c.base += dy*k; c.mesh.position.z += dz*k; }
+    if (d < 1.6) {
+      if (full) { if (t - fullWarn > 2) { fullWarn = t; toast('🎒 Bag full! Go to 🚀 SELL'); } continue; }
+      S.bag = Math.min(cap(), S.bag + c.value * mult());
+      puff(c.mesh.position, c.value > 1 ? 10 : 4, 3, 3);
+      scene.remove(c.mesh); coins.splice(i, 1);
+      if (c.value >= 25) toast('🌈 +' + fmt(c.value*mult()) + ' RAINBOW COIN!');
+    }
+  }
+  Object.keys(WANT).forEach(k => { if (count(k) < WANT[k] && Math.random() < dt*4) spawnCoin(k); });
+
+  // particles
+  parts.forEach(p => { if (p.life <= 0) return; p.life -= dt*1.6; p.v.y -= 6*dt; p.m.position.addScaledVector(p.v, dt); p.m.material.opacity = Math.max(0,p.life); p.m.scale.setScalar(Math.max(0.01,p.life)); if (p.life <= 0) p.m.visible = false; });
+
+  // camera
+  const target = new THREE.Vector3(P.pos.x, P.pos.y + 2, P.pos.z);
+  camera.position.set(target.x + Math.sin(camYaw)*Math.cos(camPitch)*camDist, target.y + Math.sin(camPitch)*camDist, target.z + Math.cos(camYaw)*Math.cos(camPitch)*camDist);
+  camera.lookAt(target);
+
+  updateHUD();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
