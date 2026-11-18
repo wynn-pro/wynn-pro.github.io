@@ -55,6 +55,26 @@
   #toast.show { opacity: 1; }
   .help { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 13px; opacity: .7; z-index: 4; white-space: nowrap; }
   body.touch .help { display: none; }
+
+  /* main menu */
+  .menu-btn { background: #0a7cff; box-shadow: 0 3px 0 #0058b8; }
+  #menu { position: fixed; inset: 0; z-index: 15; display: none; align-items: center; justify-content: center; padding: 16px; background: radial-gradient(circle at 50% 20%, #2b5a8a, #0d1622 75%); overflow-y: auto; }
+  #menu.open { display: flex; }
+  .mbox { width: min(760px, 100%); display: flex; flex-direction: column; gap: 14px; margin: auto; }
+  .mtitle { text-align: center; font-size: clamp(34px, 8vw, 58px); color: #ffd84d; text-shadow: 0 4px 0 #b07c00, 0 8px 20px #000a; letter-spacing: 1px; }
+  .mrow { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .msec { background: #0f1720cc; border: 2px solid #ffffff22; border-radius: 18px; padding: 12px; }
+  .msec h3 { font-size: 18px; margin-bottom: 10px; color: #cfe3ff; }
+  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .gtile { background: #1f3550; border: 3px solid #ffffff22; border-radius: 14px; padding: 12px 8px; text-align: center; color: #fff; font-size: 15px; display: flex; flex-direction: column; align-items: center; gap: 4px; box-shadow: 0 4px 0 #0008; transition: transform .1s; }
+  .gtile:hover { transform: translateY(-3px); border-color: #ffd84d; }
+  .gtile .gi { font-size: 36px; }
+  .gtile small { font-weight: 500; opacity: .75; font-size: 12px; }
+  .gtile.main { background: #2e7d32; border-color: #7dff7d; }
+  .speeds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .speeds button { background: #1f3550; border: 3px solid transparent; border-radius: 12px; padding: 10px 4px; font-size: 15px; }
+  .speeds button.on { border-color: #ffd84d; background: #b2400a; }
+  .bigshop { width: 100%; font-size: 20px; padding: 14px; border-radius: 14px; }
 </style>
 </head>
 <body>
@@ -63,10 +83,36 @@
   <div class="pill"><span class="rbx"></span><span id="robux">0</span></div>
   <div class="pill" id="goal">Step on the green pad!</div>
   <div class="spacer"></div>
+  <button class="menu-btn" id="menuBtn">☰ Menu</button>
   <button class="shop-btn" id="shopBtn">🛒 Shop</button>
 </div>
 <div id="wrap"><canvas id="game"></canvas></div>
-<div class="help">Move: WASD / arrows · Jump: Space · Swing sword: E · Shop: B</div>
+<div class="help">Move: WASD / arrows · Jump: Space · Swing sword: E · Shop: B · Menu: M</div>
+
+<div id="menu" class="open">
+  <div class="mbox">
+    <div class="mtitle">ROBLOX TYCOON</div>
+    <div class="mrow"><div class="pill"><span class="rbx"></span><span id="menuRobux">0</span> Robux</div></div>
+    <div class="msec">
+      <h3>🎮 Choose what to play</h3>
+      <div class="games">
+        <button class="gtile main" id="playTycoon"><span class="gi">🟩</span>My Tycoon<small>Build &amp; earn Robux</small></button>
+        <a class="gtile" href="../space-coin-sim-web/index.html?from=tycoon"><span class="gi">🚀</span>Space Coin Sim<small>Collect space coins</small></a>
+        <a class="gtile" href="../ninja-sky-sim-web/index.html"><span class="gi">🥷</span>Ninja Sky Sim<small>Swing for Chi</small></a>
+        <a class="gtile" href="../ninja-sky-obby-web/index.html"><span class="gi">☁️</span>Ninja Sky Obby<small>Jump the tower</small></a>
+        <a class="gtile" href="../block-tycoon-web/index.html"><span class="gi">⛏️</span>Block Tycoon<small>3D ore tycoon</small></a>
+      </div>
+    </div>
+    <div class="msec">
+      <h3>🛒 Buy with Robux</h3>
+      <button class="shop-btn bigshop" id="menuShop">Open Shop: hats, pets, gear &amp; ⚡ boosts</button>
+    </div>
+    <div class="msec">
+      <h3>⚡ Game speed</h3>
+      <div class="speeds" id="speeds"></div>
+    </div>
+  </div>
+</div>
 
 <div id="shop">
   <div class="panel">
@@ -132,10 +178,24 @@
       { id: 'coil', name: 'Gravity Coil', ico: '🌀', price: 150, slot: 'gear', desc: 'Low gravity. Long, floaty jumps.' },
       { id: 'magnet', name: 'Robux Magnet', ico: '🧲', price: 400, slot: 'gear', desc: 'Collects your cash from anywhere.' },
     ],
+    '⚡ Boosts': [
+      { id: 'cash2', name: '2x Robux', ico: '💵', price: 150, slot: 'boost', desc: 'Double all Robux you collect.' },
+      { id: 'turbo', name: 'Turbo Droppers', ico: '🏭', price: 400, slot: 'boost', desc: 'Droppers drop 2x faster.' },
+      { id: 'cash5', name: '5x Robux', ico: '💰', price: 2000, slot: 'boost', desc: '5x Robux! Stacks with 2x.' },
+      { id: 'hyper', name: 'Hyper Belt', ico: '🌪️', price: 3000, slot: 'boost', desc: 'Droppers drop 3x faster again!' },
+    ],
   };
   const ALL = Object.values(SHOP).flat();
   const byId = Object.fromEntries(ALL.map(i => [i.id, i]));
-  const MULTI = { gear: true };   // all owned gear works at once
+  const MULTI = { gear: true, boost: true };   // all owned gear & boosts work at once
+
+  // ---------- Game speed ----------
+  const SPEEDS = [
+    { id: 'normal', name: '🐢 Normal', f: 1 },
+    { id: 'fast', name: '🐇 Fast', f: 2 },
+    { id: 'super', name: '🚀 Super', f: 4 },
+    { id: 'extreme', name: '🔥 EXTREME', f: 8 },
+  ];
 
   // ---------- Tycoon build steps ----------
   const DROP_X = [140, 210, 280, 350, 500, 570];
@@ -158,7 +218,7 @@
 
   // ---------- Save ----------
   const KEY = 'robloxTycoonSave';
-  const fresh = () => ({ robux: 0, bank: 0, step: 0, owned: [], eq: {}, won: false });
+  const fresh = () => ({ robux: 0, bank: 0, step: 0, owned: [], eq: {}, won: false, speed: 'extreme' });
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
   if (!S.eq || typeof S.eq !== 'object') S.eq = {};
@@ -192,11 +252,16 @@
   let portalGo = false;
   const BELT = { x1: 110, x2: 760, y: 250, h: 50 };
 
-  function speed() { return 170 * (S.eq.speed === 'superspeed' ? 1.8 : S.eq.speed === 'boots' ? 1.35 : 1); }
+  function gameF() { return (SPEEDS.find(s => s.id === S.speed) || SPEEDS[3]).f; }
+  // player gets faster too, but capped so you can still steer
+  function speed() { return 170 * (1 + (gameF() - 1) * 0.25) * (S.eq.speed === 'superspeed' ? 1.8 : S.eq.speed === 'boots' ? 1.35 : 1); }
   function jumpV() { return S.eq.jump === 'superjump' ? 460 : S.eq.jump === 'jump' ? 360 : 280; }
   function gravity() { return has('coil') ? 420 : 1000; }
   function petBonus() { const p = byId[S.eq.pet]; return p ? p.bonus : 0; }
+  function cashMult() { return (has('cash2') ? 2 : 1) * (has('cash5') ? 5 : 1); }
+  function dropEvery() { return 2 / gameF() / (has('turbo') ? 2 : 1) / (has('hyper') ? 3 : 1); }
   function beltSpeed() { return built('belt') ? 120 : 65; }
+  function blockSpeed() { return beltSpeed() * Math.min(gameF(), 5); }
   function addFloat(x, y, text, color) { floats.push({ x, y, text, color: color || '#3ddc84', t: 1.2 }); }
 
   // ---------- Input ----------
@@ -205,10 +270,12 @@
   addEventListener('keydown', e => {
     const k = e.key.toLowerCase();
     if (shopEl.classList.contains('open')) { if (k === 'escape' || k === 'b') closeShop(); return; }
+    if (menuEl.classList.contains('open')) { if (k === 'escape' || k === 'm' || k === 'enter') startGame(); return; }
     keys[k] = true;
     if (k === ' ') { jumpQ = true; e.preventDefault(); }
     if (k === 'e') swingQ = true;
     if (k === 'b') openShop();
+    if (k === 'm' || k === 'escape') openMenu();
     if (k.startsWith('arrow')) e.preventDefault();
   });
   addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
@@ -237,7 +304,34 @@
   const tabsEl = document.getElementById('tabs'), itemsEl = document.getElementById('items');
   let tab = Object.keys(SHOP)[0];
   function openShop() { shopEl.classList.add('open'); renderShop(); }
-  function closeShop() { shopEl.classList.remove('open'); }
+  function closeShop() { shopEl.classList.remove('open'); renderMenu(); }
+
+  // ---------- Main menu ----------
+  const menuEl = document.getElementById('menu');
+  const speedsEl = document.getElementById('speeds');
+  let started = false;
+  function renderMenu() {
+    document.getElementById('menuRobux').textContent = S.robux.toLocaleString();
+    speedsEl.innerHTML = '';
+    SPEEDS.forEach(s => {
+      const b = document.createElement('button');
+      b.textContent = s.name; b.className = S.speed === s.id ? 'on' : '';
+      b.onclick = () => { S.speed = s.id; save(); renderMenu(); };
+      speedsEl.appendChild(b);
+    });
+  }
+  function openMenu() { for (const k in keys) keys[k] = false; menuEl.classList.add('open'); renderMenu(); }
+  function startGame() {
+    menuEl.classList.remove('open');
+    if (started) return;
+    started = true;
+    if (!S.step) toast('👋 Walk onto the green <b>FREE</b> pad to build your first dropper!');
+    else toast('👋 Welcome back! Your tycoon is saved.');
+  }
+  document.getElementById('menuBtn').onclick = openMenu;
+  document.getElementById('playTycoon').onclick = startGame;
+  document.getElementById('menuShop').onclick = openShop;
+  renderMenu();
   document.getElementById('shopBtn').onclick = openShop;
   document.getElementById('closeShop').onclick = closeShop;
   shopEl.addEventListener('pointerdown', e => { if (e.target === shopEl) closeShop(); });
@@ -297,7 +391,7 @@
   }
   function collect(auto) {
     if (S.bank <= 0) return;
-    const amt = Math.round(S.bank * (1 + petBonus()));
+    const amt = Math.round(S.bank * (1 + petBonus()) * cashMult());
     S.robux += amt; S.bank = 0;
     addFloat(auto ? P.x : COLLECT.x + 40, auto ? P.y - 80 : COLLECT.y - 10, `+${amt.toLocaleString()} R$`);
     save();
@@ -351,7 +445,7 @@
     onPadLast = onPad;
 
     if (P.z === 0 && P.x > COLLECT.x && P.x < COLLECT.x + COLLECT.w && P.y > COLLECT.y && P.y < COLLECT.y + COLLECT.h) collect(false);
-    if (has('magnet')) { magnetTimer -= dt; if (magnetTimer <= 0) { magnetTimer = 4; collect(true); } }
+    if (has('magnet')) { magnetTimer -= dt; if (magnetTimer <= 0) { magnetTimer = 4 / gameF(); collect(true); } }
 
     // space portal -> Space Coin Simulator
     if (!portalGo && P.z === 0 && P.x > PORTAL.x + 10 && P.x < PORTAL.x + PORTAL.w - 10 && P.y > PORTAL.y + 10 && P.y < PORTAL.y + PORTAL.h - 5) {
@@ -362,12 +456,12 @@
     DROP_X.forEach((x, i) => {
       if (!built('dropper', i)) return;
       timers[i] -= dt;
-      if (timers[i] <= 0) { timers[i] = 2; blocks.push({ x: x + 25, y: BELT.y + 25, v: DROP_VALUE[i], c: DROP_COLOR[i], s: 0, up: [false, false] }); }
+      if (timers[i] <= 0) { timers[i] = dropEvery(); blocks.push({ x: x + 25, y: BELT.y + 25, v: DROP_VALUE[i], c: DROP_COLOR[i], s: 0, up: [false, false] }); }
     });
     for (let i = blocks.length - 1; i >= 0; i--) {
       const b = blocks[i];
       b.s = Math.min(1, b.s + dt * 4);
-      b.x += beltSpeed() * dt;
+      b.x += blockSpeed() * dt;
       UPG_X.forEach((ux, k) => {
         if (!b.up[k] && b.x > ux && built('upgrader', k)) { b.up[k] = true; b.v *= k === 0 ? 2 : 3; b.c = k === 0 ? '#7dff7d' : '#b388ff'; }
       });
@@ -501,7 +595,7 @@
 
     rr(BELT.x1, BELT.y, BELT.x2 - BELT.x1 + 30, BELT.h, 6, '#263238');
     ctx.strokeStyle = '#455a64'; ctx.lineWidth = 3;
-    const off = (t / 1000 * beltSpeed()) % 30;
+    const off = (t / 1000 * blockSpeed()) % 30;
     for (let x = BELT.x1 + off; x < BELT.x2 + 20; x += 30) { ctx.beginPath(); ctx.moveTo(x, BELT.y + 6); ctx.lineTo(x + 10, BELT.y + 25); ctx.lineTo(x, BELT.y + 44); ctx.stroke(); }
 
     DROP_X.forEach((x, i) => {
@@ -584,12 +678,10 @@
   let last = performance.now();
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    if (!shopEl.classList.contains('open')) update(dt);
+    if (!shopEl.classList.contains('open') && !menuEl.classList.contains('open')) update(dt);
     draw(now);
     requestAnimationFrame(loop);
   }
-  if (!S.step) setTimeout(() => toast('👋 Walk onto the green <b>FREE</b> pad to build your first dropper!'), 500);
-  else toast('👋 Welcome back! Your tycoon is saved.');
   requestAnimationFrame(loop);
 })();
 </script>
