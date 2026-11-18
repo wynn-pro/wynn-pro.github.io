@@ -29,6 +29,10 @@
   .panel header h2 { flex: 1; font-size: 24px; color: #3a2600; }
   .panel header .pill { background: #3a2600; color: #fff; border: none; }
   .close { background: #3a2600; }
+  .code-row { display: flex; gap: 8px; padding: 10px 12px 0; }
+  .code-row input { flex: 1; min-width: 0; font-family: inherit; font-size: 16px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 2px solid #c9d2de; outline: none; color: #1b2633; user-select: text; -webkit-user-select: text; }
+  .code-row input:focus { border-color: #0a7cff; }
+  .code-row button { background: #9b30ff; box-shadow: 0 3px 0 #6a1bb8; }
   .tabs { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
   .tab { background: #dde3ec; color: #1b2633; border-radius: 12px 12px 0 0; }
   .tab.on { background: #fff; color: #0a7cff; }
@@ -121,6 +125,10 @@
       <div class="pill"><span class="rbx"></span><span id="shopRobux">0</span></div>
       <button class="close" id="closeShop">✕</button>
     </header>
+    <div class="code-row">
+      <input id="codeIn" placeholder="🎁 Enter code" autocomplete="off" inputmode="decimal">
+      <button id="codeBtn">Redeem</button>
+    </div>
     <div class="tabs" id="tabs"></div>
     <div class="items" id="items"></div>
   </div>
@@ -305,6 +313,22 @@
   let tab = Object.keys(SHOP)[0];
   function openShop() { shopEl.classList.add('open'); renderShop(); }
   function closeShop() { shopEl.classList.remove('open'); renderMenu(); }
+
+  // ---------- Codes ----------
+  const CODES = { '123.456': 1000000000 };
+  const codeIn = document.getElementById('codeIn');
+  function redeem() {
+    const c = codeIn.value.trim();
+    if (!c) return;
+    if (!Array.isArray(S.codes)) S.codes = [];
+    if (!(c in CODES)) { toast('❌ That code doesn\'t work.'); return; }
+    if (S.codes.includes(c)) { toast('✅ You already used that code!'); return; }
+    S.codes.push(c); S.robux += CODES[c]; codeIn.value = '';
+    save(); renderShop(); renderMenu();
+    toast(`🎁 Code redeemed! <b>+${CODES[c].toLocaleString()} Robux!</b>`);
+  }
+  document.getElementById('codeBtn').onclick = redeem;
+  codeIn.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') redeem(); if (e.key === 'Escape') closeShop(); });
 
   // ---------- Main menu ----------
   const menuEl = document.getElementById('menu');
