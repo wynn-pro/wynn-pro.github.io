@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Block Tycoon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #87cefa; color: #fff;
+    font-family: 'Fredoka', system-ui, sans-serif; touch-action: none; }
+  canvas { display: block; }
+  #hud { position: fixed; top: 10px; left: 10px; display: none; flex-direction: column; gap: 6px; z-index: 5; max-width: calc(100% - 120px); }
+  .pill { background: rgba(60,40,22,.85); border: 3px solid #5fae36; border-radius: 14px;
+    padding: 6px 14px; font-size: 18px; font-weight: 600; width: fit-content; max-width: 100%; }
+  #hName { color: #9be65a; font-size: 22px; }
+  #hCash { color: #ffe63c; font-size: 22px; }
+  #topbtns { position: fixed; top: 10px; right: 10px; display: none; gap: 8px; z-index: 5; }
+  #topbtns button { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #ffd84d;
+    background: rgba(10,25,45,.8); color: #fff; font-size: 19px; cursor: pointer; }
+  .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(5,15,30,.6); z-index: 10; padding: 16px; }
+  .overlay.show { display: flex; }
+  .panel { background: linear-gradient(#6b4a2b, #4a321c); border: 5px solid #5fae36; border-radius: 20px;
+    padding: 20px 26px; max-width: 560px; width: 100%; max-height: calc(100vh - 32px); overflow: auto;
+    box-shadow: 0 14px 44px rgba(0,0,0,.6); text-align: center; }
+  h1 { font-size: clamp(40px, 10vw, 66px); margin: 0; color: #9be65a; text-shadow: 0 5px 0 #2f5a17; line-height: 1.05; }
+  .sub { font-size: 18px; opacity: .92; margin: 8px 0 14px; }
+  input { font: 600 22px 'Fredoka', sans-serif; padding: 10px 14px; border-radius: 12px; border: 3px solid #5fae36;
+    width: 100%; max-width: 320px; text-align: center; -webkit-user-select: text; user-select: text; }
+  .big { margin-top: 14px; font-family: inherit; font-size: 26px; font-weight: 700; padding: 12px 42px; border-radius: 16px;
+    border: none; background: #4cd964; color: #08321a; cursor: pointer; box-shadow: 0 6px 0 #2a8a3e; }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 #2a8a3e; }
+  .help { font-size: 15px; opacity: .88; margin-top: 14px; line-height: 1.6; }
+  kbd { background: #fff2; border: 1px solid #fff5; border-radius: 6px; padding: 1px 7px; font-family: inherit; }
+  #joy { position: fixed; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%;
+    background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.45); display: none; z-index: 5; }
+  #knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%;
+    background: rgba(255,255,255,.75); }
+  #jumpBtn { position: fixed; right: 26px; bottom: 34px; width: 96px; height: 96px; border-radius: 50%; display: none; z-index: 5;
+    background: rgba(76,217,100,.75); border: 4px solid #fff; color: #08321a; font: 700 22px 'Fredoka', sans-serif; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="pill" id="hName">🧱 Block Tycoon</div>
+  <div class="pill" id="hCash">💰 $0</div>
+  <div class="pill" id="hTip">Step on the yellow pad!</div>
+</div>
+<div id="topbtns">
+  <button id="btnMute" title="Sound on/off">🔊</button>
+  <button id="btnReset" title="Start over">↺</button>
+</div>
+<div id="joy"><div id="knob"></div></div>
+<button id="jumpBtn">JUMP</button>
+
+<div class="overlay show" id="startOv">
+  <div class="panel">
+    <h1>BLOCK<br>TYCOON</h1>
+    <div class="sub">Drop ore, burn it in the furnace, get rich and build your block house!</div>
+    <input id="nameIn" maxlength="16" placeholder="Type your name">
+    <br><button class="big" id="playBtn">▶ PLAY</button>
+    <div class="help">
+      <kbd>W A S D</kbd> / arrows to move · <kbd>Space</kbd> to jump<br>
+      Drag the mouse to turn the camera · scroll to zoom<br>
+      🟨 Claim pad · 🟩 Buy buttons (they go 🟥 if you need more cash)
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="winOv">
+  <div class="panel">
+    <h1>🏆 YOU WIN!</h1>
+    <div class="sub" id="winText"></div>
+    <button class="big" id="keepBtn">🏠 Explore my house</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ---------- save ----------
+const SAVE = 'blockTycoonSave';
+let state = { name: '', cash: 0, bought: [], claimed: false };
+try { Object.assign(state, JSON.parse(localStorage.getItem(SAVE) || '{}')); } catch (e) {}
+function save() { try { localStorage.setItem(SAVE, JSON.stringify(state)); } catch (e) {} }
+
+// ---------- setup ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87cefa);
+scene.fog = new THREE.Fog(0x87cefa, 60, 160);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 400);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6b8f6b, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(20, 40, -15);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 120 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ---------- sound ----------
+let actx = null, muted = false;
+function beep(freq, dur = 0.12, type = 'square', vol = 0.06, slide = 0) {
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+    g.gain.setValueAtTime(vol, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.connect(g).connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+  } catch (e) {}
+}
+const sfx = {
+  jump: () => beep(420, 0.12, 'square', 0.04, 300),
+  coin: () => beep(1320, 0.06, 'square', 0.025),
+  buy: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 'triangle', 0.08), i * 80)),
+  no: () => beep(160, 0.25, 'sawtooth', 0.06),
+  win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.18, 'triangle', 0.09), i * 120)),
+};
+
+// ---------- pixel block textures ----------
+function pixTex(rgb, vary, lines) {
+  const c = document.createElement('canvas'); c.width = c.height = 16;
+  const g = c.getContext('2d');
+  for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) {
+    const s = (Math.random() * 2 - 1) * vary + (lines && j % 4 === 3 ? -30 : 0);
+    g.fillStyle = `rgb(${rgb[0] + s | 0},${rgb[1] + s | 0},${rgb[2] + s | 0})`;
+    g.fillRect(i, j, 1, 1);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = t.minFilter = THREE.NearestFilter;
+  return t;
+}
+const lam = (o) => new THREE.MeshLambertMaterial(o);
+const MAT = {
+  grass: lam({ map: pixTex([95, 159, 53], 18) }),
+  stone: lam({ map: pixTex([125, 125, 125], 16) }),
+  cobble: lam({ map: pixTex([88, 88, 88], 30) }),
+  plank: lam({ map: pixTex([170, 135, 80], 10, true) }),
+  log: lam({ map: pixTex([100, 75, 45], 14) }),
+  belt: lam({ map: pixTex([60, 60, 60], 12, true) }),
+  metal: lam({ color: 0x555a60 }),
+  glass: lam({ color: 0xaaddff, transparent: true, opacity: 0.45 }),
+  pad: lam({ color: 0xffe63c, emissive: 0x665a00 }),
+};
+
+const solids = [];
+function box(w, h, d, x, y, z, mat, solid = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  scene.add(m);
+  if (solid) solids.push({ minX: x - w / 2, maxX: x + w / 2, minY: y - h / 2, maxY: y + h / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+  return m;
+}
+
+function makeLabel(text, color = '#ffffff', scale = 1) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  sp.scale.set(8 * scale, 2 * scale, 1);
+  sp.set = (t, col = color) => {
+    g.clearRect(0, 0, 512, 128);
+    g.font = '700 54px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 10; g.strokeStyle = '#000'; g.strokeText(t, 256, 64);
+    g.fillStyle = col; g.fillText(t, 256, 64);
+    tex.needsUpdate = true;
+  };
+  sp.set(text);
+  scene.add(sp);
+  return sp;
+}
+
+// ---------- world ----------
+for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+  box(4, 1, 4, -18 + i * 4, -0.5, -18 + j * 4, MAT.grass, false);
+}
+// dirt island underneath
+box(40, 6, 40, 0, -4, 0, lam({ map: pixTex([110, 78, 50], 16) }), false);
+
+// conveyor
+box(26, 1, 4, -1, 0.5, 0, MAT.belt);
+box(26, 1.5, 0.5, -1, 1.75, 2.25, MAT.stone);
+box(26, 1.5, 0.5, -1, 1.75, -2.25, MAT.stone);
+const beltStripes = [];
+for (let i = 0; i < 9; i++) {
+  const s = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 3.6), lam({ color: 0xffd84d }));
+  s.position.set(-14 + i * 3, 1.03, 0); scene.add(s); beltStripes.push(s);
+}
+
+// furnace
+box(6, 0.8, 6, 15, 0.4, 0, MAT.cobble);
+box(1, 5, 6, 18.5, 2.5, 0, MAT.cobble);
+box(6, 2.5, 0.8, 15, 1.25, 3.4, MAT.cobble);
+box(6, 2.5, 0.8, 15, 1.25, -3.4, MAT.cobble);
+makeLabel('FURNACE', '#ff9632').position.set(15, 6.5, 0);
+const flameMat = lam({ color: 0xff7a1a, emissive: 0xff5500 });
+const flames = [];
+for (let i = 0; i < 6; i++) {
+  const f = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), flameMat);
+  f.position.set(13 + (i % 3) * 2, 1.3, i < 3 ? -1.3 : 1.3); scene.add(f); flames.push(f);
+}
+const fireLight = new THREE.PointLight(0xff7a1a, 1.2, 14);
+fireLight.position.set(15, 3, 0); scene.add(fireLight);
+
+// ---------- droppers & ore ----------
+const droppers = [];
+const ores = [];
+const oreGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+let multiplier = 1;
+
+function addDropper(name, x, color, emissive, value) {
+  box(4, 4, 4, x, 8, 0, MAT.stone, false);
+  box(2, 3, 2, x, 4.5, 0, MAT.metal, false);
+  makeLabel(`${name} $${value}`).position.set(x, 11.5, 0);
+  droppers.push({ x, mat: lam({ color, emissive }), value, timer: Math.random() * 2 });
+}
+addDropper('Coal', -10, 0x262626, 0x000000, 2);
+
+// ---------- house ----------
+function buildHouse() {
+  for (let cx = -6; cx <= 6; cx += 4) for (let cz = 8; cz <= 16; cz += 4) {
+    const edge = cx === -6 || cx === 6 || cz === 8 || cz === 16;
+    const corner = (cx === -6 || cx === 6) && (cz === 8 || cz === 16);
+    for (let h = 0; h < 2; h++) {
+      if (!edge || (cx === -2 && cz === 8)) continue; // door
+      const y = 2 + h * 4;
+      if (cx === 2 && cz === 8 && h === 1) box(4, 4, 4, cx, y, cz, MAT.glass);
+      else box(4, 4, 4, cx, y, cz, corner ? MAT.log : MAT.plank);
+    }
+    box(4, 4, 4, cx, 10, cz, MAT.cobble);
+  }
+}
+
+// ---------- shop ----------
+const SHOP = [
+  { id: 'iron', name: 'Iron Dropper', price: 20, x: -12, tip: 'Iron! Save up for Gold!',
+    buy: () => addDropper('Iron', -4, 0xd7bea0, 0x000000, 5) },
+  { id: 'gold', name: 'Gold Dropper', price: 80, x: -6, tip: 'Shiny gold! Try the Super Furnace!',
+    buy: () => addDropper('Gold', 2, 0xffcd28, 0x664400, 12) },
+  { id: 'furnace', name: 'Super Furnace x2', price: 200, x: 0, tip: 'Everything is worth DOUBLE now!',
+    buy: () => { multiplier = 2; flameMat.color.set(0x50a0ff); flameMat.emissive.set(0x1a50ff); fireLight.color.set(0x50a0ff); } },
+  { id: 'diamond', name: 'Diamond Dropper', price: 400, x: 6, tip: 'DIAMONDS! Now buy the house!',
+    buy: () => addDropper('Diamond', 8, 0x5aebe6, 0x0a6a66, 30) },
+  { id: 'house', name: 'Block House', price: 1000, x: 12, tip: 'YOU WIN! Go explore your house!',
+    buy: () => buildHouse() },
+];
+const buttons = [];
+for (const item of SHOP) {
+  if (state.bought.includes(item.id)) { item.buy(); continue; }
+  const mat = lam({ color: 0x50d250, emissive: 0x145a14 });
+  const mesh = box(3, 0.4, 3, item.x, 0.2, -9, mat, false);
+  const label = makeLabel(`${item.name} $${item.price}`, '#ffe63c', 0.8);
+  label.position.set(item.x, 2.6, -9);
+  buttons.push({ item, mesh, mat, label, cool: 0 });
+}
+
+// claim pad
+box(6, 0.2, 6, 0, 0.1, -15, MAT.pad, false);
+const padLabel = makeLabel('STEP HERE TO CLAIM!', '#ffe63c');
+padLabel.position.set(0, 3, -15);
+
+// ---------- player ----------
+const player = new THREE.Group();
+const skin = lam({ color: 0xffcf9e }), shirt = lam({ color: 0x3aa0ff }), pants = lam({ color: 0x2b2b6b });
+function part(w, h, d, x, y, mat, parent = player) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, 0); m.castShadow = true; parent.add(m); return m;
+}
+part(1.2, 1.2, 1.2, 0, 3.0, skin);
+part(1.6, 1.6, 0.9, 0, 1.75, shirt);
+function limb(x, y, len, mat) {
+  const pivot = new THREE.Group(); pivot.position.set(x, y, 0); player.add(pivot);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.7, len, 0.7), mat);
+  m.position.y = -len / 2; m.castShadow = true; pivot.add(m);
+  return pivot;
+}
+const armL = limb(-1.15, 2.5, 1.5, skin), armR = limb(1.15, 2.5, 1.5, skin);
+const legL = limb(-0.4, 0.95, 0.95, pants), legR = limb(0.4, 0.95, 0.95, pants);
+scene.add(player);
+const nameTag = makeLabel('', '#9be65a', 0.7);
+
+const R = 0.7, H = 3.6;
+const pos = new THREE.Vector3(0, 0, -18), vel = new THREE.Vector3();
+let onGround = true, walkT = 0;
+
+// ---------- input ----------
+const keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'Space') e.preventDefault(); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+let yaw = Math.PI, pitch = 0.45, dist = 16;
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
+addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  yaw -= (e.clientX - drag.x) * 0.006;
+  pitch = Math.min(1.3, Math.max(0.1, pitch + (e.clientY - drag.y) * 0.005));
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+addEventListener('pointerup', e => { if (drag && e.pointerId === drag.id) drag = null; });
+addEventListener('wheel', e => { dist = Math.min(32, Math.max(6, dist + e.deltaY * 0.02)); }, { passive: true });
+
+// touch joystick
+const isTouch = 'ontouchstart' in window;
+let joy = { x: 0, y: 0, id: null }, jumpHeld = false;
+const joyEl = $('joy'), knob = $('knob');
+joyEl.addEventListener('pointerdown', e => { joy.id = e.pointerId; joyEl.setPointerCapture(e.pointerId); moveJoy(e); });
+joyEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) moveJoy(e); });
+joyEl.addEventListener('pointerup', () => { joy = { x: 0, y: 0, id: null }; knob.style.transform = ''; });
+function moveJoy(e) {
+  const r = joyEl.getBoundingClientRect();
+  let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  const l = Math.hypot(dx, dy), max = 45;
+  if (l > max) { dx *= max / l; dy *= max / l; }
+  joy.x = dx / max; joy.y = dy / max;
+  knob.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+$('jumpBtn').addEventListener('pointerdown', () => jumpHeld = true);
+$('jumpBtn').addEventListener('pointerup', () => jumpHeld = false);
+
+// ---------- UI ----------
+let playing = false;
+$('nameIn').value = state.name;
+function refreshHud() {
+  $('hCash').textContent = '💰 $' + state.cash;
+}
+function setTip(t) { $('hTip').textContent = t; }
+function startGame() {
+  state.name = ($('nameIn').value.trim() || 'Player').slice(0, 16);
+  save();
+  $('hName').textContent = `🧱 ${state.name}'s Block Tycoon`;
+  nameTag.set(state.name);
+  if (state.claimed) {
+    padLabel.set(`${state.name}'s TYCOON`, '#7fd0ff');
+    setTip(state.bought.includes('house') ? 'You won! Keep collecting cash!' : 'Walk on green buttons to buy!');
+  }
+  refreshHud();
+  $('startOv').classList.remove('show');
+  $('hud').style.display = 'flex';
+  $('topbtns').style.display = 'flex';
+  if (isTouch) { joyEl.style.display = 'block'; $('jumpBtn').style.display = 'block'; }
+  playing = true;
+}
+$('playBtn').onclick = startGame;
+$('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); e.stopPropagation(); });
+$('keepBtn').onclick = () => $('winOv').classList.remove('show');
+$('btnMute').onclick = () => { muted = !muted; $('btnMute').textContent = muted ? '🔇' : '🔊'; };
+$('btnReset').onclick = () => {
+  if (!confirm('Start your tycoon over from $0?')) return;
+  state = { name: state.name, cash: 0, bought: [], claimed: false }; save(); location.reload();
+};
+
+// floating "+$" text
+const floaters = [];
+function floatText(text, x, y, z) {
+  const s = makeLabel(text, '#ffe63c', 0.5);
+  s.position.set(x, y, z);
+  floaters.push({ s, t: 0 });
+}
+
+// ---------- physics ----------
+function hits() {
+  return solids.filter(b => pos.x + R > b.minX && pos.x - R < b.maxX && pos.z + R > b.minZ && pos.z - R < b.maxZ
+    && pos.y + H > b.minY && pos.y < b.maxY);
+}
+function stepPlayer(dt) {
+  let fx = 0, fz = 0;
+  if (keys.KeyW || keys.ArrowUp) fz += 1;
+  if (keys.KeyS || keys.ArrowDown) fz -= 1;
+  if (keys.KeyD || keys.ArrowRight) fx += 1;
+  if (keys.KeyA || keys.ArrowLeft) fx -= 1;
+  fx += joy.x; fz -= joy.y;
+  const fwd = { x: -Math.sin(yaw), z: -Math.cos(yaw) }, right = { x: Math.cos(yaw), z: -Math.sin(yaw) };
+  let mx = fwd.x * fz + right.x * fx, mz = fwd.z * fz + right.z * fx;
+  const ml = Math.hypot(mx, mz);
+  if (ml > 1) { mx /= ml; mz /= ml; }
+  const speed = 12;
+  vel.x = mx * speed; vel.z = mz * speed;
+
+  // ride the conveyor belt!
+  if (onGround && Math.abs(pos.y - 1) < 0.05 && Math.abs(pos.z) < 2 && pos.x > -14 && pos.x < 12) vel.x += 6;
+
+  if ((keys.Space || jumpHeld) && onGround) { vel.y = 16; onGround = false; sfx.jump(); }
+  vel.y -= 45 * dt;
+
+  const wasGround = onGround;
+  for (const axis of ['x', 'z']) {
+    pos[axis] += vel[axis] * dt;
+    for (const b of hits()) {
+      if (wasGround && b.maxY - pos.y <= 1.05) { pos.y = b.maxY; continue; }
+      const min = axis === 'x' ? b.minX : b.minZ, max = axis === 'x' ? b.maxX : b.maxZ;
+      if (pos[axis] < (min + max) / 2) pos[axis] = min - R - 0.001; else pos[axis] = max + R + 0.001;
+    }
+  }
+  pos.y += vel.y * dt;
+  onGround = false;
+  for (const b of hits()) {
+    if (vel.y <= 0) { pos.y = b.maxY; vel.y = 0; onGround = true; }
+    else { pos.y = b.minY - H; vel.y = 0; }
+  }
+  if (pos.y <= 0) { pos.y = 0; vel.y = 0; onGround = true; }
+  pos.x = Math.max(-19.3, Math.min(19.3, pos.x));
+  pos.z = Math.max(-19.3, Math.min(19.3, pos.z));
+
+  player.position.copy(pos);
+  if (ml > 0.1) {
+    player.rotation.y = Math.atan2(mx, mz);
+    walkT += dt * 10;
+  } else walkT = 0;
+  const sw = Math.sin(walkT) * 0.8;
+  legL.rotation.x = sw; legR.rotation.x = -sw; armL.rotation.x = -sw; armR.rotation.x = sw;
+  nameTag.position.set(pos.x, pos.y + H + 1.1, pos.z);
+}
+
+function checkPads(dt) {
+  const grounded = onGround && pos.y < 0.5;
+  if (!state.claimed && grounded && Math.abs(pos.x) < 3 && Math.abs(pos.z + 15) < 3) {
+    state.claimed = true; save();
+    padLabel.set(`${state.name}'s TYCOON`, '#7fd0ff');
+    setTip('Walk on green buttons to buy!');
+    sfx.buy();
+  }
+  for (let i = buttons.length - 1; i >= 0; i--) {
+    const b = buttons[i];
+    b.cool -= dt;
+    const on = grounded && Math.abs(pos.x - b.item.x) < 1.9 && Math.abs(pos.z + 9) < 1.9;
+    if (!on || b.cool > 0) continue;
+    if (!state.claimed) { setTip('Claim the yellow pad first!'); b.cool = 1; continue; }
+    if (state.cash >= b.item.price) {
+      state.cash -= b.item.price;
+      state.bought.push(b.item.id); save();
+      scene.remove(b.mesh); scene.remove(b.label);
+      buttons.splice(i, 1);
+      b.item.buy(); setTip(b.item.tip); refreshHud(); sfx.buy();
+      if (b.item.id === 'house') {
+        setTimeout(() => {
+          sfx.win();
+          $('winText').textContent = `${state.name}, you built your Block House! You are a real tycoon!`;
+          $('winOv').classList.add('show');
+        }, 600);
+      }
+    } else {
+      b.cool = 1; sfx.no();
+      b.mat.color.set(0xdc3c3c); b.mat.emissive.set(0x5a1414);
+      setTip(`Need $${b.item.price - state.cash} more!`);
+      setTimeout(() => { b.mat.color.set(0x50d250); b.mat.emissive.set(0x145a14); }, 600);
+    }
+  }
+}
+
+function stepOres(dt) {
+  if (state.claimed) for (const d of droppers) {
+    d.timer -= dt;
+    if (d.timer <= 0) {
+      d.timer = 2;
+      const m = new THREE.Mesh(oreGeo, d.mat);
+      m.position.set(d.x, 2.4, 0); m.castShadow = true; scene.add(m);
+      ores.push({ m, vy: 0, value: d.value });
+    }
+  }
+  for (let i = ores.length - 1; i >= 0; i--) {
+    const o = ores[i], p = o.m.position;
+    const onBelt = p.x < 12.5;
+    const floor = onBelt ? 1.75 : 1.55;
+    if (p.y > floor) { o.vy -= 40 * dt; p.y = Math.max(floor, p.y + o.vy * dt); }
+    else o.vy = 0;
+    if (p.y <= 1.76) p.x += 6 * dt;
+    if (!onBelt && p.y <= 1.56) {
+      const gain = o.value * multiplier;
+      state.cash += gain;
+      floatText('+$' + gain, p.x, 3, p.z);
+      scene.remove(o.m); ores.splice(i, 1);
+      refreshHud(); sfx.coin();
+      saveSoon = true;
+    }
+  }
+}
+let saveSoon = false;
+setInterval(() => { if (saveSoon) { save(); saveSoon = false; } }, 2000);
+
+// ---------- loop ----------
+let last = performance.now(), clock = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
+  if (playing) { stepPlayer(dt); checkPads(dt); stepOres(dt); }
+
+  for (const s of beltStripes) { s.position.x += 6 * dt; if (s.position.x > 11.5) s.position.x -= 27; }
+  flames.forEach((f, i) => { const k = 0.7 + Math.abs(Math.sin(clock * 9 + i * 1.7)) * 0.6; f.scale.set(k, k * 1.4, k); });
+  fireLight.intensity = 1 + Math.sin(clock * 13) * 0.3;
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i]; f.t += dt;
+    f.s.position.y += dt * 2; f.s.material.opacity = 1 - f.t;
+    if (f.t >= 1) { scene.remove(f.s); floaters.splice(i, 1); }
+  }
+
+  const target = new THREE.Vector3(pos.x, pos.y + 2.5, pos.z);
+  camera.position.set(
+    target.x + Math.sin(yaw) * Math.cos(pitch) * dist,
+    target.y + Math.sin(pitch) * dist,
+    target.z + Math.cos(yaw) * Math.cos(pitch) * dist);
+  camera.lookAt(target);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+player.position.copy(pos);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

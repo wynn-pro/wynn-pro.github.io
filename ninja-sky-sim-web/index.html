@@ -22,6 +22,8 @@
   .shop-btn { background: #ffb400; }
   .auto-btn { background: #6b7a99; }
   .auto-btn.on { background: #2ed47a; }
+  .reb-btn { background: #a46bff; }
+  .btn:disabled { background: #b8c2d6; cursor: default; }
   .where { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(20,30,60,.7); color: #ffd84d; padding: 6px 16px; border-radius: 12px; font-size: 18px; font-weight: 700; z-index: 4; white-space: nowrap; }
   .msg { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #ff4d6d; color: #fff; padding: 8px 18px; border-radius: 12px; font-size: 18px; font-weight: 700; z-index: 6; opacity: 0; transition: opacity .25s; pointer-events: none; text-align: center; max-width: 90vw; }
   .msg.show { opacity: 1; }
@@ -71,9 +73,11 @@
   <div class="stat">🪙 <span id="coins">0</span> <small>coins</small></div>
   <div class="stat">🌀 <span id="chi">0</span> / <span id="cap">20</span> <small>chi</small><div class="bar" id="bar"><i id="barFill"></i></div></div>
   <div class="stat">💪 <span id="power">0</span> <small>power</small></div>
+  <div class="stat">🔁 <span id="reb">0</span> <small>rebirths · coins ×<span id="rebm">1</span></small></div>
 </div>
 <div class="side">
   <button class="btn shop-btn" id="shopBtn">🛒 Shop</button>
+  <button class="btn reb-btn" id="rebBtn">🔁 Rebirth</button>
   <button class="btn auto-btn" id="autoBtn">⚔️ Auto: OFF</button>
 </div>
 <div class="where" id="where">Spawn Island</div>
@@ -106,6 +110,17 @@
   </div>
 </div>
 
+<div class="win" id="rebModal">
+  <div class="panel">
+    <h1 style="color:#a46bff">🔁 REBIRTH</h1>
+    <p id="rebText" style="font-size:18px"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn buy" id="rebGo" style="font-size:20px">🔁 Rebirth!</button>
+      <button class="btn close" id="rebNo" style="font-size:20px">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------- DATA ----------
 const SWORDS = [
@@ -129,19 +144,22 @@ const BAGS = [
 const PETS = [
   { name: 'Kitten', ic: '🐱', cps: 2, cost: 120, color: 0xffa94d },
   { name: 'Fox', ic: '🦊', cps: 8, cost: 800, color: 0xff6b2c },
-  { name: 'Panda', ic: '🐼', cps: 30, cost: 5000, color: 0xffffff },
-  { name: 'Phoenix', ic: '🔥', cps: 100, cost: 25000, color: 0xff3b3b },
-  { name: 'Mini Dragon', ic: '🐲', cps: 350, cost: 120000, color: 0x2ed47a },
+  { name: 'Panda', ic: '🐼', cps: 30, cost: 5000, color: 0xffffff, mask: true },
+  { name: 'Phoenix', ic: '🔥', cps: 100, cost: 25000, color: 0xff3b3b, wings: true },
+  { name: 'Mini Dragon', ic: '🐲', cps: 350, cost: 120000, color: 0x2ed47a, wings: true },
+  { name: 'Pizza Pup', ic: '🐶', cps: 5, cost: 400, color: 0xd9a066 },
+  { name: 'Tomato Slime', ic: '🍅', cps: 50, cost: 10000, color: 0xe23b3b },
 ];
 const ISL = [
   { name: 'Spawn Island', x: 0, y: 0, z: 0, r: 14, top: 0x5ad35a, req: 0, mult: 1, orb: 1 },
   { name: 'Bamboo Isle', x: 0, y: 6, z: -46, r: 12, top: 0x9be35a, req: 300, mult: 3, orb: 6 },
   { name: 'Cloud Temple', x: 38, y: 12, z: -86, r: 12, top: 0xf2f4ff, req: 6000, mult: 10, orb: 30 },
   { name: 'Dragon Peak', x: 0, y: 20, z: -128, r: 13, top: 0xffb347, req: 100000, mult: 40, orb: 150 },
+  { name: 'Pizza Tycoon', x: -54, y: 0, z: 0, r: 18, top: 0xe9d8b4, req: 0, mult: 1, orb: 0, tycoon: true, padOff: [9, 9] },
 ];
 
 // ---------- SAVE ----------
-let S = { coins: 0, chi: 0, power: 0, sword: 0, bag: 0, pets: [], won: false, auto: false, check: 0 };
+let S = { coins: 0, chi: 0, power: 0, sword: 0, bag: 0, pets: [], won: false, auto: false, check: 0, tyc: [], cash: 0, reb: 0 };
 try { const d = JSON.parse(localStorage.getItem('ninjaSkySim')); if (d) S = Object.assign(S, d); } catch (e) {}
 function save() { try { localStorage.setItem('ninjaSkySim', JSON.stringify(S)); } catch (e) {} }
 setInterval(save, 3000);
@@ -194,7 +212,7 @@ ISL.forEach((I, i) => {
   surfaces.push({ type: 'circle', x: I.x, z: I.z, r: I.r, y: I.y, isl: i });
 
   // trees / decorations
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < (I.tycoon ? 0 : 5); k++) {
     const a = k * 1.3 + i, d = I.r - 2.5;
     const tx = I.x + Math.cos(a) * d, tz = I.z + Math.sin(a) * d;
     if (i === 1) { for (let h = 0; h < 3; h++) box(0.5, 3, 0.5, 0x6fbf3a, tx + h * 0.7, I.y + 1.5 + h * 0.3, tz); }
@@ -204,10 +222,11 @@ ISL.forEach((I, i) => {
   }
 
   // sell pad
-  const pad = box(3.4, 0.2, 3.4, 0x4fd1ff, I.x + 6, I.y + 0.1, I.z + 4);
+  const [pox, poz] = I.padOff || [6, 4];
+  const pad = box(3.4, 0.2, 3.4, 0x4fd1ff, I.x + pox, I.y + 0.1, I.z + poz);
   pad.material.emissive = new THREE.Color(0x1a6aa0);
-  const sl = label('💰 SELL', '#ffffff', 5); sl.position.set(I.x + 6, I.y + 2.5, I.z + 4); scene.add(sl);
-  I.pad = { x: I.x + 6, z: I.z + 4 };
+  const sl = label('💰 SELL', '#ffffff', 5); sl.position.set(I.x + pox, I.y + 2.5, I.z + poz); scene.add(sl);
+  I.pad = { x: I.x + pox, z: I.z + poz };
 
   // name sign + lock wall
   I.sign = label(I.name, '#ffd84d'); I.sign.position.set(I.x, I.y + 8, I.z); scene.add(I.sign);
@@ -220,7 +239,7 @@ ISL.forEach((I, i) => {
   }
 
   // stepping blocks from previous island
-  if (i > 0) {
+  if (i > 0 && !I.tycoon) {
     const A = ISL[i - 1];
     const dx = I.x - A.x, dz = I.z - A.z, dist = Math.hypot(dx, dz);
     const ux = dx / dist, uz = dz / dist;
@@ -241,6 +260,15 @@ ISL.forEach((I, i) => {
     }
   }
 });
+
+// wooden bridge from Spawn Island to Pizza Tycoon
+{
+  const br = box(24, 1, 4, 0xa8743f, -25, -0.5, 0);
+  surfaces.push({ type: 'box', mesh: br, w: 24, d: 4, h: 1 });
+  box(24, 0.2, 0.2, 0x7a4f2a, -25, 1, 2.1); box(24, 0.2, 0.2, 0x7a4f2a, -25, 1, -2.1);
+  for (let k = 0; k < 7; k++) { box(0.3, 1, 0.3, 0x7a4f2a, -14 - k * 4, 0.5, 2.1); box(0.3, 1, 0.3, 0x7a4f2a, -14 - k * 4, 0.5, -2.1); }
+  const bl = label('⬅ 🍕 Pizza Tycoon', '#ffd84d', 8); bl.position.set(-12, 4, 0); scene.add(bl);
+}
 
 // golden dragon statue on Dragon Peak
 const P3 = ISL[3];
@@ -269,7 +297,7 @@ for (let i = 0; i < 28; i++) {
 const orbs = [];
 const orbGeo = new THREE.OctahedronGeometry(0.6);
 ISL.forEach((I, i) => {
-  for (let k = 0; k < 7; k++) {
+  for (let k = 0; k < (I.tycoon ? 0 : 7); k++) {
     const m = new THREE.Mesh(orbGeo, new THREE.MeshLambertMaterial({ color: 0xffd84d, emissive: 0x7a5a00 }));
     scene.add(m);
     const o = { m, isl: i, t: 0 };
@@ -316,8 +344,9 @@ function buildPets() {
     box(0.7, 0.7, 0.7, P.color, 0, 0.5, 0.6, g);
     box(0.2, 0.3, 0.2, P.color, -0.22, 0.95, 0.6, g); box(0.2, 0.3, 0.2, P.color, 0.22, 0.95, 0.6, g);
     box(0.12, 0.12, 0.05, 0x111111, -0.15, 0.6, 0.96, g); box(0.12, 0.12, 0.05, 0x111111, 0.15, 0.6, 0.96, g);
-    if (idx >= 3) { box(1.2, 0.1, 0.6, P.color, -0.8, 0.3, 0, g); box(1.2, 0.1, 0.6, P.color, 0.8, 0.3, 0, g); }
-    if (idx === 2) { box(0.72, 0.25, 0.05, 0x111111, 0, 0.6, 0.96, g); }
+    if (P.wings) { box(1.2, 0.1, 0.6, P.color, -0.8, 0.3, 0, g); box(1.2, 0.1, 0.6, P.color, 0.8, 0.3, 0, g); }
+    if (P.mask) { box(0.72, 0.25, 0.05, 0x111111, 0, 0.6, 0.96, g); }
+    if (P.name === 'Pizza Pup') { box(0.5, 0.06, 0.5, 0xd83a2a, 0, 0.88, 0.6, g); }
     g.position.copy(ninja.position); scene.add(g); petMeshes.push(g);
   });
 }
@@ -348,6 +377,8 @@ function hud() {
   $('chi').textContent = fmt(S.chi);
   $('cap').textContent = fmt(cap());
   $('power').textContent = fmt(S.power);
+  $('reb').textContent = S.reb;
+  $('rebm').textContent = rebMult();
   const f = Math.min(1, S.chi / cap());
   $('barFill').style.width = (f * 100) + '%';
   $('bar').classList.toggle('full', f >= 1);
@@ -448,9 +479,9 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
 function renderShop() {
   const wrap = $('items'); wrap.innerHTML = '';
   const list = tab === 'swords' ? SWORDS : tab === 'bags' ? BAGS : PETS;
-  list.forEach((it, i) => {
+  list.map((it, i) => [it, i]).sort((a, b) => a[0].cost - b[0].cost).forEach(([it, i]) => {
     const owned = tab === 'pets' ? S.pets.includes(i) : (tab === 'swords' ? S.sword : S.bag) >= i;
-    const desc = tab === 'swords' ? '+' + it.power + ' chi per swing' : tab === 'bags' ? 'Holds ' + fmt(it.cap) + ' chi' : '+' + it.cps + ' chi every second';
+    const desc = tab === 'swords' ? '+' + it.power + ' chi per swing' : tab === 'bags' ? 'Holds ' + fmt(it.cap) + ' chi' : '+' + it.cps + ' chi/sec · +10% pizza cash';
     const row = document.createElement('div'); row.className = 'item';
     row.innerHTML = `<div class="ic">${it.ic}</div><div class="info"><b>${it.name}</b><span>${desc}</span></div>`;
     const b = document.createElement('button');
@@ -475,8 +506,233 @@ function buy(i) {
 }
 $('winOk').onclick = () => $('win').classList.remove('open');
 
+// ---------- MONEY + REBIRTH ----------
+function rebMult() { return 1 + 0.5 * S.reb; }
+function gainCoins(n) { const g = Math.floor(n * rebMult()); S.coins += g; return g; }
+function rebCost() { return 150000 * (S.reb + 1); }
+$('rebBtn').onclick = () => {
+  const can = S.coins >= rebCost();
+  $('rebText').innerHTML = `Rebirth costs <b>🪙 ${fmt(rebCost())}</b> (you have 🪙 ${fmt(S.coins)}).<br><br>
+    You will lose your coins, chi, swords, bags and pizza shop.<br>
+    You KEEP your pets, power and unlocked islands.<br><br>
+    Coins forever: <b>×${rebMult()} ➜ ×${rebMult() + 0.5}</b>`;
+  $('rebGo').disabled = !can;
+  $('rebModal').classList.add('open');
+};
+$('rebNo').onclick = () => $('rebModal').classList.remove('open');
+$('rebGo').onclick = () => {
+  if (S.coins < rebCost()) return;
+  S.reb++; S.coins = 0; S.chi = 0; S.sword = 0; S.bag = 0; S.cash = 0;
+  resetTycoon();
+  updateSwordLook(); hud(); save();
+  $('rebModal').classList.remove('open');
+  msg('🔁 REBIRTH! Coins are now ×' + rebMult() + ' forever!', true);
+};
+
+// ---------- PIZZA TYCOON ----------
+const TY = ISL[4];
+const CONV_Z = TY.z - 6, CONV_X0 = TY.x - 10, CONV_X1 = TY.x + 7.5, OVEN_X = TY.x + 8.6, BELT_Y = 0.6;
+const COLLECT = { x: TY.x + 10, z: TY.z - 2 };
+const TOWER = { x0: TY.x - 8, x1: TY.x, z0: TY.z + 7, z1: TY.z + 15 };
+const TITEMS = [
+  { name: 'Claim Pizza Shop', cost: 0, req: -1, kind: 'claim' },
+  { name: 'Pizza Dropper', cost: 25, req: 0, kind: 'drop', dx: -9, val: 2, rate: 2, crust: 0xe8b56a, color: 0xff8c42 },
+  { name: 'Cheesy Dropper', cost: 120, req: 1, kind: 'drop', dx: -6, val: 5, rate: 2, crust: 0xf0c060, color: 0xffd23f },
+  { name: 'Shop Walls', cost: 200, req: 1, kind: 'walls' },
+  { name: 'Cheese Melter x2', cost: 500, req: 2, kind: 'up', dx: 5, top: 'cheese', color: 0xffe066 },
+  { name: 'Tower Floor 1', cost: 800, req: 3, kind: 'floor', f: 1 },
+  { name: 'Veggie Dropper', cost: 1500, req: 4, kind: 'drop', dx: -3, val: 12, rate: 1.6, crust: 0xd9a066, color: 0x2ed47a },
+  { name: 'Tower Floor 2', cost: 3000, req: 5, kind: 'floor', f: 2 },
+  { name: 'Mega Dropper', cost: 6000, req: 6, kind: 'drop', dx: 0, val: 35, rate: 1.3, crust: 0xc98a4a, color: 0x4fa3ff },
+  { name: 'Pepperoni Blaster x2', cost: 12000, req: 8, kind: 'up', dx: 6.8, top: 'pep', color: 0xff3b3b },
+  { name: 'Tower Roof', cost: 15000, req: 7, kind: 'floor', f: 3 },
+  { name: 'Golden Dropper', cost: 40000, req: 9, kind: 'drop', dx: 3, val: 120, rate: 1, crust: 0xffd700, color: 0xffd700 },
+  { name: 'Giant Pizza Sign', cost: 80000, req: 10, kind: 'sign' },
+];
+
+function dynLabel(w) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d'), tex = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  s.scale.set(w, w / 4, 1);
+  s.set = (text, color = '#ffd84d') => {
+    g.clearRect(0, 0, 512, 128);
+    g.font = 'bold 54px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 12; g.strokeStyle = '#1b2a4a'; g.strokeText(text, 256, 64);
+    g.fillStyle = color; g.fillText(text, 256, 64); tex.needsUpdate = true;
+  };
+  return s;
+}
+function btnLabel(name, cost) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 200;
+  const g = c.getContext('2d');
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = '#1b2a4a';
+  g.font = 'bold 46px Fredoka, sans-serif'; g.strokeText(name, 256, 55); g.fillStyle = '#ffffff'; g.fillText(name, 256, 55);
+  const p = cost === 0 ? 'FREE!' : '🪙 ' + fmt(cost);
+  g.font = 'bold 60px Fredoka, sans-serif'; g.strokeText(p, 256, 140); g.fillStyle = '#7dff9a'; g.fillText(p, 256, 140);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+  s.scale.set(4.2, 4.2 * 200 / 512, 1); return s;
+}
+
+// buy buttons laid out in two rows in front of the conveyor
+const TBTN = TITEMS.map((it, i) => {
+  const g = new THREE.Group();
+  g.position.set(TY.x - 10 + (i % 7) * 3, TY.y, TY.z + 1.5 + Math.floor(i / 7) * 3);
+  const p = box(2, 0.25, 2, 0x2ed47a, 0, 0.12, 0, g); p.material.emissive = new THREE.Color(0x0a5a2a);
+  const l = btnLabel(it.name, it.cost); l.position.y = 2; g.add(l);
+  scene.add(g); return g;
+});
+function tOwned(i) { return S.tyc.includes(i); }
+function refreshButtons() { TBTN.forEach((b, i) => { const it = TITEMS[i]; b.visible = !tOwned(i) && (it.req < 0 || tOwned(it.req)); }); }
+
+const tycBuilt = {}, droppers = [], upgraders = [], pizzas = [], beltStripes = [];
+let cashLabel = null, pizzaSign = null;
+const matCache = {};
+const cmat = c => matCache[c] || (matCache[c] = new THREE.MeshLambertMaterial({ color: c }));
+const crustGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.12, 12), sauceGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.13, 12);
+const cheeseGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.14, 12), pepGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.16, 8);
+
+function buildItem(i) {
+  const it = TITEMS[i], rec = { objs: [], surfs: [] }; tycBuilt[i] = rec;
+  const B = (w, h, d, c, x, y, z) => { const m = box(w, h, d, c, x, y, z); rec.objs.push(m); return m; };
+  const glow = (m, c) => { m.material.emissive = new THREE.Color(c).multiplyScalar(0.4); return m; };
+  if (it.kind === 'claim') {
+    const L = CONV_X1 - CONV_X0, cx = (CONV_X0 + CONV_X1) / 2;
+    B(L, BELT_Y, 1.6, 0x3a4150, cx, BELT_Y / 2, CONV_Z);
+    B(L, 0.2, 0.2, 0xffd84d, cx, BELT_Y + 0.1, CONV_Z - 0.85); B(L, 0.2, 0.2, 0xffd84d, cx, BELT_Y + 0.1, CONV_Z + 0.85);
+    for (let k = 0; k < 12; k++) { const s = B(0.2, 0.04, 1.4, 0x5a6478, CONV_X0 + k * L / 12, BELT_Y + 0.01, CONV_Z); beltStripes.push(s); }
+    B(2.2, 2.6, 2.4, 0xb5502e, OVEN_X, 1.3, CONV_Z);
+    glow(B(0.1, 1, 1.4, 0xff8c1a, OVEN_X - 1.15, 1.1, CONV_Z), 0xff8c1a);
+    B(0.6, 1.6, 0.6, 0x7a3a20, OVEN_X + 0.5, 3.4, CONV_Z + 0.5);
+    const ol = label('🔥 OVEN', '#ffffff', 4); ol.position.set(OVEN_X, 4.6, CONV_Z); scene.add(ol); rec.objs.push(ol);
+    glow(B(2.4, 0.2, 2.4, 0xffd700, COLLECT.x, 0.1, COLLECT.z), 0xffd700);
+    cashLabel = dynLabel(6); cashLabel.position.set(COLLECT.x, 2.6, COLLECT.z); scene.add(cashLabel); rec.objs.push(cashLabel);
+    cashLabel.set('Collect 🪙 0');
+  } else if (it.kind === 'drop') {
+    const x = TY.x + it.dx;
+    B(0.3, 4, 0.3, 0x888888, x, 2, CONV_Z - 1.1); B(0.3, 4, 0.3, 0x888888, x, 2, CONV_Z + 1.1);
+    glow(B(1.6, 1.2, 2.4, it.color, x, 4.4, CONV_Z), it.color);
+    B(0.7, 0.6, 0.7, 0x444444, x, 3.5, CONV_Z);
+    droppers.push({ x, val: it.val, rate: it.rate, crust: it.crust, t: 0 });
+  } else if (it.kind === 'up') {
+    const x = TY.x + it.dx;
+    B(0.3, 2.6, 0.3, 0x666666, x, 1.3, CONV_Z - 1.1); B(0.3, 2.6, 0.3, 0x666666, x, 1.3, CONV_Z + 1.1);
+    glow(B(0.5, 0.5, 2.6, it.color, x, 2.6, CONV_Z), it.color);
+    const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 2), new THREE.MeshBasicMaterial({ color: it.color, transparent: true, opacity: 0.35 }));
+    curtain.position.set(x, 1.5, CONV_Z); scene.add(curtain); rec.objs.push(curtain);
+    upgraders.push({ x, top: it.top, id: i });
+  } else if (it.kind === 'walls') {
+    B(21, 1.6, 0.4, 0xc9785a, TY.x, 0.8, CONV_Z - 2);
+    B(0.4, 1.6, 4, 0xc9785a, CONV_X0 - 1.5, 0.8, CONV_Z);
+    for (let k = 0; k < 7; k++) B(3, 0.3, 2.6, k % 2 ? 0xffffff : 0xff4d6d, TY.x - 9 + k * 3, 5.6, CONV_Z - 0.8);
+  } else if (it.kind === 'floor') {
+    const f = it.f, y = 6 * f, odd = f % 2 === 1;
+    const px0 = odd ? TOWER.x0 : TOWER.x0 + 2, px1 = odd ? TOWER.x1 - 2 : TOWER.x1;
+    const pw = px1 - px0, pd = TOWER.z1 - TOWER.z0, pz = (TOWER.z0 + TOWER.z1) / 2;
+    const colors = [0, 0xffb38a, 0x9fd8ff, 0xffe08a];
+    const plate = B(pw, 0.4, pd, colors[f], (px0 + px1) / 2, y - 0.2, pz);
+    rec.surfs.push({ type: 'box', mesh: plate, w: pw, d: pd, h: 0.4 });
+    [[TOWER.x0, TOWER.z0], [TOWER.x1, TOWER.z0], [TOWER.x0, TOWER.z1], [TOWER.x1, TOWER.z1]].forEach(([cx, cz]) =>
+      B(0.5, 6, 0.5, 0xffffff, cx, y - 3, cz));
+    const sx = odd ? TOWER.x1 - 1 : TOWER.x0 + 1;
+    for (let k = 0; k < 12; k++) {
+      const top = 6 * (f - 1) + 0.5 * (k + 1);
+      const sz = odd ? TOWER.z0 + 0.35 + k * 0.65 : TOWER.z1 - 0.35 - k * 0.65;
+      const st = B(2, 0.5, 0.65, k % 2 ? 0xd9d9d9 : 0xbfbfbf, sx, top - 0.25, sz);
+      rec.surfs.push({ type: 'box', mesh: st, w: 2, d: 0.65, h: 0.5 });
+    }
+    const fl = label(f === 3 ? '🏯 Roof' : '🏢 Floor ' + f, '#ffffff', 4); fl.position.set((px0 + px1) / 2, y + 2, pz); scene.add(fl); rec.objs.push(fl);
+    if (f === 3) { B(0.2, 4, 0.2, 0xeeeeee, TOWER.x0 + 0.5, y + 2, TOWER.z0 + 0.5); B(1.8, 1.1, 0.1, 0xff4d6d, TOWER.x0 + 1.5, y + 3.4, TOWER.z0 + 0.5); }
+    rec.surfs.forEach(s => surfaces.push(s));
+  } else if (it.kind === 'sign') {
+    pizzaSign = new THREE.Group();
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.4, 16), cmat(0xe8b56a));
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.45, 16), cmat(0xd83a2a));
+    const ch = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.5, 16), cmat(0xffe066));
+    pizzaSign.add(c, s, ch);
+    for (let k = 0; k < 7; k++) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.55, 10), cmat(0xb3202a)); p.position.set(Math.cos(k) * 1.2 * (k % 2 + 0.5), 0, Math.sin(k) * 1.2 * (k % 2 + 0.5)); pizzaSign.add(p); }
+    pizzaSign.rotation.x = Math.PI / 2;
+    const holder = new THREE.Group(); holder.position.set((TOWER.x0 + TOWER.x1) / 2, 18 + 4, (TOWER.z0 + TOWER.z1) / 2); holder.add(pizzaSign);
+    scene.add(holder); rec.objs.push(holder);
+  }
+}
+function resetTycoon() {
+  Object.values(tycBuilt).forEach(rec => {
+    rec.objs.forEach(o => scene.remove(o));
+    rec.surfs.forEach(s => { const k = surfaces.indexOf(s); if (k >= 0) surfaces.splice(k, 1); });
+  });
+  for (const k in tycBuilt) delete tycBuilt[k];
+  pizzas.forEach(p => scene.remove(p.g)); pizzas.length = 0;
+  droppers.length = 0; upgraders.length = 0; beltStripes.length = 0;
+  cashLabel = null; pizzaSign = null; S.tyc = [];
+  refreshButtons();
+}
+function tycMult() {
+  let m = 1;
+  S.tyc.forEach(i => { const k = TITEMS[i].kind; if (k === 'floor') m += 0.25; if (k === 'sign') m += 0.5; });
+  return m * (1 + 0.1 * S.pets.length);
+}
+let lastNoMoney = 0;
+function tryBuyTyc(i) {
+  const it = TITEMS[i];
+  if (S.coins < it.cost) {
+    if (performance.now() - lastNoMoney > 1500) { lastNoMoney = performance.now(); msg('Need 🪙 ' + fmt(it.cost - S.coins) + ' more for ' + it.name + '!'); }
+    return;
+  }
+  S.coins -= it.cost; S.tyc.push(i); buildItem(i); refreshButtons();
+  msg(i === 0 ? '🍕 Your pizza shop! Buy droppers to make pizzas!' : '🔨 Built ' + it.name + '!', true);
+  hud(); save();
+}
+let cashShown = -1;
+function updateTycoon(dt) {
+  // buttons
+  TBTN.forEach((b, i) => {
+    if (!b.visible) return;
+    b.children[1].position.y = 2 + Math.sin(elapsed * 3 + i) * 0.15;
+    if (Math.abs(pos.x - b.position.x) < 1.3 && Math.abs(pos.z - b.position.z) < 1.3 && Math.abs(pos.y - TY.y) < 0.8) tryBuyTyc(i);
+  });
+  // droppers make pizzas
+  droppers.forEach(d => {
+    d.t += dt;
+    if (d.t >= d.rate) {
+      d.t -= d.rate;
+      if (pizzas.length > 90) return;
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(crustGeo, cmat(d.crust)));
+      const sc = new THREE.Mesh(sauceGeo, cmat(0xd83a2a)); sc.position.y = 0.01; g.add(sc);
+      g.position.set(d.x, 3, CONV_Z); scene.add(g);
+      pizzas.push({ g, v: d.val, vy: 0, done: {} });
+    }
+  });
+  // move pizzas
+  for (let k = pizzas.length - 1; k >= 0; k--) {
+    const p = pizzas[k], g = p.g;
+    if (g.position.y > BELT_Y + 0.07) { p.vy -= 20 * dt; g.position.y = Math.max(BELT_Y + 0.07, g.position.y + p.vy * dt); }
+    else { g.position.x += 3 * dt; g.rotation.y += dt; }
+    upgraders.forEach(u => {
+      if (p.done[u.id] || g.position.x < u.x) return;
+      p.done[u.id] = true; p.v *= 2;
+      if (u.top === 'cheese') { const c = new THREE.Mesh(cheeseGeo, cmat(0xffe066)); c.position.y = 0.02; g.add(c); }
+      else for (let j = 0; j < 3; j++) { const pp = new THREE.Mesh(pepGeo, cmat(0xb3202a)); pp.position.set(Math.cos(j * 2.1) * 0.2, 0.03, Math.sin(j * 2.1) * 0.2); g.add(pp); }
+    });
+    if (g.position.x >= CONV_X1) { S.cash += p.v * tycMult(); scene.remove(g); pizzas.splice(k, 1); }
+  }
+  beltStripes.forEach(s => { s.position.x += 3 * dt; if (s.position.x > CONV_X1) s.position.x -= CONV_X1 - CONV_X0; });
+  if (pizzaSign) pizzaSign.rotation.z += dt;
+  // collect cash
+  if (cashLabel) {
+    if (onGround && S.cash >= 1 && Math.abs(pos.x - COLLECT.x) < 1.4 && Math.abs(pos.z - COLLECT.z) < 1.4 && Math.abs(pos.y - TY.y) < 0.8) {
+      const g = gainCoins(S.cash); S.cash = 0; pop('+' + fmt(g) + ' 🪙', true); hud();
+    }
+    const shown = Math.floor(S.cash);
+    if (shown !== cashShown) { cashShown = shown; cashLabel.set('Collect 🪙 ' + fmt(shown)); }
+  }
+}
+S.tyc.forEach(buildItem);
+refreshButtons();
+
 // ---------- PHYSICS ----------
-function surfTop(s) { return s.type === 'circle' ? s.y : s.mesh.position.y + 0.5; }
+function surfTop(s) { return s.type === 'circle' ? s.y : s.mesh.position.y + (s.h || 1) / 2; }
 function inside(s, x, z) {
   if (s.type === 'circle') return Math.hypot(x - s.x, z - s.z) <= s.r;
   const p = s.mesh.position;
@@ -555,7 +811,7 @@ function update(dt) {
   // sell pad
   const I = ISL[curIsl];
   if (onGround && Math.abs(pos.x - I.pad.x) < 1.8 && Math.abs(pos.z - I.pad.z) < 1.8 && S.chi > 0) {
-    S.coins += S.chi; pop('+' + fmt(S.chi) + ' 🪙', true); S.chi = 0; hud(); save();
+    const g = gainCoins(S.chi); pop('+' + fmt(g) + ' 🪙', true); S.chi = 0; hud(); save();
   }
 
   // orbs
@@ -564,9 +820,10 @@ function update(dt) {
     if (!o.m.visible) { o.t += dt; if (o.t > 8) placeOrb(o); return; }
     o.m.rotation.y += dt * 2; o.m.position.y = ISL[o.isl].y + 1 + Math.sin(elapsed * 3 + o.isl) * 0.2;
     if (o.m.position.distanceTo(headPos) < 1.9) {
-      o.m.visible = false; S.coins += ISL[o.isl].orb; pop('+' + ISL[o.isl].orb + ' 🪙', true); hud();
+      o.m.visible = false; pop('+' + gainCoins(ISL[o.isl].orb) + ' 🪙', true); hud();
     }
   });
+  updateTycoon(dt);
 
   // statue
   if (!S.won && pos.distanceTo(statue.position) < 3) { S.won = true; save(); $('win').classList.add('open'); }
@@ -589,7 +846,7 @@ function update(dt) {
   petMeshes.forEach((p, i) => {
     const a = ninja.rotation.y + Math.PI + (i - (petMeshes.length - 1) / 2) * 0.7;
     const tx = pos.x + Math.sin(a) * 2.6, tz = pos.z + Math.cos(a) * 2.6;
-    const fly = S.pets[i] >= 3 ? 1.5 : 0;
+    const fly = PETS[S.pets[i]].wings ? 1.5 : 0;
     p.position.x += (tx - p.position.x) * Math.min(1, dt * 6);
     p.position.z += (tz - p.position.z) * Math.min(1, dt * 6);
     p.position.y += (pos.y + 0.4 + fly + Math.abs(Math.sin(elapsed * 6 + i)) * 0.3 - p.position.y) * Math.min(1, dt * 8);
@@ -620,6 +877,7 @@ function loop() {
 refreshLocks(); hud();
 $('where').textContent = ISL[curIsl].name + '  ·  ×' + ISL[curIsl].mult + ' chi';
 if (S.power === 0) setTimeout(() => msg('🥷 Click to swing your sword and collect Chi!', true), 600);
+else if (!S.tyc.length) setTimeout(() => msg('🍕 NEW! Cross the bridge on the left to the Pizza Tycoon!', true), 600);
 loop();
 </script>
 </body>
