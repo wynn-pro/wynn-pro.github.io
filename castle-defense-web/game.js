@@ -38,7 +38,7 @@ const ENEMY_GUNS = {
   // the giant gorilla throws huge boulders: 300,000 damage each
   gorilla:  { damage: 300000, reload: 80, range: 2000, speed: 9, size: 12, color: "#6b5a4a" },
   // the Devourer spits huge globs of venom
-  devourer: { damage: 400000, reload: 75, range: 2000, speed: 9, size: 11, color: "#9bff3a" },
+  devourer: { damage: 250000, reload: 75, range: 2000, speed: 9, size: 11, color: "#9bff3a" },
 };
 const CASTLE_HEALTH = 30;     // the castle starts with 30 health
 const HARD_WAVE = 5;          // from wave 5 on...
@@ -76,7 +76,7 @@ const COLLECTOR_ARMOR_MAX = 200000;  // enough to survive one giant boss shell (
 const GOLEM_MIN = 3;          // each press of the Golem button melts 3 soldiers into one golem
 const GOLEM_BONUS = 60000;    // every soldier that joins a golem adds its own health plus 60,000
 const MAX_GOLEMS = 3;         // you can have at most 3 golems; 3 golems fuse into the Three-Headed Snake
-const SNAKE_BONUS = 500000;   // the snake gets all 3 golems' health plus 500,000
+const SNAKE_BONUS = 3000000;  // the snake gets all 3 golems' health plus 3,000,000
 
 const SKIN = "#e0b48a";
 const SHADOW = "#3f6e2b";
@@ -1122,8 +1122,8 @@ function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = fals
         }
         if (giantKill && isGiant(m)) {
           // the golem's boulder smashes the giant boss in one hit, the giant giant boss in three
-          // and the gorilla in ten; the Devourer takes 40 boulders. A snake head counts double.
-          const hits = { titan: 3, gorilla: 10, devourer: 40 }[m.kind];
+          // and the gorilla in ten; the Devourer takes 100 boulders. A snake head counts double.
+          const hits = { titan: 3, gorilla: 10, devourer: 100 }[m.kind];
           hurt = hits ? Math.ceil(m.max * giantKill / hits) : m.health;
         }
         if (element) {
