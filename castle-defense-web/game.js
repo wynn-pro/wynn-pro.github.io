@@ -1825,6 +1825,75 @@ function drawGorilla(m, fur) {
   }
 }
 
+function drawDevourer(m, skin) {
+  // THE DEVOURER: a gigantic serpent slithering toward the castle, mouth wide open to swallow anything.
+  // Everything is drawn at its growth scale k.
+  const k = m.grow;
+  const x = m.x;
+  const gy = groundY(m);
+  const dark = "#1d1428";
+  const belly = "#b7a24a";
+  const half = monsterHalfWidth(m);
+  oval(x - half, gy - 14 * k, x + half, gy + 14 * k, SHADOW);
+  // the body: a chain of overlapping segments that wiggle up and down as it slithers
+  const segments = 14;
+  const points = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;                       // 0 = tail, 1 = neck
+    const px = x - half + t * half * 1.55;
+    const wave = Math.sin(m.step * 0.8 - t * 6) * 14 * k * (0.4 + t);
+    const r = (8 + 30 * Math.sin(Math.min(t * 1.15, 1) * Math.PI * 0.5)) * k;   // thin tail, fat body
+    points.push([px, gy - r - 2 + wave * 0.35, r]);
+  }
+  for (const [px, py, r] of points) {
+    oval(px - r * 1.1, py - r, px + r * 1.1, py + r, skin, true, dark);
+    oval(px - r * 0.7, py + r * 0.25, px + r * 0.7, py + r * 0.85, belly);   // golden belly
+    polygon([px - r * 0.3, py - r * 0.95, px + r * 0.3, py - r * 0.95, px, py - r * 1.5], dark);   // back spikes
+  }
+  // the neck rises up into a huge head
+  const [nx, ny, nr] = points[points.length - 1];
+  const hx = nx + 60 * k;
+  const hy = gy - 110 * k + Math.sin(m.step * 0.5) * 6 * k;
+  line(nx, ny, hx - 20 * k, hy + 10 * k, skin, nr * 1.6);
+  line(nx, ny + nr * 0.4, hx - 20 * k, hy + 22 * k, belly, nr * 0.6);
+  // head and gaping jaws (it faces the castle, to the right)
+  const open = (14 + Math.sin(m.step * 0.7) * 6) * k;
+  polygon([hx - 40 * k, hy - 28 * k, hx + 30 * k, hy - 24 * k, hx + 62 * k, hy - 6 * k - open * 0.3,
+           hx + 20 * k, hy, hx - 40 * k, hy + 8 * k], skin, true, dark);                      // upper jaw
+  polygon([hx - 36 * k, hy + 10 * k, hx + 20 * k, hy + 4 * k + open, hx + 54 * k, hy + 14 * k + open,
+           hx + 10 * k, hy + 30 * k, hx - 36 * k, hy + 28 * k], skin, true, dark);            // lower jaw
+  polygon([hx - 30 * k, hy + 2 * k, hx + 56 * k, hy - 4 * k, hx + 50 * k, hy + 12 * k + open,
+           hx - 30 * k, hy + 18 * k], "#5a0f1e");                                             // throat
+  for (let i = 0; i < 4; i++) {
+    const tx = hx + (6 + i * 12) * k;
+    polygon([tx, hy - 4 * k, tx + 5 * k, hy - 4 * k, tx + 2.5 * k, hy + 8 * k], "white");     // top fangs
+    polygon([tx, hy + 8 * k + open, tx + 5 * k, hy + 8 * k + open, tx + 2.5 * k, hy - 2 * k + open], "white");
+  }
+  // horns and glowing eyes
+  polygon([hx - 30 * k, hy - 26 * k, hx - 14 * k, hy - 26 * k, hx - 46 * k, hy - 58 * k], dark);
+  polygon([hx - 6 * k, hy - 26 * k, hx + 8 * k, hy - 25 * k, hx - 16 * k, hy - 54 * k], dark);
+  oval(hx + 8 * k, hy - 20 * k, hx + 24 * k, hy - 10 * k, "#ffe03a", true);
+  line(hx + 16 * k, hy - 19 * k, hx + 16 * k, hy - 11 * k, "black", 2 * k);                   // slit pupil
+  // how many soldiers it has eaten
+  if (m.eaten > 0) {
+    text(x - 30, gy - monsterHeight(m) - 30, "ate " + m.eaten, "#9bff3a", 12);
+  }
+}
+
+function drawDeadDevourer(x, gy) {
+  // flat on the ground, belly up, with X eyes
+  const skin = "#2e2a26";
+  oval(x - 170, gy - 10, x + 170, gy + 12, SHADOW);
+  for (let i = 0; i < 12; i++) {
+    const px = x - 160 + i * 26;
+    const r = 10 + 14 * Math.sin(Math.min(i / 9, 1) * Math.PI * 0.5);
+    oval(px - r * 1.2, gy - r * 1.4, px + r * 1.2, gy, skin, true);
+  }
+  polygon([x + 140, gy - 40, x + 200, gy - 30, x + 200, gy, x + 140, gy], skin, true);
+  line(x + 165, gy - 32, x + 177, gy - 20, "black", 3);
+  line(x + 165, gy - 20, x + 177, gy - 32, "black", 3);
+}
+
 function drawDeadGorilla(x, gy) {
   // knocked out flat on its back
   const fur = "#2e2a26";
@@ -1905,7 +1974,12 @@ function drawMonster(m) {
     body = "#5f7a2e";
   }
   const gy = groundY(m);
-  if (m.kind === "gorilla") {
+  if (m.burn > 0 && !body) {
+    body = "#a8461f";   // on fire
+  }
+  if (m.kind === "devourer") {
+    drawDevourer(m, body || "#3d2a5c");
+  } else if (m.kind === "gorilla") {
     drawGorilla(m, body || "#2b2522");
   } else if (m.kind === "titan") {
     drawTankShape(m.x, gy, 4.0, 1, body || "#3a1f4a", "#1a0d22");
@@ -1940,6 +2014,8 @@ function drawCorpse(c) {
       drawApc(c.x, c.y, "#2e2a26");
     } else if (c.kind === "gorilla") {
       drawDeadGorilla(c.x, c.y);
+    } else if (c.kind === "devourer") {
+      drawDeadDevourer(c.x, c.y);
     } else if (c.kind === "titan") {
       drawTankShape(c.x, c.y, 4.0, 1, "#2e2a26", "#1b1917");
     } else if (c.kind === "giant") {
@@ -2120,6 +2196,58 @@ function drawGolem(s) {
   }
 }
 
+function drawSnake(s) {
+  // the Three-Headed Snake: a huge coiled body with three necks, a fire, an ice and a poison head
+  const x = s.x;
+  const gy = s.y + 22;
+  const scale = "#3f6b3a";
+  const dark = "#25421f";
+  const belly = "#c9c27a";
+  oval(x - 70, gy - 10, x + 70, gy + 10, SHADOW);
+  // the coils, back to front
+  oval(x - 50, gy - 40, x + 66, gy + 4, dark, true);
+  oval(x - 40, gy - 62, x + 52, gy - 22, scale, true);
+  oval(x - 30, gy - 80, x + 40, gy - 48, dark, true);
+  line(x + 50, gy - 20, x + 80, gy - 4, scale, 10);   // tail
+  line(x + 80, gy - 4, x + 92, gy - 14, scale, 6);
+  for (const [bx, by] of [[-20, -56], [0, -60], [20, -56], [-10, -30], [16, -28]]) {
+    oval(x + bx - 5, gy + by - 3, x + bx + 5, gy + by + 3, belly);   // belly scales
+  }
+  const heads = [["#ff6a1a", "#ffd23a"], ["#4fb6e8", "#e6fbff"], ["#5fbf2a", "#d4ff5a"]];
+  for (let i = 0; i < 3; i++) {
+    const [hx, hy, hz] = snakeHead(s, i);
+    const lunge = (s.bite?.[i] ?? 0) * 1.2;
+    const headX = hx - lunge;
+    const headY = hy - hz;
+    // a curvy neck from the coils up to the head
+    const baseX = x - 10 + i * 6;
+    const baseY = gy - 70 + i * 12;
+    const midX = (baseX + headX) / 2 + 14;
+    const midY = (baseY + headY) / 2 - 10;
+    line(baseX, baseY, midX, midY, heads[i][0], 14);
+    line(midX, midY, headX + 10, headY, heads[i][0], 12);
+    // the head: snout pointing left at the enemies, glowing eye and forked tongue
+    polygon([headX + 16, headY - 10, headX - 10, headY - 7, headX - 18, headY, headX - 10, headY + 7, headX + 16, headY + 9],
+            heads[i][0], true);
+    oval(headX - 4, headY - 7, headX + 2, headY - 1, heads[i][1]);
+    oval(headX - 2, headY - 6, headX, headY - 2, "black");
+    if (lunge > 0) {
+      line(headX - 18, headY + 2, headX - 28, headY + 2, "#d4304a", 2);
+      line(headX - 28, headY + 2, headX - 32, headY - 1, "#d4304a", 1.5);
+      line(headX - 28, headY + 2, headX - 32, headY + 5, "#d4304a", 1.5);
+    }
+    // a little crown of spikes in each head's element color
+    for (const dx of [2, 8, 14]) {
+      polygon([headX + dx, headY - 9, headX + dx + 4, headY - 9, headX + dx + 2, headY - 15], heads[i][1]);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    if (s.bite?.[i] > 0) {
+      s.bite[i] -= 1;
+    }
+  }
+}
+
 function drawSoldier(s) {
   let top = s.y - 42;
   let half = 12;
@@ -2131,6 +2259,10 @@ function drawSoldier(s) {
     drawGolem(s);
     top = s.y - 112;
     half = 34;
+  } else if (s.kind === "snake") {
+    drawSnake(s);
+    top = s.y - 140;
+    half = 50;
   } else {
     drawPerson(s);
   }
@@ -2381,6 +2513,11 @@ function drawProjectile(p) {
   } else if (weapon === "grenade") {
     oval(sx - 3.5, sy - 3.5, sx + 3.5, sy + 3.5, "#333333");
     oval(sx - 1.5, sy - 1.5, sx + 1.5, sy + 1.5, stats.shot);
+  } else if (weapon === "shell" && stats.element) {
+    // a glowing ball of fire, ice or venom with a short trail
+    line(sx - dx * 1.2, sy - dy * 1.2, sx, sy, stats.shot, 5);
+    oval(sx - 7, sy - 7, sx + 7, sy + 7, stats.shot, true, "#ffffff");
+    oval(sx - 3, sy - 4, sx + 1, sy, "#ffffff");
   } else if (weapon === "shell" && p.kind === "golem") {
     oval(sx - 8, sy - 7, sx + 8, sy + 7, stats.shot, true);   // a big boulder
     oval(sx - 4, sy - 4, sx, sy - 1, "#8a8072");
@@ -2414,7 +2551,7 @@ function drawParticle(q) {
     oval(x - r, y - r, x + r, y + r, color);
   } else if (q.kind === "dust") {
     const r = q.size * (1.8 - left * 0.8);
-    oval(x - r, y - r * 0.7, x + r, y + r * 0.7, "#b39a6e");
+    oval(x - r, y - r * 0.7, x + r, y + r * 0.7, q.color === "#3a3a3a" ? "#b39a6e" : q.color);
   } else {
     const r = q.size;
     rect(x - r, y - r * 0.6, x + r, y + r * 0.6, q.color);
