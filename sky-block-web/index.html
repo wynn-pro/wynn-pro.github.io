@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Sky Block</title>
+  <meta name="description" content="Survive on a tiny floating island: build, farm, mine the cobble generator, fight zombies at night and upgrade in the shop.">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #87ceeb;
+      font-family: 'Trebuchet MS', system-ui, sans-serif; user-select: none; }
+    canvas { display: block; }
+    #crosshair { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; }
+    #crosshair:before, #crosshair:after { content: ''; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
+    #crosshair:before { left: 10px; top: 0; width: 2px; height: 22px; }
+    #crosshair:after { top: 10px; left: 0; height: 2px; width: 22px; }
+    #top { position: fixed; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between;
+      color: #fff; text-shadow: 2px 2px 0 #000; font-size: 20px; font-weight: bold; pointer-events: none; gap: 12px; }
+    #top .right { text-align: right; }
+    #gear { font-size: 15px; margin-top: 4px; }
+    #hearts { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); font-size: 20px;
+      white-space: nowrap; pointer-events: none; filter: drop-shadow(1px 1px 0 #000); }
+    #itemname { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); color: #fff;
+      text-shadow: 2px 2px 0 #000; font-size: 17px; pointer-events: none; }
+    #hotbar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px;
+      max-width: 96vw; overflow: hidden; pointer-events: none; }
+    .slot { width: 60px; height: 60px; flex: none; background: rgba(0,0,0,.45); border: 3px solid #555; position: relative;
+      display: flex; align-items: center; justify-content: center; font-size: 30px; box-sizing: border-box; }
+    .slot.sel { border-color: #fff; background: rgba(255,255,255,.2); }
+    .slot img { width: 38px; height: 38px; image-rendering: pixelated; }
+    .slot .n { position: absolute; right: 4px; bottom: 1px; font-size: 15px; color: #fff; text-shadow: 1px 1px 0 #000; font-weight: bold; }
+    .slot .k { position: absolute; left: 4px; top: 1px; font-size: 11px; color: #ddd; }
+    #breakbar { position: fixed; left: 50%; top: calc(50% + 22px); width: 70px; height: 7px; margin-left: -35px;
+      background: rgba(0,0,0,.55); display: none; pointer-events: none; }
+    #breakbar div { height: 100%; background: #fff; width: 0; }
+    #msgs { position: fixed; left: 12px; bottom: 90px; color: #fff; font-size: 17px; text-shadow: 2px 2px 0 #000;
+      pointer-events: none; display: flex; flex-direction: column; gap: 3px; }
+    #big { position: fixed; top: 22%; left: 0; right: 0; text-align: center; color: #ffd84d; font-size: 44px;
+      font-weight: bold; text-shadow: 3px 3px 0 #000; pointer-events: none; opacity: 0; transition: opacity .4s; }
+    #hurt { position: fixed; inset: 0; background: radial-gradient(transparent 40%, rgba(255,0,0,.55)); opacity: 0;
+      pointer-events: none; transition: opacity .35s; }
+    .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
+      background: rgba(10,20,40,.72); color: #fff; text-align: center; padding: 16px; box-sizing: border-box; }
+    .overlay h1 { font-size: 64px; margin: 0 0 8px; color: #7ee36b; text-shadow: 4px 4px 0 #1d4d16; letter-spacing: 3px; }
+    .overlay p { max-width: 560px; font-size: 18px; line-height: 1.5; margin: 6px 0; }
+    .keys { background: rgba(0,0,0,.35); border-radius: 10px; padding: 10px 18px; margin: 12px 0; font-size: 16px; line-height: 1.7; text-align: left; }
+    .keys b { display: inline-block; min-width: 92px; color: #ffd84d; }
+    .warn { color: #ff7a7a; font-weight: bold; }
+    button.big { font-size: 28px; padding: 12px 44px; background: #4caf50; border: 4px solid #2e7d32; color: #fff;
+      cursor: pointer; border-radius: 10px; font-family: inherit; font-weight: bold; margin-top: 10px; }
+    button.big:hover { background: #5cc560; }
+    #shop .panel { background: #2b2b2b; width: min(760px, 96vw); max-height: 88vh; overflow: auto; border: 5px solid #8b6b3d;
+      border-radius: 12px; padding: 14px 18px; box-sizing: border-box; }
+    #shop h2 { margin: 0 0 6px; color: #ffd84d; }
+    .tabs { display: flex; gap: 6px; margin: 8px 0; justify-content: center; flex-wrap: wrap; }
+    .tabs button { font-size: 18px; padding: 8px 18px; border-radius: 8px; border: 3px solid #555; background: #3a3a3a;
+      color: #fff; cursor: pointer; font-family: inherit; }
+    .tabs button.on { background: #8b6b3d; border-color: #ffd84d; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-bottom: 1px solid #444; }
+    .row .ic { width: 38px; height: 38px; font-size: 28px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .row .ic img { width: 34px; height: 34px; image-rendering: pixelated; }
+    .row .nm { flex: 1; text-align: left; font-size: 16px; }
+    .row .nm small { color: #aaa; display: block; }
+    .row button { font-size: 15px; padding: 6px 12px; border-radius: 6px; border: 2px solid #2e7d32; background: #4caf50;
+      color: #fff; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .row button:disabled { opacity: .35; cursor: default; }
+    .empty { color: #aaa; padding: 20px; }
+    @media (max-width: 600px) { .overlay h1 { font-size: 44px; } .slot { width: 46px; height: 46px; font-size: 22px; } .slot img { width: 28px; height: 28px; } }
+  </style>
+</head>
+<body>
+  <div id="crosshair"></div>
+  <div id="top">
+    <div><div id="coins">🪙 0</div><div id="gear"></div></div>
+    <div class="right"><div id="day">☀️ Day 1</div><div id="clock" style="font-size:15px"></div></div>
+  </div>
+  <div id="msgs"></div>
+  <div id="big"></div>
+  <div id="breakbar"><div></div></div>
+  <div id="itemname"></div>
+  <div id="hearts"></div>
+  <div id="hotbar"></div>
+  <div id="hurt"></div>
+
+  <div id="start" class="overlay">
+    <h1>SKY BLOCK</h1>
+    <p>You're stuck on a tiny island floating in the sky. Mine the magic cobblestone generator, grow trees and wheat,
+       build your island bigger, and fight the zombies that come out at night!</p>
+    <div class="keys">
+      <div><b>W A S D</b> walk &nbsp; <b>Space</b> jump &nbsp; <b>Shift</b> run</div>
+      <div><b>Mouse</b> look around</div>
+      <div><b>Left click</b> hold to break blocks / hit zombies</div>
+      <div><b>Right click</b> place blocks, plant seeds, eat food</div>
+      <div><b>1-9 / wheel</b> pick an item &nbsp; <b>E</b> open the shop</div>
+    </div>
+    <p class="warn">HARD MODE: if you fall off or the zombies get you, you lose EVERYTHING and start over!</p>
+    <p id="best"></p>
+    <button class="big" id="playBtn">▶ PLAY</button>
+  </div>
+
+  <div id="pause" class="overlay" style="display:none">
+    <h1 style="font-size:48px">PAUSED</h1>
+    <p>Click anywhere to keep playing</p>
+  </div>
+
+  <div id="over" class="overlay" style="display:none">
+    <h1 style="color:#ff6b6b;text-shadow:4px 4px 0 #4d1616">GAME OVER</h1>
+    <p id="overWhy" style="font-size:24px"></p>
+    <p id="overStats"></p>
+    <button class="big" id="againBtn">↻ START OVER</button>
+  </div>
+
+  <div id="shop" class="overlay" style="display:none">
+    <div class="panel">
+      <h2>🛒 Sky Shop &nbsp; <span id="shopCoins"></span></h2>
+      <div class="tabs">
+        <button data-tab="sell">💰 Sell</button>
+        <button data-tab="buy">🛍️ Buy</button>
+        <button data-tab="craft">🔨 Craft</button>
+      </div>
+      <div id="shopList"></div>
+      <button class="big" id="closeShop" style="font-size:20px;padding:8px 30px">Close (E)</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js?v=1.0.0"></script>
+</body>
+</html>
