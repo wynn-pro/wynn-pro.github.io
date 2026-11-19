@@ -53,7 +53,8 @@
       <div class="group">
         <button id="sell" class="tool"><span class="label">Sell</span><kbd>S</kbd></button>
         <button id="delete" class="tool"><span class="label">Delete</span><kbd>D</kbd></button>
-        <button id="combine" class="tool combine" title="Combine every soldier into one giant Golem that smashes the giant boss"><span class="label">🗿 Combine</span><kbd>G</kbd></button>
+        <button id="combine" class="tool combine" title="Melt 3 soldiers into one Golem (up to 3 Golems)"><span class="label">🗿 Golem 0/3</span><kbd>G</kbd></button>
+        <button id="snake" class="tool combine" hidden title="Fuse your 3 Golems into the Three-Headed Snake: fire, ice and poison heads"><span class="label">🐍 Fuse Snake</span><kbd>H</kbd></button>
         <button id="collector" class="tool collect" hidden title="With 2 or more Mechs, send one to collect coins"><span class="label">💰 Collector</span><kbd>C</kbd></button>
       </div>
       <div class="group group-end">
@@ -115,14 +116,15 @@
     <p class="help">
       <strong>Click enemies</strong> to hit them yourself and <strong>click coins</strong> to collect them before enemies pick them up.
       Every 3rd wave ends with a <strong>giant boss</strong>: only a Mech can stop it.
+      Every 8th wave <strong>THE DEVOURER</strong> slithers in: it swallows your soldiers and grows. Only the Three-Headed Snake can't be eaten.
       Keys: <kbd>1</kbd>–<kbd>6</kbd> recruit, <kbd>U</kbd> upgrade, <kbd>A</kbd> armor, <kbd>B</kbd> ammo,
-      <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>C</kbd> collector, <kbd>K</kbd> Mech armor, <kbd>G</kbd> combine into a Golem, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
+      <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>C</kbd> collector, <kbd>K</kbd> Mech armor, <kbd>G</kbd> make a Golem from 3 soldiers (max 3), <kbd>H</kbd> fuse 3 Golems into the Three-Headed Snake, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
       <kbd>Esc</kbd> cancel, <kbd>Tab</kbd> wipe out every enemy.
     </p>
-    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.07.0</span>
+    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.08.0</span>
       <a class="support" id="support" target="_blank" rel="noopener" hidden>☕ Support the game on Ko-fi</a>
     </footer>
   </main>
-  <script src="game.js?v=1.07.0"></script>
+  <script src="game.js?v=1.08.0"></script>
 </body>
 </html>

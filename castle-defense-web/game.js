@@ -1386,7 +1386,7 @@ function giantCrushes() {
 function devourerEats(m) {
   // THE DEVOURER swallows every soldier its jaws reach (even golems and mechs) and grows from it.
   // Only the Three-Headed Snake is too big to swallow.
-  const jawX = m.x + monsterHalfWidth(m) * 0.8;
+  const jawX = m.x + 190 * m.grow;   // where its open mouth is drawn
   for (const s of [...soldiers]) {
     if (s.kind === "snake") {
       continue;
