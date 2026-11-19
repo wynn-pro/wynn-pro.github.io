@@ -777,9 +777,9 @@ function hitMonster(m, damage, pushX = 0, pushZ = 0) {
     monsters = monsters.filter((other) => other !== m);
     let value = 5;
     if (m.kind === "devourer") {
-      score += 10000;
+      score += 50000;
       value = 500000;
-      showBanner("THE DEVOURER IS DEFEATED!", "+$500,000", true);
+      showBanner("THE DEVOURER IS DEFEATED!", "+50,000 score · +$500,000", true);
     } else if (m.kind === "gorilla") {
       score += 4000;
       value = 100000;
