@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mega Mania Games</title>
+<style>
+  :root {
+    --bg: #0f0a1f; --bg2: #1a1233; --card: #231a42; --card2: #2e2357;
+    --ink: #f3eeff; --dim: #a99cd1; --purple: #8b5cf6; --purple2: #6d28d9;
+    --green: #39ff88; --pink: #ff4fd8; --gold: #ffd23f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Trebuchet MS", system-ui, -apple-system, sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  /* ---------- top bar ---------- */
+  header.top {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; background: rgba(15,10,31,.92); backdrop-filter: blur(8px);
+    border-bottom: 2px solid #2b1f55;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); font-weight: 900;
+    font-size: 1.35rem; letter-spacing: .5px; white-space: nowrap; }
+  .logo b { color: var(--green); text-shadow: 0 0 10px rgba(57,255,136,.6); }
+  .logo .mm { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--purple), var(--pink)); box-shadow: 0 0 14px rgba(139,92,246,.7); font-size: 1.2rem; }
+  .back { color: var(--dim); text-decoration: none; font-size: .9rem; white-space: nowrap; }
+  .back:hover { color: var(--ink); }
+  .search { flex: 1 1 260px; position: relative; min-width: 0; }
+  .search input { width: 100%; padding: 11px 14px 11px 40px; border-radius: 999px; border: 2px solid #3a2c72;
+    background: var(--bg2); color: var(--ink); font-size: 1rem; outline: none; }
+  .search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,.3); }
+  .search span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .stats { display: flex; align-items: center; gap: 8px; }
+  .pill { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--bg2);
+    border: 2px solid #3a2c72; font-weight: 800; white-space: nowrap; }
+  .pill.coins { color: var(--gold); }
+  .lvl { min-width: 120px; }
+  .lvl .bar { width: 54px; height: 8px; border-radius: 9px; background: #3a2c72; overflow: hidden; }
+  .lvl .bar i { display: block; height: 100%; background: var(--green); width: 0; transition: width .3s; }
+  .iconbtn { border: 2px solid #3a2c72; background: var(--bg2); border-radius: 999px; padding: 7px 12px; font-weight: 800; }
+  .iconbtn:hover { border-color: var(--purple); }
+  .randbtn { border: 0; background: linear-gradient(135deg, var(--green), #1fbf6a); color: #062012; }
+
+  /* ---------- categories ---------- */
+  nav.cats { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; }
+  nav.cats::-webkit-scrollbar { display: none; }
+  .chip { flex: none; padding: 8px 14px; border-radius: 999px; border: 2px solid #3a2c72; background: var(--bg2);
+    font-weight: 800; font-size: .95rem; white-space: nowrap; }
+  .chip small { color: var(--dim); font-weight: 600; margin-left: 4px; }
+  .chip.on { background: var(--purple); border-color: var(--purple); box-shadow: 0 0 12px rgba(139,92,246,.6); }
+  .chip.on small { color: #e6dcff; }
+
+  main { padding: 0 16px 60px; max-width: 1500px; margin: 0 auto; }
+  h2 { font-size: 1.25rem; margin: 18px 0 10px; display: flex; align-items: baseline; gap: 10px; }
+  h2 small { color: var(--dim); font-size: .85rem; font-weight: 600; }
+
+  /* ---------- rows + grid ---------- */
+  .row { display: grid; grid-auto-flow: column; grid-auto-columns: 200px; gap: 12px; overflow-x: auto;
+    padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: #3a2c72 transparent; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .card { position: relative; border-radius: 14px; background: var(--card); overflow: hidden; cursor: pointer;
+    border: 2px solid transparent; transition: transform .12s, border-color .12s; content-visibility: auto;
+    contain-intrinsic-size: 200px 190px; text-align: left; }
+  .card:hover, .card:focus-visible { transform: translateY(-3px) scale(1.02); border-color: var(--green); outline: none; }
+  .thumb { position: relative; aspect-ratio: 16 / 10; display: grid; place-items: center; font-size: 3rem; }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .thumb .eng { position: absolute; left: 6px; bottom: 6px; font-size: .75rem; font-weight: 800; padding: 2px 8px;
+    border-radius: 999px; background: rgba(0,0,0,.5); }
+  .thumb .num { position: absolute; right: 6px; top: 6px; font-size: .72rem; font-weight: 800; padding: 2px 7px;
+    border-radius: 999px; background: rgba(0,0,0,.45); }
+  .card .info { padding: 8px 10px 10px; }
+  .card .name { font-weight: 800; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .meta { color: var(--dim); font-size: .78rem; margin-top: 2px; }
+  .heart { position: absolute; left: 6px; top: 6px; z-index: 2; border: 0; background: rgba(0,0,0,.45); border-radius: 999px;
+    width: 30px; height: 30px; font-size: .95rem; filter: grayscale(1); opacity: .75; }
+  .heart.on { filter: none; opacity: 1; }
+  .empty { color: var(--dim); padding: 12px 0; }
+  #sentinel { height: 40px; }
+  .loading { text-align: center; color: var(--dim); padding: 14px; }
+
+  /* ---------- player pop-up ---------- */
+  .modal { position: fixed; inset: 0; z-index: 50; background: rgba(5,3,12,.86); display: grid; place-items: center; padding: 12px; }
+  .player { width: min(1100px, 100%); background: var(--bg2); border-radius: 16px; border: 2px solid #3a2c72;
+    box-shadow: 0 0 40px rgba(139,92,246,.35); overflow: hidden; display: flex; flex-direction: column; max-height: 100%; }
+  .pbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; }
+  .pbar .title { font-weight: 900; font-size: 1.1rem; flex: 1 1 200px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pbar .title small { color: var(--dim); font-weight: 600; }
+  .stage { position: relative; background: #000; display: grid; place-items: center; min-height: 0; }
+  #cv { display: block; width: 100%; height: auto; max-height: calc(100vh - 150px); aspect-ratio: 16 / 9; object-fit: contain; touch-action: none; }
+  #frame { width: 100%; height: calc(100vh - 130px); max-height: 720px; border: 0; background: #fff; }
+  .help { padding: 8px 12px 12px; color: var(--dim); font-size: .85rem; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; background: var(--purple);
+    padding: 10px 18px; border-radius: 999px; font-weight: 800; box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    transition: opacity .3s; pointer-events: none; }
+
+  @media (max-width: 640px) {
+    .logo span.txt { display: none; }
+    .lvl .bar { display: none; }
+    .lvl { min-width: 0; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .row { grid-auto-columns: 160px; }
+    .thumb { font-size: 2.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="back" href="../index.html" title="Back to Wynn's website">← Home</a>
+  <a class="logo" href="#" id="logo"><span class="mm">🎮</span><span class="txt">Mega <b>Mania</b> Games</span></a>
+  <label class="search"><span>🔍</span>
+    <input id="q" type="search" placeholder="Search 1,000,000 games… or type a number like 500000" autocomplete="off" aria-label="Search games">
+  </label>
+  <div class="stats">
+    <div class="pill coins" title="Coins: earn them by playing">🪙 <span id="coins">0</span></div>
+    <div class="pill lvl" title="Your level">⭐ Lv <span id="level">1</span> <span class="bar"><i id="xpbar"></i></span></div>
+    <button class="iconbtn" id="mute" title="Sound on/off" aria-label="Sound on/off">🔊</button>
+    <button class="iconbtn randbtn" id="random" title="Play a random game">🎲 Random</button>
+  </div>
+</header>
+
+<nav class="cats" id="cats" aria-label="Categories"></nav>
+
+<main>
+  <section id="home">
+    <div id="recentWrap"><h2>🕘 Recently Played</h2><div class="row" id="recentRow"></div></div>
+    <div id="favWrap"><h2>❤️ My Favorites</h2><div class="row" id="favRow"></div></div>
+    <div id="wynnWrap"><h2>🏠 Wynn's Games <small>made by Wynn</small></h2><div class="row" id="wynnRow"></div></div>
+  </section>
+  <h2 id="gridTitle">🔥 All Games <small id="gridCount"></small></h2>
+  <div class="grid" id="grid"></div>
+  <div class="loading" id="loading" hidden>Loading more games…</div>
+  <p class="empty" id="noResults" hidden>😕 No games found. Try another word!</p>
+  <div id="sentinel"></div>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="player" role="dialog" aria-modal="true" aria-labelledby="ptitle">
+    <div class="pbar">
+      <div class="title" id="ptitle"></div>
+      <div class="pill" title="Your best score">🏆 <span id="pbest">0</span></div>
+      <button class="iconbtn" id="pfav" title="Favorite">🤍</button>
+      <button class="iconbtn" id="prestart" title="Restart (R)">🔄</button>
+      <a class="iconbtn" id="pfull" target="_top" hidden style="text-decoration:none">⤢ Full page</a>
+      <button class="iconbtn" id="pclose" title="Close (Esc)">✕</button>
+    </div>
+    <div class="stage">
+      <canvas id="cv"></canvas>
+      <iframe id="frame" hidden title="Wynn's game"></iframe>
+    </div>
+    <div class="help" id="phelp"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Mega Mania Games: 1,000,000 games built from 7 game engines.
+   Every number from 1 to 1,000,000 always becomes the same game
+   (same name, theme, speed and difficulty), because it is used as the
+   seed for a random number generator.
+   ===================================================================== */
+const TOTAL = 1000000;
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => n.toLocaleString('en-US');
+
+// ---------- saved data (coins, level, scores, favorites, recent) ----------
+const SAVE_KEY = 'megaMania.v1';
+let save = { coins: 0, xp: 0, best: {}, fav: [], recent: [], muted: false };
+try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) {}
+let saveTimer = 0;
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }, 150);
+}
+const levelOf = (xp) => Math.floor(Math.sqrt(xp / 40)) + 1;
+const xpFor = (lv) => (lv - 1) * (lv - 1) * 40;
+function renderStats() {
+  $('coins').textContent = fmt(save.coins);
+  const lv = levelOf(save.xp);
+  $('level').textContent = lv;
+  $('xpbar').style.width = Math.round(100 * (save.xp - xpFor(lv)) / (xpFor(lv + 1) - xpFor(lv))) + '%';
+  $('mute').textContent = save.muted ? '🔇' : '🔊';
+}
+
+// ---------- seeded random ----------
+function rng(seed) {
+  let a = (seed * 2654435761) >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+
+// ---------- themes, names, game types ----------
+const THEMES = [
+  { n: 'Lava', i: '🌋', p: '🔥', g: '💎', b: '🪨', h: 10 },   { n: 'Ocean', i: '🌊', p: '🐬', g: '🐚', b: '🦈', h: 200 },
+  { n: 'Space', i: '🚀', p: '🚀', g: '⭐', b: '☄️', h: 260 }, { n: 'Candy', i: '🍭', p: '🧁', g: '🍬', b: '🌶️', h: 320 },
+  { n: 'Jungle', i: '🌴', p: '🐒', g: '🍌', b: '🐍', h: 120 }, { n: 'Ice', i: '❄️', p: '🐧', g: '🐟', b: '🧊', h: 190 },
+  { n: 'Ninja', i: '🥷', p: '🥷', g: '🪙', b: '🗡️', h: 280 }, { n: 'Dragon', i: '🐉', p: '🐉', g: '🥚', b: '⚔️', h: 0 },
+  { n: 'Robot', i: '🤖', p: '🤖', g: '🔋', b: '⚡', h: 170 }, { n: 'Pirate', i: '🏴‍☠️', p: '🦜', g: '💰', b: '💣', h: 30 },
+  { n: 'Ghost', i: '👻', p: '👻', g: '🍬', b: '🎃', h: 275 }, { n: 'Dino', i: '🦖', p: '🦖', g: '🦴', b: '🌋', h: 90 },
+  { n: 'Pizza', i: '🍕', p: '🐭', g: '🍕', b: '🔪', h: 40 },  { n: 'Neon', i: '💡', p: '🟢', g: '💠', b: '🔺', h: 300 },
+  { n: 'Galaxy', i: '🌌', p: '🛸', g: '🌟', b: '🪐', h: 240 }, { n: 'Monster', i: '👾', p: '👾', g: '🍩', b: '👹', h: 140 },
+  { n: 'Farm', i: '🚜', p: '🐷', g: '🌽', b: '🐺', h: 60 },   { n: 'Desert', i: '🏜️', p: '🐪', g: '💧', b: '🦂', h: 35 },
+  { n: 'Castle', i: '🏰', p: '🤴', g: '👑', b: '🐲', h: 220 }, { n: 'Sports', i: '⚽', p: '⚽', g: '🏆', b: '🥅', h: 110 },
+];
+const ADJ = ['Super', 'Mega', 'Turbo', 'Crazy', 'Hyper', 'Tiny', 'Epic', 'Wild', 'Ultra', 'Rapid', 'Funky', 'Cosmic',
+  'Golden', 'Shadow', 'Rocket', 'Pixel', 'Thunder', 'Lucky', 'Jolly', 'Sneaky', 'Mighty', 'Bouncy', 'Zippy', 'Blazing',
+  'Frosty', 'Wacky', 'Royal', 'Secret', 'Giant', 'Speedy', 'Glowing', 'Silly'];
+
+// Game id -> engine is simply (id - 1) % 7, so categories can be counted with plain maths.
+const ENGINE_INFO = [
+  { key: 'runner', label: 'Runner',  e: '🏃', cat: 'action', words: ['Run', 'Dash', 'Jump', 'Sprint'],
+    help: 'Jump: Space / ↑ / W / tap / controller A. Jump over the blocks, grab the coins!' },
+  { key: 'clicker', label: 'Clicker', e: '👆', cat: 'clicker', words: ['Tap', 'Clicker', 'Pop', 'Smash'],
+    help: 'Click or tap the targets fast! Keyboard / controller: move the aim with arrows / stick, hit with Space / A. Don\'t hit bombs!' },
+  { key: 'dodge', label: 'Shooter', e: '🛸', cat: 'action', words: ['Blaster', 'Dodge', 'Storm', 'Invaders'],
+    help: 'Move: arrows / WASD / mouse / finger / stick. Dodge the falling rocks. Some games shoot by themselves!' },
+  { key: 'breaker', label: 'Breaker', e: '🧱', cat: 'arcade', words: ['Breaker', 'Bricks', 'Bounce', 'Smasher'],
+    help: 'Move the paddle: mouse / finger / ← → / stick. Launch the ball: Space / click / A.' },
+  { key: 'flappy', label: 'Flyer', e: '🪽', cat: 'arcade', words: ['Flyer', 'Flap', 'Wings', 'Glide'],
+    help: 'Flap: Space / ↑ / click / tap / A. Fly through the gaps!' },
+  { key: 'catch', label: 'Catch', e: '🧺', cat: 'arcade', words: ['Catch', 'Drop', 'Grab', 'Rain'],
+    help: 'Move the basket: mouse / finger / ← → / stick. Catch the good stuff, dodge the bad stuff!' },
+  { key: 'memory', label: 'Memory', e: '🃏', cat: 'puzzle', words: ['Match', 'Memory', 'Flip', 'Pairs'],
+    help: 'Click / tap 2 cards to find pairs. Keyboard / controller: arrows to move, Space / A to flip.' },
+];
+const CATS = [
+  { key: 'all', label: '🔥 All', engines: [0, 1, 2, 3, 4, 5, 6] },
+  { key: 'action', label: '⚡ Action', engines: [0, 2] },
+  { key: 'arcade', label: '🕹️ Arcade', engines: [3, 4, 5] },
+  { key: 'puzzle', label: '🧩 Puzzle', engines: [6] },
+  { key: 'clicker', label: '👆 Clicker', engines: [1] },
+  { key: 'runner', label: '🏃 Runners', engines: [0] },
+  { key: 'dodge', label: '🛸 Shooters', engines: [2] },
+  { key: 'breaker', label: '🧱 Breakers', engines: [3] },
+  { key: 'flappy', label: '🪽 Flyers', engines: [4] },
+  { key: 'catch', label: '🧺 Catch', engines: [5] },
+];
+CATS.forEach((c) => { c.count = c.engines.reduce((s, e) => s + Math.floor((TOTAL - 1 - e) / 7) + 1, 0); });
+
+const cache = new Map();
+function gameInfo(id) {
+  let g = cache.get(id);
+  if (g) return g;
+  const r = rng(id);
+  const eng = (id - 1) % 7;
+  const info = ENGINE_INFO[eng];
+  const theme = pick(r, THEMES), adj = pick(r, ADJ), word = pick(r, info.words);
+  const diff = 1 + Math.floor(r() * 5); // 1..5
+  g = {
+    id, eng, info, theme, diff,
+    name: adj + ' ' + theme.n + ' ' + word,
+    hue: (theme.h + Math.floor(r() * 60) - 30 + 360) % 360,
+    speed: 0.85 + r() * 0.6,
+    grav: 0.8 + r() * 0.5,
+    extra: r(), extra2: r(), // engine-specific variety
+  };
+  if (cache.size > 5000) cache.clear();
+  cache.set(id, g);
+  return g;
+}
+
+// ---------- Wynn's own games ----------
+const WYNN = [
+  ['dragon-blocks-web', 'Dragon Blocks', '🐉'], ['pip-quest-web', "Pip's Quest", '🦊'], ['speedway-5-billion-web', 'Speedway 5 Billion', '🏎️'],
+  ['neon-flip', 'Neon Flip', '💡'], ['cosmo-crates-web', 'Cosmo Crates', '📦'], ['sugar-pipes-web', 'Sugar Pipes', '🍭'],
+  ['colour-match-web', 'Colour Match', '🎨'], ['quiz-40-web', '40 Questions', '❓'], ['99-nights-web', '99 Nights', '🌙'],
+  ['math-test-web', 'Math Test', '➗'], ['spelling-test-web', 'Spelling Test', '🔤'], ['writing-test-web', 'Writing Test', '✍️'],
+  ['brickhop-obby-web', 'Brickhop Obby', '🧱'], ['block-tycoon-web', 'Block Tycoon', '🏗️'], ['ninja-sky-sim-web', 'Ninja Sky Sim', '🥷'],
+  ['ninja-sky-obby-web', 'Ninja Sky Obby', '☁️'], ['one-block-web', 'One Block Island', '🟫'], ['zipper-dash-web', 'Zipper Dash', '⚡'],
+  ['hedgehog-hustle-web', 'Hedgehog Hustle', '🦔'], ['tiny-tides-web', 'Tiny Tides', '🌊'], ['frostspire-web', 'Frostspire', '🗼'],
+  ['castle-defense-web', 'Castle Defense', '🏰'], ['frostfall-web', 'Frostfall', '❄️'], ['island-builder-web', 'Island Builder', '🏝️'],
+  ['battleship', 'Battleship Bay', '🚢'], ['dying-sun-web', 'Empire of the Dying Sun', '☀️'], ['goal-rush-web', 'Goal Rush', '⚽'],
+  ['star-snackers-web', 'Star Snackers', '⭐'], ['block-blaster-web', 'Block Blaster', '💥'], ['slice-master-web', 'Slice Master', '🔪'],
+  ['wobblebow-web', 'Wobblebow', '🏹'], ['redline-rush-web', 'Redline Rush', '🏁'], ['follow-the-line-web', 'Follow the Line', '〰️'],
+  ['orbit-defender-web', 'Orbit Defender', '🪐'], ['last-keep-web', 'Last Keep', '🛡️'], ['throne-forsaken-web', 'Throne of the Forsaken', '👑'],
+  ['bastion-ops-web', 'Bastion Ops', '🎖️'], ['krakens-row-web', "Kraken's Row", '🐙'], ['buccaneer-bay-web', 'Buccaneer Bay', '🏴‍☠️'],
+  ['deadzone-web', 'Dead Zone', '🧟'], ['worlds-last-dawn-web', "The World's Last Dawn", '🌅'], ['space-coin-sim-web', 'Space Coin Simulator', '🪙'],
+  ['paperland-web', 'Paperland', '📄'], ['pickaxe-miner-web', 'Pickaxe Miner', '⛏️'], ['pottery-master-web', 'Pottery Master', '🏺'],
+  ['roblox-web', 'Roblox Tycoon', '🏭'], ['sea-strike-web', 'Sea Strike', '⚓'], ['realm-mage-web', 'Realm Mage', '🧙'],
+  ['beastcaller-web', 'Beastcaller Arena', '🐺'], ['rune-realms-web', 'Rune Realms', '🔮'], ['iron-front-web', 'Iron Front', '🪖'],
+  ['food-fight-heroes-web', 'Food Fight Heroes', '🍔'], ['wizard-brawl-web', 'Wizard Brawl', '🪄'],
+];
+const SHOTS = new Set(['block-blaster-web', 'castle-defense-web', 'colour-match-web', 'cosmo-crates-web', 'dragon-blocks-web',
+  'frostfall-web', 'hedgehog-hustle-web', 'island-builder-web', 'neon-flip', 'paperland-web', 'pickaxe-miner-web', 'pip-quest-web',
+  'pottery-master-web', 'slice-master-web', 'speedway-5-billion-web', 'star-snackers-web', 'sugar-pipes-web', 'tiny-tides-web',
+  'wobblebow-web', 'zipper-dash-web']);
+
+// ---------- cards ----------
+function cardHTML(id) {
+  const g = gameInfo(id);
+  const best = save.best[id];
+  const fav = save.fav.includes(id);
+  return '<div class="card" tabindex="0" data-id="' + id + '">' +
+    '<button class="heart' + (fav ? ' on' : '') + '" data-heart="' + id + '" aria-label="Favorite">❤️</button>' +
+    '<div class="thumb" style="background:linear-gradient(135deg,hsl(' + g.hue + ',85%,55%),hsl(' + ((g.hue + 50) % 360) + ',80%,28%))">' +
+    g.theme.i + '<span class="eng">' + g.info.e + ' ' + g.info.label + '</span><span class="num">#' + fmt(id) + '</span></div>' +
+    '<div class="info"><div class="name">' + g.name + '</div><div class="meta">' + '⭐'.repeat(g.diff) +
+    (best != null ? ' · 🏆 ' + fmt(best) : '') + '</div></div></div>';
+}
+function wynnCardHTML(w) {
+  const [dir, name, emo] = w;
+  const h = (name.length * 47) % 360;
+  return '<div class="card" tabindex="0" data-wynn="' + dir + '">' +
+    '<div class="thumb" style="background:linear-gradient(135deg,hsl(' + h + ',85%,55%),hsl(' + (h + 50) % 360 + ',80%,28%))">' + emo +
+    (SHOTS.has(dir) ? '<img loading="lazy" alt="" src="../images/screens/' + dir + '.jpg" onerror="this.remove()">' : '') +
+    '<span class="eng">🏠 Wynn</span></div>' +
+    '<div class="info"><div class="name">' + name + '</div><div class="meta">Made by Wynn</div></div></div>';
+}
+
+// ---------- the endless list ----------
+// Every list is a "generator" that hands out game ids one at a time,
+// so search and categories can scroll through all 1,000,000 without building a huge list.
+let curCat = CATS[0], query = '', gen = null, genDone = false, shown = 0, filling = false;
+
+function* catGen(cat, start) {
+  const E = cat.engines, k0 = start || 0;
+  for (let k = k0; ; k++) {
+    const id = Math.floor(k / E.length) * 7 + E[k % E.length] + 1;
+    if (id > TOTAL) return;
+    yield id;
+  }
+}
+function* searchGen(cat, q) {
+  const num = q.replace(/[#,\s]/g, '');
+  if (/^\d+$/.test(num)) {
+    const n = Math.min(TOTAL, Math.max(1, +num));
+    for (let id = n; id <= TOTAL; id++) if (cat.engines.includes((id - 1) % 7)) yield id;
+    return;
+  }
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  for (let id = 1; id <= TOTAL; id++) {
+    if (!cat.engines.includes((id - 1) % 7)) continue;
+    const g = gameInfo(id);
+    const hay = (g.name + ' ' + g.info.label + ' ' + g.info.cat).toLowerCase();
+    if (words.every((w) => hay.includes(w))) yield id;
+    else if ((id & 1023) === 0) yield 0; // 0 = "still searching", lets us pause so the page never freezes
+  }
+}
+
+function resetList() {
+  $('grid').innerHTML = '';
+  shown = 0; genDone = false;
+  gen = query ? searchGen(curCat, query) : catGen(curCat, 0);
+  $('noResults').hidden = true;
+  $('gridTitle').firstChild.textContent = query ? '🔍 Results for "' + query + '" ' : curCat.label + ' Games ';
+  $('gridCount').textContent = query ? '' : fmt(curCat.count) + ' games';
+  $('home').hidden = !!query || curCat.key !== 'all';
+  fill();
+}
+function fill() {
+  if (filling || genDone) return;
+  filling = true;
+  const t0 = performance.now();
+  let html = '', n = 0;
+  while (n < 60 && performance.now() - t0 < 12) {
+    const r = gen.next();
+    if (r.done) { genDone = true; break; }
+    if (r.value) { html += cardHTML(r.value); n++; }
+  }
+  if (html) $('grid').insertAdjacentHTML('beforeend', html);
+  shown += n;
+  filling = false;
+  $('loading').hidden = genDone;
+  if (genDone && shown === 0) $('noResults').hidden = false;
+  // keep filling while the bottom of the list is still on screen
+  if (!genDone && $('sentinel').getBoundingClientRect().top < innerHeight + 800) requestAnimationFrame(fill);
+}
+new IntersectionObserver((es) => { if (es[0].isIntersecting) fill(); }, { rootMargin: '800px' }).observe($('sentinel'));
+
+function renderRows() {
+  const rec = save.recent.slice(0, 20), fav = save.fav.slice().reverse();
+  $('recentWrap').hidden = !rec.length;
+  $('recentRow').innerHTML = rec.map((x) => (typeof x === 'string' ? wynnCardHTML(WYNN.find((w) => w[0] === x) || [x, x, '🎮']) : cardHTML(x))).join('');
+  $('favWrap').hidden = !fav.length;
+  $('favRow').innerHTML = fav.map(cardHTML).join('');
+  $('wynnRow').innerHTML = WYNN.map(wynnCardHTML).join('');
+}
+function renderCats() {
+  $('cats').innerHTML = CATS.map((c) => '<button class="chip' + (c === curCat ? ' on' : '') + '" data-cat="' + c.key + '">' +
+    c.label + '<small>' + (c.count >= 1e6 ? '1M' : Math.round(c.count / 1000) + 'K') + '</small></button>').join('');
+}
+
+$('cats').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cat]');
+  if (!b) return;
+  curCat = CATS.find((c) => c.key === b.dataset.cat);
+  renderCats(); resetList(); scrollTo({ top: 0 });
+});
+let qTimer = 0;
+$('q').addEventListener('input', () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { query = $('q').value.trim(); resetList(); }, 180);
+});
+$('logo').addEventListener('click', (e) => {
+  e.preventDefault(); $('q').value = ''; query = ''; curCat = CATS[0]; renderCats(); renderRows(); resetList(); scrollTo({ top: 0 });
+});
+$('random').addEventListener('click', () => {
+  const k = Math.floor(Math.random() * curCat.count);
+  const E = curCat.engines;
+  openGame(Math.floor(k / E.length) * 7 + E[k % E.length] + 1);
+});
+$('mute').addEventListener('click', () => { save.muted = !save.muted; persist(); renderStats(); });
+
+document.querySelector('main').addEventListener('click', (e) => {
+  const h = e.target.closest('[data-heart]');
+  if (h) { toggleFav(+h.dataset.heart); return; }
+  const c = e.target.closest('.card');
+  if (!c) return;
+  if (c.dataset.wynn) openWynn(c.dataset.wynn); else openGame(+c.dataset.id);
+});
+document.querySelector('main').addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); e.target.click(); }
+});
+
+function toggleFav(id) {
+  const i = save.fav.indexOf(id);
+  if (i >= 0) save.fav.splice(i, 1); else save.fav.push(id);
+  persist();
+  const on = i < 0;
+  document.querySelectorAll('[data-heart="' + id + '"]').forEach((b) => b.classList.toggle('on', on));
+  if (current && current.id === id) $('pfav').textContent = on ? '❤️' : '🤍';
+  if (!$('home').hidden) { $('favWrap').hidden = !save.fav.length; $('favRow').innerHTML = save.fav.slice().reverse().map(cardHTML).join(''); }
+  toast(on ? '❤️ Added to favorites' : 'Removed from favorites');
+}
+function addRecent(x) {
+  save.recent = [x].concat(save.recent.filter((r) => r !== x)).slice(0, 20);
+  persist();
+}
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false; t.style.opacity = 1;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.style.opacity = 0; setTimeout(() => (t.hidden = true), 300); }, 1600);
+}
+
+// ---------- sound (made in code, no files) ----------
+let actx = null;
+function sfx(type) {
+  if (save.muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const S = { jump: [520, 880, .12, 'square'], coin: [880, 1320, .1, 'triangle'], hit: [220, 60, .25, 'sawtooth'],
+      pop: [660, 990, .07, 'triangle'], over: [400, 100, .5, 'sawtooth'], win: [523, 1046, .4, 'triangle'], flip: [300, 450, .06, 'sine'] }[type];
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = S[3]; o.frequency.setValueAtTime(S[0], t); o.frequency.exponentialRampToValueAtTime(S[1], t + S[2]);
+    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + S[2]);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + S[2] + .02);
+  } catch (e) {}
+}
+
+// =====================================================================
+//  GAME PLAYER
+// =====================================================================
+const W = 800, H = 450;
+const cv = $('cv'), ctx = cv.getContext('2d');
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+cv.width = W * DPR; cv.height = H * DPR;
+
+const sprites = new Map();
+function spr(emoji, size) {
+  const k = emoji + size;
+  let c = sprites.get(k);
+  if (!c) {
+    c = document.createElement('canvas');
+    const s = Math.ceil(size * 1.3 * DPR); c.width = c.height = s;
+    const x = c.getContext('2d');
+    x.font = Math.floor(size * DPR) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(emoji, s / 2, s / 2 + size * DPR * .06);
+    sprites.set(k, c);
+  }
+  return c;
+}
+function drawSpr(emoji, x, y, size) { const s = size * 1.3; ctx.drawImage(spr(emoji, Math.round(size)), x - s / 2, y - s / 2, s, s); }
+let bgCanvas = null;
+function makeBg(g) {
+  const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR;
+  const x = c.getContext('2d'); x.scale(DPR, DPR);
+  const gr = x.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, 'hsl(' + g.hue + ',55%,22%)'); gr.addColorStop(1, 'hsl(' + (g.hue + 40) % 360 + ',60%,8%)');
+  x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  const r = rng(g.id + 7);
+  x.fillStyle = 'rgba(255,255,255,.5)';
+  for (let i = 0; i < 60; i++) x.fillRect(r() * W, r() * H * .8, 2, 2);
+  x.globalAlpha = .12; x.font = '90px sans-serif';
+  for (let i = 0; i < 5; i++) x.fillText(g.theme.i, r() * W, 80 + r() * (H - 120));
+  return c;
+}
+const hit = (a, b, pad) => a.x + pad < b.x + b.w && a.x + a.w - pad > b.x && a.y + pad < b.y + b.h && a.y + a.h - pad > b.y;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+// ---------- the 7 engines ----------
+// Each one returns { score, over, lives, update(dt, inp), draw() }
+const ENGINES = [
+  // 0 RUNNER
+  (g) => {
+    const s = { score: 0, over: false, lives: 1 };
+    const ground = 380, p = { x: 120, y: ground - 44, w: 44, h: 44, vy: 0, jumps: 0 };
+    const grav = 2300 * g.grav, jumpV = -840 * Math.sqrt(g.grav), maxJumps = g.extra < .5 ? 2 : 1;
+    let speed = 320 * g.speed, t = 0, next = 1, bonus = 0;
+    const obs = [], coins = [];
+    s.update = (dt, inp) => {
+      t += dt; speed += dt * (4 + g.diff * 2.5);
+      if (inp.pressed && p.jumps < maxJumps) { p.vy = jumpV * (p.jumps ? .85 : 1); p.jumps++; sfx('jump'); }
+      p.vy += grav * dt; p.y += p.vy * dt;
+      if (p.y >= ground - p.h) { p.y = ground - p.h; p.vy = 0; p.jumps = 0; }
+      next -= dt;
+      if (next <= 0) {
+        const fly = Math.random() < .12 + g.diff * .04;
+        const h = fly ? 34 : rand(30, 46 + g.diff * 8), w = fly ? 50 : rand(28, 40 + g.diff * 6);
+        obs.push({ x: W + 20, y: fly ? ground - 44 - rand(70, 95) : ground - h, w, h, fly });
+        if (Math.random() < .5) coins.push({ x: W + 160, y: ground - rand(90, 170), w: 30, h: 30 });
+        next = rand(.75, 1.6) * (340 / speed) * (1.25 - g.diff * .05);
+      }
+      for (const o of obs) o.x -= speed * dt;
+      for (const c of coins) c.x -= speed * dt;
+      while (obs.length && obs[0].x < -80) obs.shift();
+      for (let i = coins.length - 1; i >= 0; i--) {
+        if (coins[i].x < -40) coins.splice(i, 1);
+        else if (hit(p, coins[i], 0)) { coins.splice(i, 1); bonus += 25; sfx('coin'); }
+      }
+      for (const o of obs) if (hit(p, o, 7)) { s.over = true; }
+      s.score = Math.floor(t * 10) + bonus;
+    };
+    s.draw = () => {
+      ctx.fillStyle = 'hsl(' + g.hue + ',40%,30%)'; ctx.fillRect(0, ground, W, H - ground);
+      ctx.fillStyle = 'hsl(' + g.hue + ',70%,55%)'; ctx.fillRect(0, ground, W, 6);
+      for (const c of coins) drawSpr(g.theme.g, c.x + 15, c.y + 15, 28);
+      for (const o of obs) {
+        if (o.fly) drawSpr(g.theme.b, o.x + o.w / 2, o.y + o.h / 2, 40);
+        else { ctx.fillStyle = 'hsl(' + (g.hue + 180) % 360 + ',75%,55%)'; ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(o.x, o.y + o.h - 8, o.w, 8); }
+      }
+      drawSpr(g.theme.p, p.x + p.w / 2, p.y + p.h / 2, 46);
+      if (maxJumps === 2 && t < 3) hint('Double jump allowed!');
+    };
+    return s;
+  },
+  // 1 CLICKER
+  (g) => {
+    const s = { score: 0, over: false, lives: 1 };
+    let time = 25 + Math.floor(g.extra * 4) * 5, spawn = 0, combo = 0;
+    const T = [], aim = { x: W / 2, y: H / 2 }, bombChance = .08 + g.diff * .04;
+    s.update = (dt, inp) => {
+      time -= dt;
+      if (time <= 0) { s.over = true; return; }
+      if (inp.ptr.active) { aim.x = inp.ptr.x; aim.y = inp.ptr.y; }
+      else { aim.x = clamp(aim.x + inp.x * 520 * dt, 0, W); aim.y = clamp(aim.y + inp.y * 520 * dt, 0, H); }
+      spawn -= dt;
+      if (spawn <= 0) {
+        const r = rand(30, 46) - g.diff * 3, life = (1.9 - g.diff * .2) / g.speed + .4;
+        T.push({ x: rand(r + 10, W - r - 10), y: rand(r + 50, H - r - 10), r, life, max: life,
+          bomb: Math.random() < bombChance, gold: Math.random() < .07 });
+        spawn = rand(.35, .75) / (g.speed * (.8 + g.diff * .12));
+      }
+      for (let i = T.length - 1; i >= 0; i--) { T[i].life -= dt; if (T[i].life <= 0) { if (!T[i].bomb) combo = 0; T.splice(i, 1); } }
+      if (inp.pressed) {
+        const hx = inp.tap ? inp.tap.x : aim.x, hy = inp.tap ? inp.tap.y : aim.y;
+        for (let i = T.length - 1; i >= 0; i--) {
+          const o = T[i];
+          if ((o.x - hx) ** 2 + (o.y - hy) ** 2 < (o.r + 6) ** 2) {
+            T.splice(i, 1);
+            if (o.bomb) { time -= 4; combo = 0; sfx('hit'); flash = .3; }
+            else { combo++; s.score += (o.gold ? 5 : 1) + Math.floor(combo / 5); sfx(o.gold ? 'coin' : 'pop'); }
+            break;
+          }
+        }
+      }
+    };
+    s.draw = () => {
+      for (const o of T) {
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7);
+        ctx.fillStyle = o.bomb ? 'rgba(255,60,60,.35)' : o.gold ? 'rgba(255,210,63,.45)' : 'hsla(' + g.hue + ',90%,60%,.45)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * (o.life / o.max));
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        drawSpr(o.bomb ? '💣' : o.gold ? '🌟' : g.theme.g, o.x, o.y, o.r * 1.2);
+      }
+      if (!ptr.active) {
+        ctx.strokeStyle = '#39ff88'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(aim.x, aim.y, 14, 0, 7);
+        ctx.moveTo(aim.x - 22, aim.y); ctx.lineTo(aim.x + 22, aim.y); ctx.moveTo(aim.x, aim.y - 22); ctx.lineTo(aim.x, aim.y + 22); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(250, 16, 300, 12);
+      ctx.fillStyle = time < 5 ? '#ff4f6d' : '#39ff88'; ctx.fillRect(250, 16, 300 * clamp(time / 40, 0, 1), 12);
+      text('⏱ ' + Math.max(0, Math.ceil(time)), 400, 48, 18, 'center');
+      if (combo >= 5) text('🔥 Combo x' + combo, W - 16, 74, 18, 'right');
+    };
+    return s;
+  },
+  // 2 DODGE / SHOOTER
+  (g) => {
+    const s = { score: 0, over: false, lives: 3 };
+    const shooter = g.extra < .6;
+    const ship = { x: W / 2, y: H - 60, r: 20 };
+    const M = [], B = [], parts = [];
+    let t = 0, spawn = 0, fire = 0, inv = 0, pts = 0;
+    s.update = (dt, inp) => {
+      t += dt; inv -= dt;
+      if (inp.ptr.active) { ship.x += (inp.ptr.x - ship.x) * Math.min(1, dt * 12); ship.y += (inp.ptr.y - ship.y) * Math.min(1, dt * 12); }
+      else { ship.x += inp.x * 430 * dt; ship.y += inp.y * 430 * dt; }
+      ship.x = clamp(ship.x, 20, W - 20); ship.y = clamp(ship.y, 60, H - 20);
+      spawn -= dt;
+      if (spawn <= 0) {
+        const r = rand(14, 32);
+        M.push({ x: rand(r, W - r), y: -r, r, vy: rand(140, 230) * g.speed * (1 + t / 60), vx: rand(-50, 50), hp: r > 26 ? 2 : 1 });
+        spawn = Math.max(.12, (.7 - g.diff * .07) - t * .006);
+      }
+      if (shooter) {
+        fire -= dt;
+        if (fire <= 0) { B.push({ x: ship.x, y: ship.y - 20 }); fire = .2; }
+        for (const b of B) b.y -= 620 * dt;
+        while (B.length && B[0].y < -10) B.shift();
+      }
+      for (let i = M.length - 1; i >= 0; i--) {
+        const m = M[i]; m.y += m.vy * dt; m.x += m.vx * dt;
+        if (m.y > H + 40) { M.splice(i, 1); continue; }
+        let dead = false;
+        if (shooter) for (let j = B.length - 1; j >= 0; j--) {
+          if ((B[j].x - m.x) ** 2 + (B[j].y - m.y) ** 2 < (m.r + 4) ** 2) {
+            B.splice(j, 1);
+            if (--m.hp <= 0) { dead = true; M.splice(i, 1); pts += 10; sfx('pop');
+              for (let k = 0; k < 6; k++) parts.push({ x: m.x, y: m.y, vx: rand(-150, 150), vy: rand(-150, 150), l: .4 }); }
+            break;
+          }
+        }
+        if (!dead && inv <= 0 && (m.x - ship.x) ** 2 + (m.y - ship.y) ** 2 < (m.r + ship.r - 6) ** 2) {
+          M.splice(i, 1); s.lives--; inv = 1.5; flash = .3; sfx('hit');
+          if (s.lives <= 0) s.over = true;
+        }
+      }
+      for (let i = parts.length - 1; i >= 0; i--) { const q = parts[i]; q.x += q.vx * dt; q.y += q.vy * dt; if ((q.l -= dt) <= 0) parts.splice(i, 1); }
+      s.score = Math.floor(t * 10) + pts;
+    };
+    s.draw = () => {
+      ctx.fillStyle = '#39ff88';
+      for (const b of B) ctx.fillRect(b.x - 2, b.y - 10, 4, 14);
+      for (const m of M) drawSpr(g.theme.b, m.x, m.y, m.r * 2);
+      ctx.fillStyle = '#ffd23f';
+      for (const q of parts) ctx.fillRect(q.x, q.y, 4, 4);
+      if (inv <= 0 || Math.floor(inv * 10) % 2) drawSpr(g.theme.p, ship.x, ship.y, 42);
+      if (t < 3) hint(shooter ? 'Your ship shoots by itself!' : 'Dodge everything!');
+    };
+    return s;
+  },
+  // 3 BREAKER
+  (g) => {
+    const s = { score: 0, over: false, lives: 3 };
+    const pad = { x: W / 2 - 60, y: H - 30, w: 130 - g.diff * 10, h: 14 };
+    const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 9, stuck: true };
+    let bricks = [], level = 1;
+    const base = 360 * g.speed;
+    const build = () => {
+      bricks = [];
+      const rows = 3 + Math.min(4, g.diff + level - 1), cols = 10, bw = (W - 40) / cols;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (g.extra2 < .3 && (r + c) % 2 && r % 2) continue; // some games have gaps in the wall
+        bricks.push({ x: 20 + c * bw + 2, y: 60 + r * 26, w: bw - 4, h: 22, hue: (g.hue + r * 25) % 360 });
+      }
+    };
+    build();
+    s.update = (dt, inp) => {
+      if (inp.ptr.active) pad.x = inp.ptr.x - pad.w / 2; else pad.x += inp.x * 600 * dt;
+      pad.x = clamp(pad.x, 0, W - pad.w);
+      if (ball.stuck) {
+        ball.x = pad.x + pad.w / 2; ball.y = pad.y - ball.r - 1;
+        if (inp.pressed) { ball.stuck = false; const sp = base * (1 + (level - 1) * .08); ball.vx = sp * rand(-.5, .5); ball.vy = -sp; sfx('jump'); }
+        return;
+      }
+      const steps = 3;
+      for (let k = 0; k < steps; k++) {
+        ball.x += ball.vx * dt / steps; ball.y += ball.vy * dt / steps;
+        if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if (ball.y < ball.r) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+        if (ball.vy > 0 && ball.y + ball.r >= pad.y && ball.y < pad.y + pad.h && ball.x > pad.x - ball.r && ball.x < pad.x + pad.w + ball.r) {
+          const sp = Math.hypot(ball.vx, ball.vy), a = (ball.x - (pad.x + pad.w / 2)) / (pad.w / 2) * 1.05;
+          ball.vx = sp * Math.sin(a); ball.vy = -sp * Math.cos(a); ball.y = pad.y - ball.r; sfx('flip');
+        }
+        for (let i = 0; i < bricks.length; i++) {
+          const b = bricks[i];
+          if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+            const ox = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
+            const oy = Math.min(ball.y + ball.r - b.y, b.y + b.h - (ball.y - ball.r));
+            if (ox < oy) ball.vx = -ball.vx; else ball.vy = -ball.vy;
+            bricks.splice(i, 1); s.score += 10; sfx('pop');
+            break;
+          }
+        }
+      }
+      if (ball.y > H + 20) { s.lives--; flash = .3; sfx('hit'); ball.stuck = true; if (s.lives <= 0) s.over = true; }
+      if (!bricks.length) { level++; s.score += 100; sfx('win'); build(); ball.stuck = true; }
+    };
+    s.draw = () => {
+      for (const b of bricks) { ctx.fillStyle = 'hsl(' + b.hue + ',85%,58%)'; ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(b.x, b.y, b.w, 4); }
+      ctx.fillStyle = '#39ff88'; ctx.fillRect(pad.x, pad.y, pad.w, pad.h);
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+      text('Level ' + level, W - 16, 74, 18, 'right');
+      if (ball.stuck) hint('Press Space / click / A to launch!');
+    };
+    return s;
+  },
+  // 4 FLAPPY FLYER
+  (g) => {
+    const s = { score: 0, over: false, lives: 1 };
+    const bird = { x: 200, y: H / 2, vy: 0, w: 36, h: 36 };
+    const P = [];
+    let started = false, next = 0, speed = 210 * g.speed;
+    const gap = 175 - g.diff * 12, grav = 1500 * g.grav, flap = -440 * Math.sqrt(g.grav);
+    s.update = (dt, inp) => {
+      if (!started) { bird.y = H / 2 + Math.sin(performance.now() / 200) * 8; if (inp.pressed) { started = true; bird.vy = flap; sfx('jump'); } return; }
+      if (inp.pressed) { bird.vy = flap; sfx('jump'); }
+      bird.vy += grav * dt; bird.y += bird.vy * dt;
+      next -= dt;
+      if (next <= 0) { P.push({ x: W + 40, gy: rand(80, H - 80 - gap), w: 70, done: false }); next = 1.55 / g.speed * (1 - g.diff * .03); }
+      speed += dt * 3;
+      const box = { x: bird.x - bird.w / 2, y: bird.y - bird.h / 2, w: bird.w, h: bird.h };
+      for (const p of P) {
+        p.x -= speed * dt;
+        if (!p.done && p.x + p.w < bird.x) { p.done = true; s.score++; sfx('coin'); }
+        if (hit(box, { x: p.x, y: -10, w: p.w, h: p.gy + 10 }, 6) || hit(box, { x: p.x, y: p.gy + gap, w: p.w, h: H }, 6)) s.over = true;
+      }
+      while (P.length && P[0].x < -100) P.shift();
+      if (bird.y > H - 10 || bird.y < -30) s.over = true;
+    };
+    s.draw = () => {
+      for (const p of P) {
+        ctx.fillStyle = 'hsl(' + (g.hue + 150) % 360 + ',70%,45%)';
+        ctx.fillRect(p.x, 0, p.w, p.gy); ctx.fillRect(p.x, p.gy + gap, p.w, H);
+        ctx.fillStyle = 'hsl(' + (g.hue + 150) % 360 + ',80%,62%)';
+        ctx.fillRect(p.x - 6, p.gy - 20, p.w + 12, 20); ctx.fillRect(p.x - 6, p.gy + gap, p.w + 12, 20);
+      }
+      ctx.save(); ctx.translate(bird.x, bird.y); ctx.rotate(clamp(bird.vy / 900, -.5, .9));
+      ctx.drawImage(spr(g.theme.p, 40), -26, -26, 52, 52); ctx.restore();
+      if (!started) hint('Tap / Space / A to start flying!');
+    };
+    return s;
+  },
+  // 5 CATCH
+  (g) => {
+    const s = { score: 0, over: false, lives: 3 };
+    const bk = { x: W / 2 - 50, y: H - 56, w: 100, h: 40 };
+    const F = [];
+    let t = 0, spawn = 0;
+    const badChance = .15 + g.diff * .05;
+    s.update = (dt, inp) => {
+      t += dt;
+      if (inp.ptr.active) bk.x += (inp.ptr.x - bk.w / 2 - bk.x) * Math.min(1, dt * 15); else bk.x += inp.x * 600 * dt;
+      bk.x = clamp(bk.x, 0, W - bk.w);
+      spawn -= dt;
+      if (spawn <= 0) {
+        const r = Math.random();
+        F.push({ x: rand(30, W - 30), y: -30, vy: rand(150, 230) * g.speed * (1 + t / 50), kind: r < badChance ? 'bad' : r > .95 ? 'gold' : 'good' });
+        spawn = Math.max(.18, .75 - t * .008 - g.diff * .05);
+      }
+      for (let i = F.length - 1; i >= 0; i--) {
+        const f = F[i]; f.y += f.vy * dt;
+        if (f.y > bk.y && f.y < bk.y + bk.h && f.x > bk.x - 10 && f.x < bk.x + bk.w + 10) {
+          F.splice(i, 1);
+          if (f.kind === 'bad') { s.lives--; flash = .3; sfx('hit'); if (s.lives <= 0) s.over = true; }
+          else { s.score += f.kind === 'gold' ? 5 : 1; sfx(f.kind === 'gold' ? 'coin' : 'pop'); }
+        } else if (f.y > H + 30) F.splice(i, 1);
+      }
+    };
+    s.draw = () => {
+      for (const f of F) drawSpr(f.kind === 'bad' ? g.theme.b : f.kind === 'gold' ? '🌟' : g.theme.g, f.x, f.y, 36);
+      drawSpr('🧺', bk.x + bk.w / 2, bk.y + 14, 64);
+    };
+    return s;
+  },
+  // 6 MEMORY
+  (g) => {
+    const s = { score: 0, over: false, lives: 1 };
+    const POOL = ['🍎', '🍌', '🍇', '🍓', '🍒', '🥝', '🍍', '🥕', '🌽', '🍩', '🍪', '🍕', '🐶', '🐱', '🐸', '🐵', '🦁', '🐼',
+      '🐙', '🦄', '🐝', '🐢', '⚽', '🏀', '🎸', '🚗', '🚀', '⭐', '🌈', '🔥', '💎', '👑'];
+    const pairs = [6, 8, 10, 12, 12][g.diff - 1];
+    const cols = pairs <= 8 ? 4 : pairs === 10 ? 5 : 6, rows = (pairs * 2) / cols;
+    const sh = POOL.slice().sort(() => Math.random() - .5).slice(0, pairs);
+    const cards = sh.concat(sh).sort(() => Math.random() - .5).map((e) => ({ e, up: false, done: false, a: 0 }));
+    const cw = Math.min(110, (W - 60) / cols - 10), ch = Math.min(cw * 1.2, (H - 80) / rows - 10);
+    const ox = (W - cols * (cw + 10) + 10) / 2, oy = 60 + (H - 60 - rows * (ch + 10) + 10) / 2;
+    let open = [], wait = 0, moves = 0, t = 0, cur = 0, matched = 0, kb = false;
+    const pos = (i) => ({ x: ox + (i % cols) * (cw + 10), y: oy + Math.floor(i / cols) * (ch + 10) });
+    const flip = (i) => {
+      const c = cards[i];
+      if (!c || c.up || c.done || wait > 0 || open.length >= 2) return;
+      c.up = true; open.push(i); sfx('flip');
+      if (open.length === 2) {
+        moves++;
+        const [a, b] = open;
+        if (cards[a].e === cards[b].e) { cards[a].done = cards[b].done = true; open = []; matched++; sfx('coin'); s.score = matched * 10;
+          if (matched === pairs) { s.score = Math.max(20, Math.round(pairs * 60 - (moves - pairs) * 6 - t)); s.over = true; s.win = true; } }
+        else wait = .8;
+      }
+    };
+    s.update = (dt, inp) => {
+      t += dt;
+      if (wait > 0) { wait -= dt; if (wait <= 0) { open.forEach((i) => (cards[i].up = false)); open = []; } }
+      if (inp.dir.dx || inp.dir.dy) { kb = true; cur = clamp(cur + inp.dir.dx + inp.dir.dy * cols, 0, cards.length - 1); }
+      if (inp.tap) {
+        kb = false;
+        for (let i = 0; i < cards.length; i++) { const p = pos(i); if (inp.tap.x > p.x && inp.tap.x < p.x + cw && inp.tap.y > p.y && inp.tap.y < p.y + ch) { flip(i); break; } }
+      } else if (inp.pressed) { kb = true; flip(cur); }
+      for (const c of cards) c.a += ((c.up || c.done ? 1 : 0) - c.a) * Math.min(1, dt * 14);
+    };
+    s.draw = () => {
+      cards.forEach((c, i) => {
+        const p = pos(i), sx = Math.abs(c.a * 2 - 1);
+        ctx.save(); ctx.translate(p.x + cw / 2, p.y + ch / 2); ctx.scale(Math.max(.05, sx), 1);
+        ctx.fillStyle = c.a > .5 ? (c.done ? 'hsl(140,60%,40%)' : '#f3eeff') : 'hsl(' + g.hue + ',70%,45%)';
+        ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+        if (c.a > .5) ctx.drawImage(spr(c.e, 44), -29, -29, 58, 58);
+        else { ctx.globalAlpha = .5; ctx.drawImage(spr(g.theme.i, 30), -20, -20, 40, 40); ctx.globalAlpha = 1; }
+        ctx.restore();
+        if (kb && i === cur) { ctx.strokeStyle = '#39ff88'; ctx.lineWidth = 4; ctx.strokeRect(p.x - 4, p.y - 4, cw + 8, ch + 8); }
+      });
+      text('Moves ' + moves + '   Pairs ' + matched + '/' + pairs, W - 16, 30, 18, 'right');
+    };
+    return s;
+  },
+];
+
+function text(str, x, y, size, align) {
+  ctx.font = 'bold ' + size + 'px "Trebuchet MS", sans-serif'; ctx.textAlign = align || 'left';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeText(str, x, y); ctx.fillStyle = '#fff'; ctx.fillText(str, x, y);
+}
+function hint(str) { text(str, W / 2, H - 14, 16, 'center'); }
+
+// ---------- input: keyboard, mouse, touch, controller ----------
+const keys = new Set();
+let pressedFlag = false, tapPos = null, dirX = 0, dirY = 0;
+const ptr = { x: W / 2, y: H / 2, active: false, down: false };
+const padPrev = {};
+const ACTION = ['Space', 'ArrowUp', 'KeyW', 'Enter'];
+
+addEventListener('keydown', (e) => {
+  if ($('modal').hidden) { if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); } return; }
+  if (e.key === 'Escape') { closeGame(); return; }
+  if (!current || current.wynn) return;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if (e.code === 'KeyR') { startGame(); return; }
+  keys.add(e.code); ptr.active = false;
+  if (!e.repeat) {
+    if (ACTION.includes(e.code)) pressedFlag = true;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') dirX = -1;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') dirX = 1;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW') dirY = -1;
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') dirY = 1;
+  }
+});
+addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+function toCanvas(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+cv.addEventListener('pointerdown', (e) => { const p = toCanvas(e); ptr.x = p.x; ptr.y = p.y; ptr.active = true; ptr.down = true;
+  tapPos = p; pressedFlag = true; try { cv.setPointerCapture(e.pointerId); } catch (err) {} });
+cv.addEventListener('pointermove', (e) => { const p = toCanvas(e); if (Math.abs(p.x - ptr.x) + Math.abs(p.y - ptr.y) > 2) ptr.active = true; ptr.x = p.x; ptr.y = p.y; });
+cv.addEventListener('pointerup', () => { ptr.down = false; });
+
+addEventListener('gamepadconnected', () => toast('🎮 Controller connected!'));
+function readInput() {
+  let x = (keys.has('ArrowRight') || keys.has('KeyD') ? 1 : 0) - (keys.has('ArrowLeft') || keys.has('KeyA') ? 1 : 0);
+  let y = (keys.has('ArrowDown') || keys.has('KeyS') ? 1 : 0) - (keys.has('ArrowUp') || keys.has('KeyW') ? 1 : 0);
+  let action = ACTION.some((k) => keys.has(k)) || ptr.down;
+  const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+  for (const gp of gps) {
+    if (!gp) continue;
+    const b = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
+    const ax = Math.abs(gp.axes[0]) > .25 ? gp.axes[0] : 0, ay = Math.abs(gp.axes[1]) > .25 ? gp.axes[1] : 0;
+    const gx = ax || (b(15) ? 1 : 0) - (b(14) ? 1 : 0), gy = ay || (b(13) ? 1 : 0) - (b(12) ? 1 : 0);
+    if (gx || gy) { x = gx; y = gy; ptr.active = false; }
+    const A = b(0) || b(2) || b(7);
+    if (A) action = true;
+    const now = { A, B: b(1), S: b(9), L: gx < -.5, R: gx > .5, U: gy < -.5, D: gy > .5 };
+    const pv = padPrev[gp.index] || {};
+    padPrev[gp.index] = now;
+    if (now.A && !pv.A) { pressedFlag = true; ptr.active = false; }
+    if (now.B && !pv.B) { closeGame(); return null; }
+    if (now.S && !pv.S) { startGame(); return null; }
+    if (now.L && !pv.L) dirX = -1;
+    if (now.R && !pv.R) dirX = 1;
+    if (now.U && !pv.U) dirY = -1;
+    if (now.D && !pv.D) dirY = 1;
+  }
+  const inp = { x: clamp(x, -1, 1), y: clamp(y, -1, 1), action, pressed: pressedFlag, tap: tapPos, dir: { dx: dirX, dy: dirY }, ptr };
+  pressedFlag = false; tapPos = null; dirX = dirY = 0;
+  return inp;
+}
+
+// ---------- game loop ----------
+let current = null, state = null, raf = 0, last = 0, flash = 0, overT = 0, rewarded = false, reward = 0, newBest = false;
+
+function openGame(id) {
+  const g = gameInfo(id);
+  current = g;
+  $('frame').hidden = true; $('frame').src = 'about:blank'; cv.hidden = false; $('pfull').hidden = true;
+  $('prestart').hidden = false; $('pfav').hidden = false;
+  $('ptitle').innerHTML = g.theme.i + ' ' + g.name + ' <small>#' + fmt(id) + ' · ' + g.info.label + ' · ' + '⭐'.repeat(g.diff) + '</small>';
+  $('pbest').textContent = fmt(save.best[id] || 0);
+  $('pfav').textContent = save.fav.includes(id) ? '❤️' : '🤍';
+  $('phelp').textContent = '🎮 ' + g.info.help + '  ·  R = restart, Esc / controller B = close.';
+  $('modal').hidden = false;
+  if (document.activeElement) document.activeElement.blur();
+  bgCanvas = makeBg(g);
+  addRecent(id);
+  startGame();
+}
+function openWynn(dir) {
+  const w = WYNN.find((x) => x[0] === dir);
+  current = { wynn: dir };
+  cancelAnimationFrame(raf); state = null;
+  cv.hidden = true; $('frame').hidden = false; $('frame').src = '../' + dir + '/index.html';
+  $('pfull').hidden = false; $('pfull').href = '../' + dir + '/index.html';
+  $('prestart').hidden = true; $('pfav').hidden = true;
+  $('ptitle').innerHTML = (w ? w[2] + ' ' + w[1] : dir) + ' <small>· Wynn\'s game</small>';
+  $('pbest').textContent = '—';
+  $('phelp').textContent = 'Click inside the game to play. Press "⤢ Full page" to open it on its own page.';
+  $('modal').hidden = false;
+  addRecent(dir);
+  $('frame').focus();
+}
+function startGame() {
+  if (!current || current.wynn) return;
+  state = ENGINES[current.eng](current);
+  rewarded = false; overT = 0; flash = 0; newBest = false;
+  keys.clear(); pressedFlag = false; tapPos = null; ptr.down = false;
+  cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(loop);
+}
+function closeGame() {
+  if ($('modal').hidden) return;
+  cancelAnimationFrame(raf); raf = 0;
+  $('modal').hidden = true; $('frame').src = 'about:blank';
+  current = null; state = null;
+  if (!$('home').hidden) renderRows();
+}
+function finish() {
+  rewarded = true;
+  const id = current.id, sc = state.score;
+  newBest = sc > (save.best[id] || 0);
+  if (newBest) save.best[id] = sc;
+  reward = clamp(1 + Math.floor(sc / [20, 3, 20, 20, 1, 2, 30][current.eng]), 1, 500);
+  const lvBefore = levelOf(save.xp);
+  save.coins += reward; save.xp += reward;
+  persist(); renderStats();
+  $('pbest').textContent = fmt(save.best[id] || 0);
+  if (save.best[id] != null) document.querySelectorAll('.card[data-id="' + id + '"] .meta')
+    .forEach((m) => (m.textContent = '⭐'.repeat(current.diff) + ' · 🏆 ' + fmt(save.best[id])));
+  sfx(state.win ? 'win' : 'over');
+  if (levelOf(save.xp) > lvBefore) setTimeout(() => toast('🎉 Level up! You are now level ' + levelOf(save.xp)), 400);
+}
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const inp = readInput();
+  if (!inp || !state || !current) return; // controller closed or restarted the game inside readInput
+  if (!state.over) state.update(dt, inp);
+  else { overT += dt; if (overT > .6 && inp.pressed) { startGame(); return; } }
+  if (state.over && !rewarded) finish();
+  // draw
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.drawImage(bgCanvas, 0, 0, W, H);
+  state.draw();
+  text('Score ' + fmt(state.score), 16, 30, 22);
+  if ([2, 3, 5].includes(current.eng)) text('❤️'.repeat(Math.max(0, state.lives)), 16, 60, 18);
+  text('🏆 ' + fmt(Math.max(save.best[current.id] || 0, state.score)), W - 16, current.eng === 6 ? 58 : 30, 18, 'right');
+  if (flash > 0) { ctx.fillStyle = 'rgba(255,40,60,' + flash + ')'; ctx.fillRect(0, 0, W, H); flash -= dt; }
+  if (state.over) {
+    ctx.fillStyle = 'rgba(10,5,25,.72)'; ctx.fillRect(0, 0, W, H);
+    text(state.win ? '🎉 You Win!' : '💥 Game Over', W / 2, 150, 48, 'center');
+    text('Score ' + fmt(state.score) + (newBest ? '  ·  NEW BEST! 🏆' : ''), W / 2, 205, 26, 'center');
+    text('+' + reward + ' 🪙 coins', W / 2, 245, 22, 'center');
+    text('Press Space / tap / A to play again', W / 2, 310, 20, 'center');
+  }
+  raf = requestAnimationFrame(loop);
+}
+
+$('pclose').addEventListener('click', closeGame);
+$('prestart').addEventListener('click', () => { startGame(); $('prestart').blur(); });
+$('pfav').addEventListener('click', () => { if (current && current.id) toggleFav(current.id); $('pfav').blur(); });
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeGame(); });
+// pause the game loop while the tab is hidden so it doesn't waste battery
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) cancelAnimationFrame(raf);
+  else if (state && current && !current.wynn) { last = performance.now(); raf = requestAnimationFrame(loop); }
+});
+
+// ---------- start ----------
+renderStats(); renderCats(); renderRows(); resetList();
+const startQ = new URLSearchParams(location.search).get('game');
+if (startQ && +startQ >= 1 && +startQ <= TOTAL) openGame(+startQ);
+</script>
+</body>
+</html>
