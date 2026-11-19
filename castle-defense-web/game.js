@@ -18,6 +18,13 @@ const TITAN_WAVE = 6;         // every 6th wave, the giant GIANT boss comes inst
 const TITAN_HEALTH = 900000;  // it acts like the giant boss, only bigger: a Golem needs 3 hits, a Mech 20
 const GORILLA_WAVE = 7;         // every 7th wave, the giant gorilla comes instead of any other boss
 const GORILLA_HEALTH = 9000000; // it acts like the giant boss too: a Golem needs 10 hits, a Mech 100
+// every 8th wave THE DEVOURER comes instead of any other boss: a giant serpent that swallows every
+// soldier it slithers over and grows bigger and stronger with each one it eats.
+// Only the Three-Headed Snake is too big for it to swallow.
+const DEVOURER_WAVE = 8;
+const DEVOURER_HEALTH = 30000000;
+const DEVOURER_GROW = 0.12;     // each soldier it eats makes it 12% bigger...
+const DEVOURER_MAX_GROW = 2;    // ...up to twice its size
 // enemies shoot back at your soldiers:
 // damage per shot, ticks between shots, how far they can shoot, shot speed, shot size and color
 const ENEMY_GUNS = {
@@ -30,6 +37,8 @@ const ENEMY_GUNS = {
   titan:    { damage: 250000, reload: 70, range: 2000, speed: 10, size: 9, color: "magenta" },
   // the giant gorilla throws huge boulders: 300,000 damage each
   gorilla:  { damage: 300000, reload: 80, range: 2000, speed: 9, size: 12, color: "#6b5a4a" },
+  // the Devourer spits huge globs of venom
+  devourer: { damage: 400000, reload: 75, range: 2000, speed: 9, size: 11, color: "#9bff3a" },
 };
 const CASTLE_HEALTH = 30;     // the castle starts with 30 health
 const HARD_WAVE = 5;          // from wave 5 on...
@@ -64,8 +73,10 @@ const COLLECTOR_REACH = 22;          // how close it has to get to grab a coin
 const COLLECTOR_ARMOR_PACK = 20000;  // the Mech armor button buys 20,000 armor points...
 const COLLECTOR_ARMOR_COST = 50;     // ...for $50
 const COLLECTOR_ARMOR_MAX = 200000;  // enough to survive one giant boss shell (150,000)
-const GOLEM_MIN = 3;          // you need at least 3 soldiers to combine them into a golem
-const GOLEM_BONUS = 60000;    // every soldier that joins the golem adds its own health plus 60,000
+const GOLEM_MIN = 3;          // each press of the Golem button melts 3 soldiers into one golem
+const GOLEM_BONUS = 60000;    // every soldier that joins a golem adds its own health plus 60,000
+const MAX_GOLEMS = 3;         // you can have at most 3 golems; 3 golems fuse into the Three-Headed Snake
+const SNAKE_BONUS = 500000;   // the snake gets all 3 golems' health plus 500,000
 
 const SKIN = "#e0b48a";
 const SHADOW = "#3f6e2b";
@@ -96,7 +107,20 @@ const SOLDIER_TYPES = {
   // Its boulder smashes the giant boss in one hit and takes half of a heavy tank's health.
   "golem": { name: "Golem", cost: 0, damage: 40, megaHalf: true, giantKill: true, health: 1, blast: 70, reload: 45,
              range: 600, color: "#7d7466", weapon: "shell", speed: 16, spread: 0.01, shot: "#5e554a" },
+  // the Three-Headed Snake is 3 golems fused together (see fuseSnake): it can't be bought either.
+  // Each head has its own element and shoots on its own (see snakeShoots). Nothing can swallow it.
+  "snake": { name: "Three-Headed Snake", cost: 0, health: 1, range: 650, color: "#3f6b3a" },
+  // the fire head's fireball smashes giant bosses like a golem's boulder and sets enemies ablaze
+  "snake-fire": { damage: 60, giantKill: 2, megaHalf: true, blast: 80, reload: 40, range: 650, weapon: "shell",
+                  speed: 15, spread: 0.01, shot: "#ff6a1a", element: "fire" },
+  // the ice head's frost ball hits hard and freezes everything it splashes for 4 seconds
+  "snake-ice": { damage: 40, giantKill: 2, blast: 100, reload: 50, range: 650, weapon: "shell",
+                 speed: 15, spread: 0.01, shot: "#8fe3ff", element: "ice", freeze: 80 },
+  // the poison head's venom ball poisons everything it splashes and eats away at giant bosses
+  "snake-poison": { damage: 40, giantKill: 2, blast: 90, reload: 45, range: 650, weapon: "shell",
+                    speed: 15, spread: 0.01, shot: "#7dff3a", element: "poison", poison: 200 },
 };
+const SNAKE_HEADS = ["snake-fire", "snake-ice", "snake-poison"];
 // the mech is bought with its own button at the top right
 const SHOP_ORDER = ["strong", "archer", "poison", "freezer", "boss killer"];
 
@@ -256,6 +280,11 @@ KILL_SOUNDS.gorilla = () => {
   tone(180, 40, 1.8, "sawtooth", 0.22);
   tone(90, 30, 1.6, "square", 0.1, 0.15);
 };
+KILL_SOUNDS.devourer = () => {
+  // a long hiss that sinks into a rumble
+  tone(2400, 600, 1.2, "sawtooth", 0.08);
+  tone(120, 25, 2.0, "sawtooth", 0.22, 0.2);
+};
 
 function buySound() {
   tone(520, 780, 0.07, "square", 0.05);
@@ -272,7 +301,7 @@ function coinSound() {
 }
 
 function soldierDiedSound(kind) {
-  if (kind === "mech" || kind === "golem") {
+  if (kind === "mech" || kind === "golem" || kind === "snake") {
     tone(90, 30, 1.0, "sawtooth", 0.2);
   } else {
     tone(900, 500, 0.12, "triangle", 0.1);
@@ -424,19 +453,21 @@ function updateMoney() {
   collectorButton.hidden = !collectMode && !collector && mechCount() < 2;
   collectorButton.classList.toggle("ready", playing && !collector && mechCount() >= 2 && !collectMode);
   collectorArmorButton.hidden = !collector;
-  const golem = soldiers.some((s) => s.kind === "golem");
-  const canCombine = soldiers.length >= GOLEM_MIN || (golem && soldiers.length >= 2);
+  const golems = golemCount();
+  const canCombine = golems < MAX_GOLEMS && golemIngredients().length >= GOLEM_MIN;
   setLocked(combineButton, !playing || !canCombine);
-  if (!combineArmedAt) {
-    setText(combineButton.label, golem ? "🗿 Add to Golem" : "🗿 Combine");
-  }
+  setText(combineButton.label, "🗿 Golem " + golems + "/" + MAX_GOLEMS);
   combineButton.classList.toggle("ready", playing && canCombine && !!strongestBoss() && isGiant(strongestBoss()));
+  // the snake button only shows up once you have 3 golems to fuse
+  snakeButton.hidden = golems < MAX_GOLEMS;
+  setLocked(snakeButton, !playing || golems < MAX_GOLEMS);
+  snakeButton.classList.toggle("ready", playing && golems >= MAX_GOLEMS);
   setLocked(collectorArmorButton, !collector || money < COLLECTOR_ARMOR_COST || collector.armor >= COLLECTOR_ARMOR_MAX);
 }
 
 function strongestBoss() {
   // the boss bar shows the biggest boss on the field
-  const rank = { gorilla: 5, titan: 4, giant: 3, megaboss: 2, boss: 1 };
+  const rank = { devourer: 6, gorilla: 5, titan: 4, giant: 3, megaboss: 2, boss: 1 };
   let best = null;
   for (const m of monsters) {
     if (rank[m.kind] && (!best || rank[m.kind] > rank[best.kind])) {
@@ -465,7 +496,7 @@ function updateInfo() {
   const boss = playing ? strongestBoss() : null;
   bossBox.hidden = !boss;
   if (boss) {
-    setText(bossName, { gorilla: "GIANT GORILLA", titan: "GIANT GIANT BOSS", giant: "GIANT BOSS", megaboss: "HEAVY TANK", boss: "ARMORED CAR" }[boss.kind]);
+    setText(bossName, { devourer: "THE DEVOURER", gorilla: "GIANT GORILLA", titan: "GIANT GIANT BOSS", giant: "GIANT BOSS", megaboss: "HEAVY TANK", boss: "ARMORED CAR" }[boss.kind]);
     bossFill.style.width = (100 * Math.max(boss.health, 0) / boss.max) + "%";
     setText(bossHp, Math.max(boss.health, 0).toLocaleString() + " / " + boss.max.toLocaleString());
   }
@@ -482,7 +513,7 @@ function isMega(m) {
 
 function isGiant(m) {
   // the giant giant boss and the gorilla do everything the giant boss does
-  return m.kind === "giant" || m.kind === "titan" || m.kind === "gorilla";
+  return m.kind === "giant" || m.kind === "titan" || m.kind === "gorilla" || m.kind === "devourer";
 }
 
 function isBoss(m) {
@@ -494,6 +525,7 @@ function isTough(m) {
 }
 
 function monsterSize(m) {
+  if (m.kind === "devourer") return 250 * m.grow;
   if (m.kind === "gorilla") return 250;
   if (m.kind === "titan") return 200;
   if (isGiant(m)) return 150;
@@ -504,10 +536,12 @@ function monsterSize(m) {
 }
 
 function monsterHeight(m) {
+  if (m.kind === "devourer") return 150 * m.grow;
   return { normal: 38, tough: 54, boss: 64, megaboss: 104, giant: 156, titan: 208, gorilla: 250 }[m.kind];
 }
 
 function monsterHalfWidth(m) {
+  if (m.kind === "devourer") return 170 * m.grow;
   return { normal: 11, tough: 16, boss: 50, megaboss: 95, giant: 143, titan: 190, gorilla: 130 }[m.kind];
 }
 
@@ -648,7 +682,9 @@ function startWave() {
   waveTotal = Math.round((5 + 3 * wave) * difficulty.monsters);
   waveSpawned = 0;
   // the same order spawnMonster uses to pick the boss at the end of the wave
-  if (wave % GORILLA_WAVE === 0) {
+  if (wave % DEVOURER_WAVE === 0) {
+    showBanner("WAVE " + wave, "THE DEVOURER awakens! It swallows soldiers and grows. Fuse a Three-Headed Snake!", true);
+  } else if (wave % GORILLA_WAVE === 0) {
     showBanner("WAVE " + wave, "A GIANT GORILLA is coming: 9,000,000 health! Build a Golem!", true);
   } else if (wave % TITAN_WAVE === 0) {
     showBanner("WAVE " + wave, "The GIANT GIANT BOSS is coming: 900,000 health! Build a Golem!", true);
@@ -666,12 +702,12 @@ function startWave() {
 }
 
 function addMonster(y, health, speed, kind) {
-  if (wave >= HARD_WAVE && !["giant", "titan", "gorilla"].includes(kind)) {
+  if (wave >= HARD_WAVE && !["giant", "titan", "gorilla", "devourer"].includes(kind)) {
     health *= HARD_HEALTH;   // the giant boss stays the same: a Mech still kills it in 2 hits
   }
   // gunTime is random so enemies do not all shoot at once; carried holds the coins it has picked up
   monsters.push({ x: 0, y, health, max: health, speed, slowed: 0, poison: 0, kind, push: 0, step: uniform(0, 6),
-                  gunTime: randint(10, ENEMY_GUNS[kind].reload), carried: [] });
+                  gunTime: randint(10, ENEMY_GUNS[kind].reload), carried: [], burn: 0, grow: 1, eaten: 0 });
 }
 
 function spawnMonster() {
@@ -693,7 +729,10 @@ function spawnMonster() {
   const y = randint(60, HEIGHT - 60);
   const speed = Math.min(3 + 0.25 * (wave - 1), 6) * difficulty.speed;   // enemies get faster
   const toughChance = Math.min(0.08 * wave, 0.6);                        // and more of them are armored
-  if (wave % GORILLA_WAVE === 0 && waveSpawned === waveTotal) {
+  if (wave % DEVOURER_WAVE === 0 && waveSpawned === waveTotal) {
+    // THE DEVOURER: a giant serpent slithering slowly toward the castle
+    addMonster(HEIGHT / 2 - 20, DEVOURER_HEALTH, 0.22, "devourer");
+  } else if (wave % GORILLA_WAVE === 0 && waveSpawned === waveTotal) {
     // the giant gorilla: taller than every tank, and it stomps slowly toward the castle
     addMonster(HEIGHT / 2 - 40, GORILLA_HEALTH, 0.25, "gorilla");
   } else if (wave % TITAN_WAVE === 0 && waveSpawned === waveTotal) {
@@ -737,7 +776,11 @@ function hitMonster(m, damage, pushX = 0, pushZ = 0) {
   if (m.health <= 0) {
     monsters = monsters.filter((other) => other !== m);
     let value = 5;
-    if (m.kind === "gorilla") {
+    if (m.kind === "devourer") {
+      score += 10000;
+      value = 500000;
+      showBanner("THE DEVOURER IS DEFEATED!", "+$500,000", true);
+    } else if (m.kind === "gorilla") {
       score += 4000;
       value = 100000;
     } else if (m.kind === "titan") {
@@ -891,7 +934,10 @@ function land(p, stats, target) {
   const z = Math.max(p.z, 0);
   if (stats.weapon === "shell") {
     explode(p.x, p.y, z, stats.blast, shotDamage(stats), Boolean(stats.megaHalf), Boolean(stats.giantHalf),
-            Boolean(stats.giantKill));
+            Number(stats.giantKill || 0), stats.element ? stats : null);
+    if (stats.element) {
+      elementBurst(p.x, p.y, z, stats);
+    }
   } else if (stats.weapon === "grenade") {
     gasBurst(p, stats);
   } else if (target) {
@@ -900,6 +946,18 @@ function land(p, stats, target) {
     stuck.push({ x: p.x, y: p.y, vx: p.vx, vz: p.vz, life: STUCK_LIFE });
   } else {
     addParticle("dust", p.x, p.y, 0, 0, 0, 0.3, 14, 3);   // the bullet kicks up dirt
+  }
+}
+
+function elementBurst(x, y, z, stats) {
+  // a splash in the head's own color
+  for (let i = 0; i < 14; i++) {
+    const angle = uniform(0, 2 * Math.PI);
+    addParticle(stats.element === "fire" ? "fire" : "dust", x, y, z, Math.cos(angle) * uniform(1, 4),
+                Math.sin(angle) * uniform(0.5, 2), uniform(1, 3), randint(14, 26), uniform(4, 8), stats.shot);
+  }
+  if (stats.element !== "fire") {
+    clouds.push({ x, y, life: 30, kind: stats.element === "ice" ? "tear" : "toxic", radius: stats.blast });
   }
 }
 
@@ -962,6 +1020,10 @@ function soldiersShoot() {
     if (s.collector) {
       continue;   // the collecting mech is busy picking up coins
     }
+    if (s.kind === "snake") {
+      snakeShoots(s);
+      continue;
+    }
     const stats = SOLDIER_TYPES[s.kind];
     s.reload -= 1;
     if (s.reload > 0) {
@@ -994,13 +1056,46 @@ function soldiersShoot() {
   }
 }
 
+function snakeHead(s, i) {
+  // where each of the snake's three heads is, as [x, ground_y, height]: fire on top, ice in front, poison low
+  const sway = Math.sin(performance.now() / 300 + i * 2) * 4;
+  return [[s.x - 52, s.y + 22, 128 + sway], [s.x - 74, s.y + 22, 92 + sway], [s.x - 56, s.y + 22, 56 + sway]][i];
+}
+
+function snakeShoots(s) {
+  // each head aims and shoots on its own: the ice head picks enemies that aren't frozen yet,
+  // the poison head ones that aren't poisoned yet, and every head goes for a giant boss first
+  for (let i = 0; i < SNAKE_HEADS.length; i++) {
+    const kind = SNAKE_HEADS[i];
+    const stats = SOLDIER_TYPES[kind];
+    s.heads[i] -= 1;
+    if (s.heads[i] > 0) {
+      continue;
+    }
+    let target = monsters.find((m) => isGiant(m) && distanceTo(s, m) < stats.range);
+    if (!target) {
+      const skip = { "snake-ice": "slowed", "snake-poison": "poison" }[kind] ?? null;
+      target = findClosest(s, stats, skip) || findClosest(s, stats);
+    }
+    if (!target) {
+      continue;
+    }
+    const [x, y, z] = snakeHead(s, i);
+    const [vx, vy, vz] = aim(x, y, z, target, stats);
+    projectiles.push({ x, y, z, vx, vy, vz, g: 0, kind, big: false, age: 0, done: false });
+    addParticle("flash", x, y, z, 0, 0, 0, 3, 10);
+    s.heads[i] = stats.reload;
+    s.bite[i] = 8;   // the head lunges forward as it spits
+  }
+}
+
 // ---------- explosions, smoke and fire ----------
 
 function addParticle(kind, x, y, z, vx, vy, vz, life, size, color = "#3a3a3a") {
   particles.push({ kind, x, y, z, vx, vy, vz, life, max: life, size, color });
 }
 
-function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = false, giantKill = false) {
+function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = false, giantKill = 0, element = null) {
   addParticle("flash", x, y, z, 0, 0, 0, 4, radius * 0.8);
   for (let i = 0; i < Math.floor(6 + radius / 4); i++) {
     const angle = uniform(0, 2 * Math.PI);
@@ -1023,18 +1118,32 @@ function explode(x, y, z, radius, damage = 0, megaHalf = false, giantHalf = fals
         if (giantHalf && isGiant(m)) {
           // half of the giant boss's max health, rounded up; only a twentieth of the giant giant boss's
           // and a hundredth of the gorilla's
-          hurt = Math.ceil(m.max / ({ titan: 20, gorilla: 100 }[m.kind] ?? 2));
+          hurt = Math.ceil(m.max / ({ titan: 20, gorilla: 100, devourer: 400 }[m.kind] ?? 2));
         }
         if (giantKill && isGiant(m)) {
           // the golem's boulder smashes the giant boss in one hit, the giant giant boss in three
-          // and the gorilla in ten
-          const hits = { titan: 3, gorilla: 10 }[m.kind];
-          hurt = hits ? Math.ceil(m.max / hits) : m.health;
+          // and the gorilla in ten; the Devourer takes 40 boulders. A snake head counts double.
+          const hits = { titan: 3, gorilla: 10, devourer: 40 }[m.kind];
+          hurt = hits ? Math.ceil(m.max * giantKill / hits) : m.health;
+        }
+        if (element) {
+          applyElement(m, element);
         }
         const away = m.x >= x ? 1 : -1;   // the blast pushes enemies away from it
         hitMonster(m, hurt, away * 6, 6);
       }
     }
+  }
+}
+
+function applyElement(m, stats) {
+  // the snake heads' fire, ice and poison
+  if (stats.element === "fire") {
+    m.burn = Math.max(m.burn, 100);
+  } else if (stats.element === "ice") {
+    m.slowed = Math.max(m.slowed, stats.freeze);
+  } else if (stats.element === "poison") {
+    m.poison = Math.max(m.poison, stats.poison);
   }
 }
 
@@ -1173,8 +1282,19 @@ function update() {
     }
     addParticle("dust", CASTLE_X - 14, groundY(m), 10, -0.5, 0, 0.5, 20, 8);
   }
-  // poison hurts a little every second
+  // poison hurts a little every second; burning hurts more, and fast
   for (const m of [...monsters]) {
+    if (m.burn > 0) {
+      m.burn -= 1;
+      if (m.burn % 10 === 0) {
+        hitMonster(m, isGiant(m) ? Math.ceil(m.max / 2000) : 3);
+        addParticle("fire", m.x + uniform(-10, 10), groundY(m), monsterHeight(m) * uniform(0.2, 0.8),
+                    0, 0, uniform(1, 2), 12, 5);
+      }
+    }
+    if (!isAlive(m)) {
+      continue;
+    }
     if (m.poison > 0) {
       m.poison -= 1;
       if (m.poison % POISON_TICK === 0) {
@@ -1224,7 +1344,7 @@ function enemiesShoot() {
     }
     let targets = soldiers;
     if (isGiant(m)) {
-      const mechs = soldiers.filter((s) => s.kind === "mech" || s.kind === "golem");
+      const mechs = soldiers.filter((s) => s.kind === "mech" || s.kind === "golem" || s.kind === "snake");
       if (mechs.length > 0) {
         targets = mechs;
       }
@@ -1248,13 +1368,46 @@ function giantCrushes() {
     if (!isGiant(m)) {
       continue;
     }
+    if (m.kind === "devourer") {
+      devourerEats(m);
+      continue;
+    }
     for (const s of [...soldiers]) {
-      if (s.kind === "golem") {
+      if (s.kind === "golem" || s.kind === "snake") {
         continue;   // the golem is too big to be driven over
       }
       if (Math.abs(s.x - m.x) < monsterHalfWidth(m) && Math.abs(s.y + 22 - groundY(m)) < 30) {
         hurtSoldier(s, s.health + s.armor);   // armor can't stop being driven over
       }
+    }
+  }
+}
+
+function devourerEats(m) {
+  // THE DEVOURER swallows every soldier its jaws reach (even golems and mechs) and grows from it.
+  // Only the Three-Headed Snake is too big to swallow.
+  const jawX = m.x + monsterHalfWidth(m) * 0.8;
+  for (const s of [...soldiers]) {
+    if (s.kind === "snake") {
+      continue;
+    }
+    if (Math.abs(s.x - jawX) < 40 * m.grow && Math.abs(s.y + 22 - groundY(m)) < 70 * m.grow) {
+      soldiers = soldiers.filter((other) => other !== s);
+      m.eaten += 1;
+      const before = monsterHeight(m);
+      m.grow = Math.min(m.grow + DEVOURER_GROW, DEVOURER_MAX_GROW);
+      m.y -= (monsterHeight(m) - before) / 2;   // keep its belly on the ground as it grows
+      const extra = Math.round(m.max * 0.15);   // every meal adds 15% more health
+      m.max += extra;
+      m.health += extra;
+      addParticle("flash", s.x, s.y + 22, 30, 0, 0, 0, 6, 30);
+      for (let i = 0; i < 10; i++) {
+        addParticle("dust", s.x, s.y + 22, 20, uniform(-2, 2), uniform(-1, 1), uniform(0.5, 2), 30, 8, "#9bff3a");
+      }
+      tone(300, 60, 0.6, "sawtooth", 0.18);   // GULP
+      floaters.push({ x: s.x, y: s.y - 40, words: "GULP!", color: "#9bff3a", life: 30 });
+      toast("The Devourer swallowed your " + (SOLDIER_TYPES[s.kind].name) + " and grew bigger!", "bad");
+      updateInfo();
     }
   }
 }
@@ -1270,7 +1423,7 @@ function updateEnemyShells() {
     const speed = e.gun.speed;
     const dx = s.x - e.x;
     const dy = s.y + 22 - e.y;
-    const dz = { mech: 40, golem: 70 }[s.kind] ?? 20;
+    const dz = { mech: 40, golem: 70, snake: 90 }[s.kind] ?? 20;
     const dz2 = dz - e.z;
     const distance = Math.hypot(dx, dy, dz2);
     if (distance <= speed) {
@@ -1291,6 +1444,8 @@ function hurtSoldier(s, damage) {
     explode(s.x, gy, 40, 30);   // just the fire and smoke, no damage to enemies
   } else if (s.kind === "golem") {
     addParticle("debris", s.x, gy, 70, uniform(-3, 3), uniform(-1, 1), uniform(2, 5), 30, 4, "#7d7466");
+  } else if (s.kind === "snake") {
+    addParticle("debris", s.x, gy, 80, uniform(-3, 3), uniform(-1, 1), uniform(2, 5), 30, 4, "#3f6b3a");
   } else {
     addParticle("dust", s.x, gy, 20, 0, 0, 0.5, 10, 4);
     if (s.ragdoll) {
@@ -1305,7 +1460,7 @@ function hurtSoldier(s, damage) {
   s.health -= damage;
   if (s.health <= 0) {
     soldiers = soldiers.filter((other) => other !== s);
-    if (s.kind === "golem") {
+    if (s.kind === "golem" || s.kind === "snake") {
       // the golem crumbles into a pile of rocks
       for (let i = 0; i < 30; i++) {
         addParticle("debris", s.x + uniform(-30, 30), gy, uniform(10, 110), uniform(-4, 4), uniform(-2, 2),
@@ -1329,6 +1484,8 @@ function hurtSoldier(s, damage) {
       toast("Your Mech was destroyed!", "bad");
     } else if (s.kind === "golem") {
       toast("Your Golem crumbled!", "bad");
+    } else if (s.kind === "snake") {
+      toast("Your Three-Headed Snake was defeated!", "bad");
     }
     updateInfo();
   }
