@@ -103,7 +103,7 @@ const SOLDIER_TYPES = {
   // the mech is a giant walking robot: its cannon shell takes half of the giant boss's health (2 hits kill it)
   "mech": { name: "Mech", cost: 200, damage: 20, giantHalf: true, health: 9000, blast: 50, reload: 40,
             range: 520, color: "#5b6b7a", weapon: "shell", speed: 20, spread: 0.008, shot: "cyan" },
-  // the golem is every soldier combined into one giant stone giant (see combineSoldiers): it can't be bought.
+  // the golem is every soldier combined into one giant stone giant (see makeGolem): it can't be bought.
   // Its boulder smashes the giant boss in one hit and takes half of a heavy tank's health.
   "golem": { name: "Golem", cost: 0, damage: 40, megaHalf: true, giantKill: true, health: 1, blast: 70, reload: 45,
              range: 600, color: "#7d7466", weapon: "shell", speed: 16, spread: 0.01, shot: "#5e554a" },
@@ -1509,36 +1509,86 @@ function pickUpCoins() {
   }
 }
 
-function combineSoldiers() {
-  // every soldier (and any golem you already have) melts together into one giant golem
-  const golem = soldiers.find((s) => s.kind === "golem");
-  let health = golem ? golem.health : 0;
-  let maxHealth = golem ? golem.maxHealth : 0;
-  let cost = golem ? golem.cost : 0;
-  for (const s of soldiers) {
-    if (s === golem) {
-      continue;
-    }
+function golemCount() {
+  return soldiers.filter((s) => s.kind === "golem").length;
+}
+
+function golemIngredients() {
+  // the soldiers that can be melted into a golem: cheapest first, so your Mechs are used last
+  return soldiers.filter((s) => s.kind !== "golem" && s.kind !== "snake" && !s.collector)
+                 .sort((a, b) => SOLDIER_TYPES[a.kind].cost - SOLDIER_TYPES[b.kind].cost);
+}
+
+// the golems stand in a column in front of the castle
+const GOLEM_SPOTS = [HEIGHT / 2 - 30, HEIGHT / 2 - 130, HEIGHT / 2 + 70];
+
+function makeGolem() {
+  // 3 soldiers melt together into ONE new golem; you can have up to 3 golems
+  const parts = golemIngredients().slice(0, GOLEM_MIN);
+  let health = 0;
+  let maxHealth = 0;
+  let cost = 0;
+  for (const s of parts) {
     health += s.health + GOLEM_BONUS;
     maxHealth += SOLDIER_TYPES[s.kind].health + GOLEM_BONUS;
-    cost += SOLDIER_TYPES[s.kind].cost;
+    cost += s.cost ?? SOLDIER_TYPES[s.kind].cost;
     // each soldier flies into the golem in a puff of sparks
     addParticle("flash", s.x, s.y + 22, 20, 0, 0, 0, 6, 16);
     for (let i = 0; i < 8; i++) {
       addParticle("fire", s.x, s.y + 22, 20, uniform(-2, 2), uniform(-1, 1), uniform(1, 4), 14, 4, "#ffb347");
     }
   }
-  const y = HEIGHT / 2 - 30;
-  soldiers = [{ x: CASTLE_X - 70, y, reload: 0, kind: "golem", cloudTime: 0, ragdoll: null, recoil: 0, ammo: null,
-                health, maxHealth, cost, collector: false, returning: false, homeX: CASTLE_X - 70, homeY: y, armor: 0 }];
-  addParticle("flash", CASTLE_X - 70, y + 22, 60, 0, 0, 0, 10, 80);
+  soldiers = soldiers.filter((s) => !parts.includes(s));
+  // pick the first free spot in the golem column
+  const taken = soldiers.filter((s) => s.kind === "golem").map((s) => s.homeY);
+  const y = GOLEM_SPOTS.find((spot) => !taken.includes(spot)) ?? GOLEM_SPOTS[0];
+  const x = CASTLE_X - 70;
+  soldiers.push({ x, y, reload: 0, kind: "golem", cloudTime: 0, ragdoll: null, recoil: 0, ammo: null,
+                  health, maxHealth, cost, collector: false, returning: false, homeX: x, homeY: y, armor: 0 });
+  addParticle("flash", x, y + 22, 60, 0, 0, 0, 10, 80);
   for (let i = 0; i < 24; i++) {
-    addParticle("dust", CASTLE_X - 70 + uniform(-40, 40), y + 22, 5, uniform(-3, 3), uniform(-1, 1), uniform(0.5, 2),
+    addParticle("dust", x + uniform(-40, 40), y + 22, 5, uniform(-3, 3), uniform(-1, 1), uniform(0.5, 2),
                 40, uniform(8, 16));
   }
   tone(60, 30, 1.2, "sawtooth", 0.2);
   tone(120, 240, 0.6, "square", 0.06, 0.3);
-  showBanner("GOLEM!", health.toLocaleString() + " health · smashes the giant boss in one hit", true);
+  const count = golemCount();
+  showBanner("GOLEM " + count + "/" + MAX_GOLEMS,
+             count >= MAX_GOLEMS ? "Press 🐍 Fuse Snake to make the Three-Headed Snake!"
+                                 : health.toLocaleString() + " health · smashes the giant boss in one hit", true);
+}
+
+function fuseSnake() {
+  // the 3 golems fuse into the Three-Headed Snake: a fire head, an ice head and a poison head
+  const golems = soldiers.filter((s) => s.kind === "golem");
+  let health = SNAKE_BONUS;
+  let maxHealth = SNAKE_BONUS;
+  let cost = 0;
+  for (const g of golems) {
+    health += g.health;
+    maxHealth += g.maxHealth;
+    cost += g.cost;
+    for (let i = 0; i < 20; i++) {
+      addParticle("debris", g.x + uniform(-30, 30), g.y + 22, uniform(10, 110), uniform(-4, 4), uniform(-2, 2),
+                  uniform(1, 6), 50, uniform(4, 9), "#7d7466");
+    }
+  }
+  soldiers = soldiers.filter((s) => s.kind !== "golem");
+  const x = CASTLE_X - 75;
+  const y = HEIGHT / 2 - 30;
+  soldiers.push({ x, y, reload: 0, kind: "snake", cloudTime: 0, ragdoll: null, recoil: 0, ammo: null,
+                  health, maxHealth, cost, collector: false, returning: false, homeX: x, homeY: y, armor: 0,
+                  heads: [0, 15, 30], bite: [0, 0, 0] });
+  addParticle("flash", x, y + 22, 80, 0, 0, 0, 14, 120);
+  for (const color of ["#ff6a1a", "#8fe3ff", "#7dff3a"]) {
+    for (let i = 0; i < 16; i++) {
+      addParticle("dust", x + uniform(-60, 60), y + 22, uniform(10, 120), uniform(-3, 3), uniform(-1, 1),
+                  uniform(0.5, 2), 50, uniform(6, 12), color);
+    }
+  }
+  tone(2000, 400, 0.8, "sawtooth", 0.08);   // hiss
+  tone(50, 30, 1.6, "sawtooth", 0.22, 0.2);
+  showBanner("THREE-HEADED SNAKE!", health.toLocaleString() + " health · 🔥 fire · ❄️ ice · ☠️ poison", true);
 }
 
 function mechCount() {
@@ -2803,36 +2853,33 @@ function toggleSound() {
   }
 }
 
-let combineArmedAt = 0;
-
 function askCombine() {
-  // combining can't be undone, so it needs a second click to make sure
+  // every press melts 3 soldiers into one more golem, up to 3 golems
   if (!playing) {
     return;
   }
-  const golem = soldiers.some((s) => s.kind === "golem");
-  if (soldiers.length < GOLEM_MIN && !(golem && soldiers.length >= 2)) {
-    denied(combineButton, golem ? "Recruit more soldiers to add to the Golem."
-                                : "You need at least " + GOLEM_MIN + " soldiers to make a Golem.");
+  if (golemCount() >= MAX_GOLEMS) {
+    denied(combineButton, "You already have " + MAX_GOLEMS + " golems. Fuse them into the Three-Headed Snake!");
     return;
   }
-  if (combineArmedAt && performance.now() - combineArmedAt < 2500) {
-    combineArmedAt = 0;
-    combineButton.classList.remove("armed");
-    combineSoldiers();
-    updateInfo();
+  if (golemIngredients().length < GOLEM_MIN) {
+    denied(combineButton, "You need " + GOLEM_MIN + " soldiers to make a Golem.");
     return;
   }
-  combineArmedAt = performance.now();
-  combineButton.label.textContent = "Combine all " + soldiers.length + "?";
-  combineButton.classList.add("armed");
-  setTimeout(() => {
-    if (combineArmedAt && performance.now() - combineArmedAt >= 2500) {
-      combineArmedAt = 0;
-      combineButton.classList.remove("armed");
-      updateInfo();
-    }
-  }, 2600);
+  makeGolem();
+  updateInfo();
+}
+
+function askSnake() {
+  if (!playing) {
+    return;
+  }
+  if (golemCount() < MAX_GOLEMS) {
+    denied(snakeButton, "You need " + MAX_GOLEMS + " golems to fuse the Three-Headed Snake.");
+    return;
+  }
+  fuseSnake();
+  updateInfo();
 }
 
 let resetArmedAt = 0;
@@ -2862,8 +2909,8 @@ function sellSoldierAt(x, y, refund = true) {
   // check the newest soldier first, because it is drawn on top
   for (let i = soldiers.length - 1; i >= 0; i--) {
     const s = soldiers[i];
-    const reach = { mech: 30, golem: 45 }[s.kind] ?? 25;
-    const top = { mech: -60, golem: -120 }[s.kind] ?? -37;
+    const reach = { mech: 30, golem: 45, snake: 70 }[s.kind] ?? 25;
+    const top = { mech: -60, golem: -120, snake: -150 }[s.kind] ?? -37;
     if (Math.abs(s.x - x) < reach && y - s.y > top && y - s.y < 26) {
       const value = s.cost ?? SOLDIER_TYPES[s.kind].cost;   // a golem is worth what its soldiers cost
       if (refund) {
@@ -2962,7 +3009,7 @@ function keyPressed(event) {
   }
   const actions = { p: togglePause, " ": togglePause, f: changeMonsterSpeed, s: toggleSellMode,
                     d: toggleDeleteMode, c: toggleCollectMode, u: buyUpgrade, a: buyArmor, b: buyAmmo,
-                    k: buyCollectorArmor, g: askCombine };
+                    k: buyCollectorArmor, g: askCombine, h: askSnake };
   if (actions[key]) {
     event.preventDefault();   // stop Space from scrolling the page or clicking a focused button
     actions[key]();
@@ -3083,6 +3130,7 @@ for (const level of Object.keys(DIFFICULTIES)) {
 const deleteButton = document.getElementById("delete");
 const combineButton = document.getElementById("combine");
 combineButton.label = combineButton.querySelector(".label");
+const snakeButton = document.getElementById("snake");
 const collectorButton = document.getElementById("collector");
 const sellButton = document.getElementById("sell");
 const pauseButton = document.getElementById("pause");
@@ -3125,6 +3173,7 @@ sellButton.addEventListener("click", toggleSellMode);
 deleteButton.addEventListener("click", toggleDeleteMode);
 collectorButton.addEventListener("click", toggleCollectMode);
 combineButton.addEventListener("click", askCombine);
+snakeButton.addEventListener("click", askSnake);
 pauseButton.addEventListener("click", togglePause);
 pauseScreen.addEventListener("click", togglePause);
 speedGroup.addEventListener("click", (event) => {
