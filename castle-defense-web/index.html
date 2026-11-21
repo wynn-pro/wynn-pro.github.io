@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;600;700;800&display=swap">
   <!-- change ?v= on both lines below for every new version, so browsers download the new files -->
-  <link rel="stylesheet" href="style.css?v=1.07.0">
+  <link rel="stylesheet" href="style.css?v=1.09.0">
 </head>
 <body>
   <main class="game">
@@ -121,10 +121,13 @@
       <kbd>S</kbd> sell, <kbd>D</kbd> delete, <kbd>C</kbd> collector, <kbd>K</kbd> Mech armor, <kbd>G</kbd> make a Golem from 3 soldiers (max 3), <kbd>H</kbd> fuse 3 Golems into the Three-Headed Snake, <kbd>P</kbd> pause, <kbd>F</kbd> speed, <kbd>M</kbd> mute,
       <kbd>Esc</kbd> cancel, <kbd>Tab</kbd> wipe out every enemy.
     </p>
-    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.08.0</span>
+    <footer class="credit">This game is created and built by <strong>Wynn Tantithamthavorn</strong>. <span class="version">v1.09.0</span>
       <a class="support" id="support" target="_blank" rel="noopener" hidden>☕ Support the game on Ko-fi</a>
     </footer>
   </main>
-  <script src="game.js?v=1.08.0"></script>
+  <script src="game.js?v=1.09.0"></script>
+  <!-- multiplayer talks through Supabase Realtime -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="multiplayer.js?v=1.09.0"></script>
 </body>
 </html>
