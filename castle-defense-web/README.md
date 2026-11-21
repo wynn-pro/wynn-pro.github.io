@@ -41,6 +41,8 @@ to show a new `index.html`; to see it right away, press **Ctrl+Shift+R** (**Cmd+
 On the title screen press **⚔ Multiplayer**, type your name and press **Create room**. Tell your
 friend the 4-letter code; they type it and press **Join**, and the match starts for both of you.
 
+- No friend online? Press **🤖 Easy**, **🤖 Medium** or **🤖 Hard** to play a bot instead. It earns
+  money, sends units at you, and defends its castle against what you send (no internet needed).
 - You each defend your own castle with the normal waves.
 - The red **SEND ➜** bar spends your money to send units onto your friend's battlefield:
   Soldier $10, Armored $20, Armored car $60, Heavy tank $200, Giant boss $800, Giant giant $5,000, Gorilla $25,000.

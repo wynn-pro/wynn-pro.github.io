@@ -20,6 +20,7 @@ const STATUS_EVERY = 150;   // ms between status updates (only sent when somethi
 const mp = {
   client: null,
   channel: null,
+  bot: null,        // set when playing against the bot instead of a person
   room: "",
   me: Math.random().toString(36).slice(2, 10),
   name: "",
@@ -52,6 +53,12 @@ mpPanel.innerHTML = `
     <div class="mp-row">
       <input id="mp-code" maxlength="4" placeholder="CODE" autocomplete="off">
       <button type="button" class="mp-btn" id="mp-join">Join</button>
+    </div>
+    <div class="mp-or">or play a bot</div>
+    <div class="mp-row mp-bots" id="mp-bots">
+      <button type="button" class="mp-btn mp-bot" data-bot="Easy">🤖 Easy</button>
+      <button type="button" class="mp-btn mp-bot" data-bot="Medium">🤖 Medium</button>
+      <button type="button" class="mp-btn mp-bot" data-bot="Hard">🤖 Hard</button>
     </div>
     <p class="mp-status" id="mp-status" aria-live="polite"></p>
     <button type="button" class="mp-link" id="mp-back">← Back</button>
@@ -157,6 +164,10 @@ mpCode.addEventListener("keydown", (event) => {
   }
 });
 rematchButton.addEventListener("click", () => {
+  if (mp.bot) {
+    botStart(mp.bot.level);
+    return;
+  }
   if (!mp.channel || !mp.opponent) {
     mpSay("Your opponent has left. Make a new room.");
     return;
@@ -221,6 +232,7 @@ function mpLeave() {
     mp.client.removeChannel(mp.channel);
   }
   mp.channel = null;
+  mp.bot = null;
   mp.started = false;
   mp.opponent = null;
   sendShop.hidden = true;
@@ -228,7 +240,9 @@ function mpLeave() {
 }
 
 function mpPost(payload) {
-  if (mp.channel) {
+  if (mp.bot) {
+    botReceive(payload);
+  } else if (mp.channel) {
     mp.channel.send({ type: "broadcast", event: "msg", payload });
   }
 }
@@ -476,3 +490,110 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 setInterval(mpSendStatus, STATUS_EVERY);
+
+// ---------- the bot ----------
+// The bot doesn't run a real battlefield. It simulates one: it earns money, saves up and sends
+// units at you, and its "defense" chews through what you send it. Whatever gets through hurts
+// its castle, the same amount a real enemy would hurt yours.
+
+const BOT_LEVELS = {
+  //          money per second, defense per second, how quickly it sends, its name
+  Easy:   { income: 0.7, defense: 0.8, think: 6, name: "Rookie Bot" },
+  Medium: { income: 1.0, defense: 1.0, think: 4, name: "Captain Bot" },
+  Hard:   { income: 1.5, defense: 1.3, think: 2, name: "Warlord Bot" },
+};
+// how hard each unit is for the bot to stop, how long it takes to walk over, and the castle damage
+const BOT_THREAT = {
+  normal:   { hp: 1,    walk: 12, hurt: 1 },
+  tough:    { hp: 3,    walk: 12, hurt: 1 },
+  boss:     { hp: 10,   walk: 18, hurt: BOSS_DAMAGE },
+  megaboss: { hp: 40,   walk: 30, hurt: MEGA_BOSS_DAMAGE },
+  giant:    { hp: 200,  walk: 45, hurt: GIANT_BOSS_DAMAGE },
+  titan:    { hp: 900,  walk: 55, hurt: GIANT_BOSS_DAMAGE },
+  gorilla:  { hp: 4000, walk: 60, hurt: GIANT_BOSS_DAMAGE },
+};
+
+for (const button of document.querySelectorAll(".mp-bot")) {
+  button.addEventListener("click", () => {
+    mpLeave();
+    mp.name = (mpName.value.trim() || "Player").slice(0, 16);
+    botStart(button.dataset.bot);
+  });
+}
+
+function botStart(level) {
+  const lvl = BOT_LEVELS[level] || BOT_LEVELS.Medium;
+  mp.bot = { level, lvl, time: 0, money: 0, score: 0, wave: 1, castle: CASTLE_HEALTH, max: CASTLE_HEALTH,
+             incoming: [], target: null, nextThink: lvl.think };
+  mp.opponent = { name: lvl.name, castle: CASTLE_HEALTH, max: CASTLE_HEALTH, wave: 1, money: 0, score: 0 };
+  mpStart();
+}
+
+function botReceive(msg) {
+  const bot = mp.bot;
+  if (msg.type === "send" && BOT_THREAT[msg.kind]) {
+    const t = BOT_THREAT[msg.kind];
+    bot.incoming.push({ hp: t.hp, left: t.walk, hurt: t.hurt });
+  }
+  // "status", "dead" and "again" need no answer from the bot
+}
+
+function botPickTarget(bot) {
+  // mostly cheap units early, and it saves up for bosses as the game goes on
+  const choices = SEND_UNITS.filter((u) => u.cost <= 60 + bot.wave * bot.wave * 40);
+  const weights = choices.map((u, i) => 1 + i * (bot.wave / 4));
+  let roll = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < choices.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) {
+      return choices[i];
+    }
+  }
+  return choices[0];
+}
+
+function botTick() {
+  const bot = mp.bot;
+  if (!bot || !mpActive()) {
+    return;
+  }
+  const lvl = bot.lvl;
+  bot.time += 1;
+  bot.wave = 1 + Math.floor(bot.time / 30);
+  bot.money += Math.round((3 + bot.wave * 1.5) * lvl.income);
+  bot.score += bot.wave;
+  // its soldiers fight what you sent, oldest first
+  let defense = (2 + 2 * bot.wave + bot.wave * bot.wave * 0.3) * lvl.defense;
+  for (const u of bot.incoming) {
+    const hit = Math.min(defense, u.hp);
+    u.hp -= hit;
+    defense -= hit;
+    u.left -= 1;
+    if (u.hp > 0 && u.left <= 0) {
+      bot.castle -= u.hurt;
+      u.hp = 0;
+    } else if (u.hp <= 0) {
+      bot.score += 5;
+    }
+  }
+  bot.incoming = bot.incoming.filter((u) => u.hp > 0);
+  // now and then, it sends something at you
+  bot.nextThink -= 1;
+  if (bot.nextThink <= 0) {
+    bot.target = bot.target || botPickTarget(bot);
+    if (bot.money >= bot.target.cost) {
+      bot.money -= bot.target.cost;
+      mpArrive(bot.target.kind, mp.opponent.name);
+      bot.target = null;
+    }
+    bot.nextThink = lvl.think + randint(0, 2);
+  }
+  Object.assign(mp.opponent, { castle: Math.max(0, bot.castle), max: bot.max, wave: bot.wave,
+                               money: bot.money, score: bot.score });
+  drawVs();
+  if (bot.castle <= 0) {
+    mpWin(mp.opponent.name + "'s castle has fallen!");
+  }
+}
+
+setInterval(botTick, 1000);

@@ -1194,3 +1194,15 @@ canvas#board {
   color: var(--muted);
   white-space: nowrap;
 }
+
+.mp-or {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mp-btn.mp-bot {
+  padding: 9px 6px;
+  font-size: 13px;
+  background: linear-gradient(180deg, #4a3a22, #2c2214);
+}
