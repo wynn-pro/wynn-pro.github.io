@@ -36,6 +36,23 @@ the old game. To stop that, change the version number in `index.html` every time
 The new number makes the browser download the new files. GitHub Pages can take up to 10 minutes
 to show a new `index.html`; to see it right away, press **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac).
 
+## Multiplayer
+
+On the title screen press **⚔ Multiplayer**, type your name and press **Create room**. Tell your
+friend the 4-letter code; they type it and press **Join**, and the match starts for both of you.
+
+- You each defend your own castle with the normal waves.
+- The red **SEND ➜** bar spends your money to send units onto your friend's battlefield:
+  Soldier $10, Armored $20, Armored car $60, Heavy tank $200, Giant boss $800, Giant giant $5,000, Gorilla $25,000.
+  Sent units drop no coin of their own, so sending never pays the defender.
+- The panel in the bottom left shows your opponent's castle health, wave, money and score live.
+- The first castle to fall loses (leaving the match also loses). Press **Rematch** to play again.
+- There is no pausing and no Tab cheat during a match.
+
+Multiplayer uses Supabase Realtime broadcast (the same Supabase project as the leaderboard) in
+`multiplayer.js`. Messages go straight between the two browsers through a websocket, usually in
+well under 100 ms, and nothing is saved in the database.
+
 ## How to play
 
 - Pick **Easy**, **Medium** or **Hard** to start. Each wave starts as soon as the last one is cleared.

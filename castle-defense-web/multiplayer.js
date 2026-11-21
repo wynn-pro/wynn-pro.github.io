@@ -264,7 +264,7 @@ function mpPresence() {
   mp.opponent = { name: other.name || "Opponent", castle: 0, max: 0, wave: 0, money: 0, score: 0 };
   // the player who joined first starts the match for both
   if (players[0].id === mp.me) {
-    mpPost({ type: "start" });
+    mpPost({ type: "start", name: mp.name });
     mpStart();
   } else {
     mpSay(`Found ${mp.opponent.name}! Starting…`);
@@ -276,9 +276,13 @@ function mpReceive(msg) {
     return;
   }
   if (msg.type === "start" && !mp.started) {
+    mp.opponent = mp.opponent || { name: String(msg.name || "Opponent").slice(0, 16), castle: 0, max: 0, wave: 0, money: 0, score: 0 };
     mpStart();
-  } else if (msg.type === "status" && mp.opponent && msg.status) {
+  } else if (msg.type === "status" && mp.started && msg.status) {
+    // the "start" message can arrive before presence says who the other player is
+    mp.opponent = mp.opponent || { name: "Opponent", castle: 0, max: 0, wave: 0, money: 0, score: 0 };
     Object.assign(mp.opponent, msg.status);
+    mp.opponent.name = String(mp.opponent.name || "Opponent").slice(0, 16);
     drawVs();
   } else if (msg.type === "send" && mpActive()) {
     mpArrive(msg.kind, msg.from);
