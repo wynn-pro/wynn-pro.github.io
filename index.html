@@ -600,7 +600,7 @@
     </div>
   </section>
 
-  <section id="games">
+  <section id="games" class="compact">
     <div class="wrap">
       <h2 class="section-title">The Game Vault</h2>
       <p class="section-sub">Click a game to play it right now in your browser!</p>
@@ -3118,7 +3118,7 @@
         groups.forEach((group) => {
           let shown = 0;
           group.querySelectorAll('article.game').forEach((card) => {
-            const text = card.querySelector('.game-body').textContent.toLowerCase();
+            const text = card._text || (card._text = card.querySelector('.game-body').textContent.toLowerCase());
             const link = card.querySelector('a.btn-play');
             const key = link ? link.getAttribute('href') : card;
             let ok = !searching || (words.every((w) => text.includes(w)) && !seen.has(key));
@@ -3146,6 +3146,46 @@
       clear.addEventListener('click', () => { input.value = ''; run(); input.focus(); });
       new MutationObserver(labels).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
       labels();
+    })();
+  </script>
+
+  <script>
+    // Card size switch ("See lots" = compact grid) + "Just updated" strip
+    (function () {
+      const section = document.getElementById('games');
+      const btns = section.querySelectorAll('.view-switch button');
+      const setView = (v) => {
+        section.classList.toggle('compact', v === 'compact');
+        btns.forEach((b) => b.setAttribute('aria-pressed', b.dataset.view === v));
+        try { localStorage.setItem('view', v); } catch (e) {}
+      };
+      btns.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+      let v = 'compact';
+      try { v = localStorage.getItem('view') || 'compact'; } catch (e) {}
+      setView(v);
+
+      // Newest 8 games by their "Updated" date, each listed once
+      const seen = new Set();
+      const items = [];
+      section.querySelectorAll('article.game').forEach((card) => {
+        const a = card.querySelector('a.btn-play');
+        const t = card.querySelector('p.updated time');
+        if (!a || !t || seen.has(a.getAttribute('href'))) return;
+        seen.add(a.getAttribute('href'));
+        items.push({ href: a.getAttribute('href'), name: card.querySelector('h3').textContent.trim(), date: t.dateTime, label: t.textContent });
+      });
+      items.sort((x, y) => y.date.localeCompare(x.date));
+      const list = document.getElementById('freshList');
+      items.slice(0, 8).forEach((it) => {
+        const link = document.createElement('a');
+        link.href = it.href;
+        link.textContent = it.name + ' ';
+        const sm = document.createElement('small');
+        sm.textContent = it.label;
+        link.appendChild(sm);
+        list.appendChild(link);
+      });
+      document.getElementById('freshStrip').hidden = items.length === 0;
     })();
   </script>
 
