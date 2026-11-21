@@ -14,12 +14,26 @@ PLAY_LINK = re.compile(r'( *)<a class="btn btn-play" href="([^"/]+)/index.html">
 UPDATED_LINE = re.compile(r' *<p class="updated"[^\n]*</p>\n')
 
 
-def last_changed(folder):
+def all_last_changed():
+    """One git call for the whole repo: newest commit date per top-level folder."""
     out = subprocess.run(
-        ["git", "log", "-1", "--format=%cs", "--", folder],
+        ["git", "log", "--format=@%cs", "--name-only"],
         capture_output=True, text=True, check=True, cwd=PAGE.parent,
-    ).stdout.strip()
-    return date.fromisoformat(out) if out else None
+    ).stdout
+    dates, current = {}, None
+    for line in out.splitlines():
+        if line.startswith("@"):
+            current = date.fromisoformat(line[1:])
+        elif "/" in line and current:
+            dates.setdefault(line.split("/", 1)[0], current)  # log is newest first
+    return dates
+
+
+DATES = all_last_changed()
+
+
+def last_changed(folder):
+    return DATES.get(folder)
 
 
 def stamp(match):
