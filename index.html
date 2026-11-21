@@ -574,6 +574,16 @@
       <p class="search-msg" id="gameSearchMsg" aria-live="polite"></p>
       <p class="no-games" id="noGames" hidden>🐉 No games found. Try another word!</p>
 
+      <div class="view-switch" role="group" aria-label="Card size">
+        <button type="button" data-view="compact" aria-pressed="true">▦ See lots</button>
+        <button type="button" data-view="big" aria-pressed="false">▢ Big cards</button>
+      </div>
+
+      <div class="fresh-strip" id="freshStrip" hidden>
+        <h3>⚡ Just updated</h3>
+        <div class="fresh-list" id="freshList"></div>
+      </div>
+
       <div class="vault-nav">
         <a class="chip" href="#favourites">⭐ Favourites</a>
         <a class="chip" href="#puzzle">🧩 Puzzle</a>
