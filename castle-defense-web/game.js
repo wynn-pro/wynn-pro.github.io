@@ -759,6 +759,49 @@ function isAlive(m) {
   return monsters.includes(m);
 }
 
+// ---------- secret codes ----------
+// Press the Code button and type a code. Code 123.456 makes the Devourer worth 100,000 score
+// instead of 10,000. The code is remembered in this browser.
+const DEVOURER_SCORE = 10000;
+const DEVOURER_SCORE_CODE = 100000;
+const CODES = { "123.456": "devourerBoost" };
+const usedCodes = new Set();
+try {
+  for (const name of JSON.parse(localStorage.getItem("castleDefenseCodes") || "[]")) {
+    usedCodes.add(name);
+  }
+} catch (e) {
+  // private window: codes just aren't remembered
+}
+
+function devourerScore() {
+  return usedCodes.has("devourerBoost") ? DEVOURER_SCORE_CODE : DEVOURER_SCORE;
+}
+
+function enterCode() {
+  const typed = window.prompt("Enter a code:");
+  if (typed === null) {
+    return;
+  }
+  const name = CODES[typed.trim()];
+  if (!name) {
+    toast("That code doesn't work", "warn");
+    return;
+  }
+  if (usedCodes.has(name)) {
+    toast("You already have that code!", "good");
+    return;
+  }
+  usedCodes.add(name);
+  try {
+    localStorage.setItem("castleDefenseCodes", JSON.stringify([...usedCodes]));
+  } catch (e) {
+    // fine: it still works until the page is closed
+  }
+  coinSound();
+  toast("Code accepted! The Devourer now gives " + DEVOURER_SCORE_CODE.toLocaleString() + " score", "good");
+}
+
 function hitMonster(m, damage, pushX = 0, pushZ = 0) {
   // pushX and pushZ are how hard the hit shoves the enemy (and its ragdoll if it dies)
   if (!isAlive(m)) {
@@ -777,9 +820,10 @@ function hitMonster(m, damage, pushX = 0, pushZ = 0) {
     monsters = monsters.filter((other) => other !== m);
     let value = 5;
     if (m.kind === "devourer") {
-      score += 50000;
+      const reward = devourerScore();
+      score += reward;
       value = 500000;
-      showBanner("THE DEVOURER IS DEFEATED!", "+50,000 score · +$500,000", true);
+      showBanner("THE DEVOURER IS DEFEATED!", "+" + reward.toLocaleString() + " score · +$500,000", true);
     } else if (m.kind === "gorilla") {
       score += 4000;
       value = 100000;
@@ -3320,6 +3364,7 @@ speedGroup.addEventListener("click", (event) => {
   }
 });
 soundButton.addEventListener("click", toggleSound);
+document.getElementById("code").addEventListener("click", enterCode);
 resetButton.addEventListener("click", askReset);
 document.addEventListener("keydown", keyPressed);
 nameForm.addEventListener("submit", saveName);
