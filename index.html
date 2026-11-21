@@ -306,6 +306,45 @@
     .search .clear:hover { background: var(--pink); color: var(--white); }
     .search-msg { text-align: center; font-weight: 800; margin: -6px 0 22px; min-height: 1.4em; }
     .no-games { text-align: center; font-size: 1.3rem; font-weight: 800; padding: 40px 0; }
+
+    /* ---------- View switch: Compact grid shows lots of games at once ---------- */
+    .view-switch { display: flex; justify-content: center; gap: 8px; margin: 0 0 22px; }
+    .view-switch button {
+      font: 700 0.95rem 'Fredoka', sans-serif; padding: 8px 16px; border-radius: 999px; cursor: pointer;
+      background: var(--white); color: var(--ink); border: 3px solid var(--ink);
+    }
+    .view-switch button[aria-pressed="true"] { background: var(--blue); color: var(--white); border-color: var(--blue-dark); }
+    .compact .games { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+    .compact .game { border-width: 3px; border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); }
+    .compact .game:hover { transform: translateY(-3px); }
+    .compact .game-art { height: 92px; }
+    .compact .game-art:has(.shot)::after, .compact .ribbon { display: none; }
+    .compact .game-body { padding: 10px; }
+    .compact .game-body h3 { font-size: 1rem; margin-bottom: 4px; line-height: 1.2; }
+    .compact .game-body p:not(.updated), .compact .badges { display: none; }
+    .compact .game-body p.updated { font-size: 0.72rem; margin: 0 0 8px; }
+    .compact .btn-play, .compact .btn-locked { padding: 7px 8px; font-size: 0.85rem; border-radius: 10px; box-shadow: 0 3px 0 var(--blue-dark); }
+    .compact .btn-locked { box-shadow: 0 3px 0 #6f7c93; }
+    .compact .like-btn { top: 5px; right: 5px; padding: 3px 7px; font-size: 0.75rem; }
+    .compact .like-btn .count { display: none; }
+    .compact .mystery .qmark { font-size: 3rem; }
+    .compact .group { margin-bottom: 32px; }
+    .compact .group-sub { margin-bottom: 12px; }
+    .compact .favourites { padding: 16px; border-radius: 22px; }
+    .compact .vault-nav { margin-bottom: 24px; }
+    /* Skip drawing groups that are off screen, so the page stays fast */
+    .group { content-visibility: auto; contain-intrinsic-size: auto 600px; }
+
+    /* "Just updated" strip: the newest games, found from their dates */
+    .fresh-strip { margin: 0 0 28px; }
+    .fresh-strip h3 { font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
+    .fresh-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .fresh-list a {
+      text-decoration: none; font-weight: 800; font-size: 0.9rem; padding: 6px 12px; border-radius: 999px;
+      background: #e3fbef; color: #0d6e3b; border: 2px solid #128a4a;
+    }
+    .fresh-list a:hover { background: #128a4a; color: var(--white); }
+    .fresh-list small { font-weight: 700; opacity: 0.75; }
     [hidden] { display: none !important; }
 
     .group { margin-bottom: 60px; scroll-margin-top: 90px; }
